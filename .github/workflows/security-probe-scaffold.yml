@@ -1,0 +1,50 @@
+name: security-probe-commit1
+
+on:
+  pull_request:
+    paths:
+      - "security-probe/**"
+      - ".github/workflows/security-probe-commit1.yml"
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - "security-probe/**"
+      - ".github/workflows/security-probe-commit1.yml"
+
+jobs:
+  commit1-ci:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: security-probe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: security-probe/package.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: CLI smoke run
+        run: npx tsx ./index.ts https://example.test --output ./reports-ci
+
+      - name: Assert reports exist and JSON is valid
+        run: |
+          test -f ./reports-ci/security-probe-report.json
+          test -f ./reports-ci/security-probe-report.md
+          node -e "JSON.parse(require('fs').readFileSync('./reports-ci/security-probe-report.json','utf8')); console.log('json valid')"
+          grep -q "No findings yet." ./reports-ci/security-probe-report.md
