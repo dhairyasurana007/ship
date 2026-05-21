@@ -1,20 +1,19 @@
-name: security-probe-commit1
+name: security-probe-scaffold
 
 on:
   pull_request:
     paths:
       - "security-probe/**"
-      - ".github/workflows/security-probe-commit1.yml"
+      - ".github/workflows/security-probe-scaffold.yml"
   push:
     branches:
-      - main
-      - master
+      - "**"
     paths:
       - "security-probe/**"
-      - ".github/workflows/security-probe-commit1.yml"
+      - ".github/workflows/security-probe-scaffold.yml"
 
 jobs:
-  commit1-ci:
+  scaffold-ci:
     runs-on: ubuntu-latest
 
     defaults:
