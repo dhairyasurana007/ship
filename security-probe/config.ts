@@ -15,7 +15,7 @@ export function parseConfig(): Config {
     args: process.argv.slice(2),
     allowPositionals: true,
     options: {
-      output: { type: 'string', default: 'security-probe/reports' },
+      output: { type: 'string', default: 'reports' },
       verbose: { type: 'boolean', default: false },
       timeout: { type: 'string', default: '10000' },
       repo: { type: 'string' },

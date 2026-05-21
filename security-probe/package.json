@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "bin": {
-    "ship-security-probe": "./index.ts"
+    "ship-security-probe": "./index.js"
   },
   "dependencies": {
     "tough-cookie": "^4.1.4",
@@ -15,5 +15,8 @@
     "@types/tough-cookie": "^4.0.0",
     "@types/ws": "^8.5.0",
     "typescript": "^5.0.0"
+  },
+  "scripts": {
+    "test": "tsx --test tests/**/*.test.ts"
   }
 }

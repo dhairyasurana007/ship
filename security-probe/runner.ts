@@ -1,5 +1,6 @@
 import type { Config } from './config.js';
 import type { Category, Finding, Report, Severity } from './types.js';
+import { probeDeps } from './probes/deps.js';
 
 const ALL_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
 const ALL_CATEGORIES: Category[] = [
@@ -33,7 +34,7 @@ export function buildSummary(findings: Finding[]): Report['summary'] {
 }
 
 export async function run(config: Config): Promise<Report> {
-  const findings: Finding[] = [];
+  const findings: Finding[] = [...(await probeDeps(config))];
 
   return {
     generated: new Date().toISOString(),
