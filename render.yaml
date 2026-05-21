@@ -1,0 +1,59 @@
+services:
+  - type: web
+    name: ship-api
+    runtime: node
+    plan: starter
+    rootDir: .
+    buildCommand: |
+      corepack enable
+      corepack pnpm install --frozen-lockfile
+      corepack pnpm build:api
+    preDeployCommand: corepack pnpm --filter @ship/api db:migrate
+    startCommand: corepack pnpm --filter @ship/api start
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      # Use non-production to skip AWS SSM bootstrap in api/src/index.ts.
+      # If you want NODE_ENV=production, you must also provide AWS SSM config/secrets.
+      - key: NODE_ENV
+        value: development
+      - key: DATABASE_URL
+        fromDatabase:
+          name: ship-postgres
+          property: connectionString
+      - key: SESSION_SECRET
+        sync: false
+      # Set to your static site's public URL during Blueprint creation
+      # (example: https://ship-web.onrender.com).
+      - key: CORS_ORIGIN
+        sync: false
+
+  - type: web
+    name: ship-web
+    runtime: static
+    rootDir: .
+    buildCommand: |
+      corepack enable
+      corepack pnpm install --frozen-lockfile
+      corepack pnpm build:web
+    staticPublishPath: ./web/dist
+    autoDeployTrigger: commit
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      # Set to your API public URL during Blueprint creation
+      # (example: https://ship-api.onrender.com).
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_APP_ENV
+        value: production
+
+databases:
+  - name: ship-postgres
+    plan: free
