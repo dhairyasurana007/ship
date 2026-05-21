@@ -2,6 +2,10 @@
 node_modules
 .pnpm-store
 
+# Agents
+.claude
+.agents
+
 # Build outputs
 dist
 build
@@ -110,6 +114,10 @@ vendor/
 .pr-checklist.json
 .dev-ports
 .claude/settings.local.json
+skills-lock.json
 
 # Vite PWA dev artifacts
 web/dev-dist/
+
+# Security Probe
+security-probe/reports
