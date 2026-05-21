@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "private": true,
   "description": "Ship monorepo - API + Web + Shared types",
-  "packageManager": "pnpm@10.27.0",
+  "packageManager": "pnpm@10.27.0+sha512.72d699da16b1179c14ba9e64dc71c9a40988cbdc65c264cb0e489db7de917f20dcf4d64d8723625f2969ba52d4b7e2a1170682d9ac2a5dcaeaab732b7e16f04a",
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=9.0.0"
   },
   "scripts": {
-    "dev": "./scripts/dev.sh",
+    "dev": "pnpm --parallel --recursive run dev",
     "docker:up": "docker compose -f docker-compose.local.yml up --build",
     "docker:down": "docker compose -f docker-compose.local.yml down",
     "docker:clean": "docker compose -f docker-compose.local.yml down -v",
@@ -36,6 +36,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.0",
+    "@guidepup/guidepup": "^0.24.1",
     "@playwright/test": "^1.57.0",
     "@testcontainers/postgresql": "^11.11.0",
     "@types/supertest": "^6.0.3",

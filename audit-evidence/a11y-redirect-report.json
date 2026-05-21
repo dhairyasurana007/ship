@@ -1,0 +1,121 @@
+[
+  {
+    "key": "login",
+    "requestedUrl": "http://localhost:5173/login",
+    "finalUrl": "http://localhost:5173/docs",
+    "redirected": true,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "setup",
+    "requestedUrl": "http://localhost:5173/setup",
+    "finalUrl": "http://localhost:5173/docs",
+    "redirected": true,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "my-week",
+    "requestedUrl": "http://localhost:5173/my-week",
+    "finalUrl": "http://localhost:5173/my-week",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "dashboard",
+    "requestedUrl": "http://localhost:5173/dashboard",
+    "finalUrl": "http://localhost:5173/dashboard",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "docs",
+    "requestedUrl": "http://localhost:5173/docs",
+    "finalUrl": "http://localhost:5173/docs",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "issues",
+    "requestedUrl": "http://localhost:5173/issues",
+    "finalUrl": "http://localhost:5173/issues",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "projects",
+    "requestedUrl": "http://localhost:5173/projects",
+    "finalUrl": "http://localhost:5173/projects",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "programs",
+    "requestedUrl": "http://localhost:5173/programs",
+    "finalUrl": "http://localhost:5173/programs",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "document",
+    "requestedUrl": "http://localhost:5173/documents/0c399ee7-f357-4501-9017-f6cdb605a0a5",
+    "finalUrl": "http://localhost:5173/documents/0c399ee7-f357-4501-9017-f6cdb605a0a5",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "team-allocation",
+    "requestedUrl": "http://localhost:5173/team/allocation",
+    "finalUrl": "http://localhost:5173/team/allocation",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "team-directory",
+    "requestedUrl": "http://localhost:5173/team/directory",
+    "finalUrl": "http://localhost:5173/team/directory",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "team-status",
+    "requestedUrl": "http://localhost:5173/team/status",
+    "finalUrl": "http://localhost:5173/team/status",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "team-reviews",
+    "requestedUrl": "http://localhost:5173/team/reviews",
+    "finalUrl": "http://localhost:5173/team/reviews",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "team-org-chart",
+    "requestedUrl": "http://localhost:5173/team/org-chart",
+    "finalUrl": "http://localhost:5173/team/org-chart",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "admin",
+    "requestedUrl": "http://localhost:5173/admin",
+    "finalUrl": "http://localhost:5173/admin",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "settings",
+    "requestedUrl": "http://localhost:5173/settings",
+    "finalUrl": "http://localhost:5173/settings",
+    "redirected": false,
+    "redirectedToLogin": false
+  },
+  {
+    "key": "settings-conversions",
+    "requestedUrl": "http://localhost:5173/settings/conversions",
+    "finalUrl": "http://localhost:5173/settings/conversions",
+    "redirected": false,
+    "redirectedToLogin": false
+  }
+]

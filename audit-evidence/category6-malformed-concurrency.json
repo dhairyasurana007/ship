@@ -1,0 +1,46 @@
+{
+  "timestamp": "2026-05-20T20:53:00.903Z",
+  "docId": "ee3bb43b-5773-46ab-b5b6-ed07669c656f",
+  "tests": {
+    "empty_login": {
+      "status": 400,
+      "body": "{\"success\":false,\"error\":{\"code\":\"VALIDATION_ERROR\",\"message\":\"Email and password are required\"}}"
+    },
+    "login_status": 200,
+    "empty_title_patch": {
+      "status": 400,
+      "body": "{\"error\":\"Invalid input\",\"details\":[{\"code\":\"too_small\",\"minimum\":1,\"type\":\"string\",\"inclusive\":true,\"exact\":false,\"message\":\"String must contain at least 1 character(s)\",\"path\":[\"title\"]}]}"
+    },
+    "long_title_patch": {
+      "status": 400,
+      "body": "{\"error\":\"Invalid input\",\"details\":[{\"code\":\"too_big\",\"maximum\":255,\"type\":\"string\",\"inclusive\":true,\"exact\":false,\"message\":\"String must contain at most 255 character(s)\",\"path\":[\"title\"]}]}"
+    },
+    "script_title_patch": {
+      "status": 200,
+      "body": "{\"id\":\"ee3bb43b-5773-46ab-b5b6-ed07669c656f\",\"workspace_id\":\"8fa0a75d-c4ac-482c-870d-c7280baa7a6a\",\"document_type\":\"issue\",\"title\":\"<script>alert('xss')</script> !@#$%^&*()_+|~=`{}[]:\\\\;\\\"'<>?,./\",\"content\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]},\"yjs_state\":null,\"parent_id\":null,\"position\":0,\"properties\":{\"state\":\"todo\",\"source\":\"internal\",\"estimate\":3,\"priority\":\"low\",\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"feedback_status\":null,\"rejection_reason\":null},\"ticket_number\":10,\"archived_at\":null,\"deleted_at\":null,\"started_at\":null,\"completed_at\":null,\"cancelled_at\":null,\"reopened_at\":null,\"converted_to_id\":null,\"converted_from_id\":null,\"converted_at\":null,\"converted_by\":null,\"original_type\":null,\"conversion_count\":0,\"created_at\":\"2026-05-20T20:32:24.274Z\",\"updated_at\":\"2026-05-20T20:53:01.100Z\",\"created_by\":null,\"visibility\":\"workspace\",\"state\":\"todo\",\"priority\":\"low\",\"estimate\":3,\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"source\":\"internal\",\"owner\":null}"
+    },
+    "fetch_after_script": {
+      "status": 200,
+      "body": "{\"id\":\"ee3bb43b-5773-46ab-b5b6-ed07669c656f\",\"workspace_id\":\"8fa0a75d-c4ac-482c-870d-c7280baa7a6a\",\"document_type\":\"issue\",\"title\":\"<script>alert('xss')</script> !@#$%^&*()_+|~=`{}[]:\\\\;\\\"'<>?,./\",\"content\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]},\"yjs_state\":null,\"parent_id\":null,\"position\":0,\"properties\":{\"state\":\"todo\",\"source\":\"internal\",\"estimate\":3,\"priority\":\"low\",\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"feedback_status\":null,\"rejection_reason\":null},\"ticket_number\":10,\"archived_at\":null,\"deleted_at\":null,\"started_at\":null,\"completed_at\":null,\"cancelled_at\":null,\"reopened_at\":null,\"converted_to_id\":null,\"converted_from_id\":null,\"converted_at\":null,\"converted_by\":null,\"original_type\":null,\"conversion_count\":0,\"created_at\":\"2026-05-20T20:32:24.274Z\",\"updated_at\":\"2026-05-20T20:53:01.100Z\",\"created_by\":null,\"visibility\":\"workspace\",\"can_access\":true,\"state\":\"todo\",\"priority\":\"low\",\"estimate\":3,\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"source\":\"internal\",\"owner\":null,\"accountable_id\":null,\"consulted_ids\":[],\"informed_ids\":[],\"has_design_review\":null,\"design_review_notes\":null,\"belongs_to\":[{\"id\":\"937db5fe-31b5-4279-bb33-1d541c25ad55\",\"type\":\"program\",\"title\":\"Ship Core\",\"color\":\"#3B82F6\"},{\"id\":\"8aeb6d26-687d-4718-af49-8592feed3be9\",\"type\":\"sprint\",\"title\":\"Week 12\"},{\"id\":\"15366a2e-8d4f-4fc3-8210-15bbaf9eb9a9\",\"type\":\"project\",\"title\":\"Ship Core - Bug Fixes\",\"color\":\"#ef4444\"}]}"
+    },
+    "login2_status": 200,
+    "concurrent_patch": {
+      "A": {
+        "status": 200,
+        "body": "{\"id\":\"ee3bb43b-5773-46ab-b5b6-ed07669c656f\",\"workspace_id\":\"8fa0a75d-c4ac-482c-870d-c7280baa7a6a\",\"document_type\":\"issue\",\"title\":\"Concurrent A 1779310381184\",\"content\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]},\"yjs_state\":null,\"parent_id\":null,\"position\":0,\"properties\":{\"state\":\"todo\",\"source\":\"internal\",\"estimate\":3,\"priority\":\"low\",\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"feedback_status\":null,\"rejection_reason\":null},\"ticket_number\":10,\"archived_at\":null,\"deleted_at\":null,\"started_at\":null,\"completed_at\":null,\"cancelled_at\":null,\"reopened_at\":null,\"converted_to_id\":null,\"converted_from_id\":null,\"converted_at\":null,\"converted_by\":null,\"original_type\":null,\"conversion_count\":0,\"created_at\":\"2026-05-20T20:32:24.274Z\",\"updated_at\":\"2026-05-20T20:53:01.204Z\",\"created_by\":null,\"visibility\":\"workspace\",\"state\":\"todo\",\"priority\":\"low\",\"estimate\":3,\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"source\":\"internal\",\"owner\":null}"
+      },
+      "B": {
+        "status": 200,
+        "body": "{\"id\":\"ee3bb43b-5773-46ab-b5b6-ed07669c656f\",\"workspace_id\":\"8fa0a75d-c4ac-482c-870d-c7280baa7a6a\",\"document_type\":\"issue\",\"title\":\"Concurrent B 1779310381184\",\"content\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]},\"yjs_state\":null,\"parent_id\":null,\"position\":0,\"properties\":{\"state\":\"todo\",\"source\":\"internal\",\"estimate\":3,\"priority\":\"low\",\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"feedback_status\":null,\"rejection_reason\":null},\"ticket_number\":10,\"archived_at\":null,\"deleted_at\":null,\"started_at\":null,\"completed_at\":null,\"cancelled_at\":null,\"reopened_at\":null,\"converted_to_id\":null,\"converted_from_id\":null,\"converted_at\":null,\"converted_by\":null,\"original_type\":null,\"conversion_count\":0,\"created_at\":\"2026-05-20T20:32:24.274Z\",\"updated_at\":\"2026-05-20T20:53:01.210Z\",\"created_by\":null,\"visibility\":\"workspace\",\"state\":\"todo\",\"priority\":\"low\",\"estimate\":3,\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"source\":\"internal\",\"owner\":null}"
+      },
+      "values": {
+        "tA": "Concurrent A 1779310381184",
+        "tB": "Concurrent B 1779310381184"
+      }
+    },
+    "fetch_after_concurrent": {
+      "status": 200,
+      "body": "{\"id\":\"ee3bb43b-5773-46ab-b5b6-ed07669c656f\",\"workspace_id\":\"8fa0a75d-c4ac-482c-870d-c7280baa7a6a\",\"document_type\":\"issue\",\"title\":\"Concurrent B 1779310381184\",\"content\":{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"}]},\"yjs_state\":null,\"parent_id\":null,\"position\":0,\"properties\":{\"state\":\"todo\",\"source\":\"internal\",\"estimate\":3,\"priority\":\"low\",\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"feedback_status\":null,\"rejection_reason\":null},\"ticket_number\":10,\"archived_at\":null,\"deleted_at\":null,\"started_at\":null,\"completed_at\":null,\"cancelled_at\":null,\"reopened_at\":null,\"converted_to_id\":null,\"converted_from_id\":null,\"converted_at\":null,\"converted_by\":null,\"original_type\":null,\"conversion_count\":0,\"created_at\":\"2026-05-20T20:32:24.274Z\",\"updated_at\":\"2026-05-20T20:53:01.210Z\",\"created_by\":null,\"visibility\":\"workspace\",\"can_access\":true,\"state\":\"todo\",\"priority\":\"low\",\"estimate\":3,\"assignee_id\":\"6699718f-1bbe-4437-ba10-a0575c08ff43\",\"source\":\"internal\",\"owner\":null,\"accountable_id\":null,\"consulted_ids\":[],\"informed_ids\":[],\"has_design_review\":null,\"design_review_notes\":null,\"belongs_to\":[{\"id\":\"937db5fe-31b5-4279-bb33-1d541c25ad55\",\"type\":\"program\",\"title\":\"Ship Core\",\"color\":\"#3B82F6\"},{\"id\":\"8aeb6d26-687d-4718-af49-8592feed3be9\",\"type\":\"sprint\",\"title\":\"Week 12\"},{\"id\":\"15366a2e-8d4f-4fc3-8210-15bbaf9eb9a9\",\"type\":\"project\",\"title\":\"Ship Core - Bug Fixes\",\"color\":\"#ef4444\"}]}"
+    }
+  }
+}

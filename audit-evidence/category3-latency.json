@@ -1,0 +1,118 @@
+{
+  "generatedAt": "2026-05-20T03:25:33.460Z",
+  "base": "http://127.0.0.1:3000",
+  "mode": "shared-auth-session-concurrent-requests",
+  "levels": {
+    "10": {
+      "/api/auth/me": {
+        "samples": 400,
+        "failures": 0,
+        "p50": 28.689100000000053,
+        "p95": 39.8420000000001,
+        "p99": 47.903999999999996
+      },
+      "/api/documents": {
+        "samples": 400,
+        "failures": 0,
+        "p50": 138.95190000000002,
+        "p95": 191.64039999999977,
+        "p99": 228.3765999999996
+      },
+      "/api/issues": {
+        "samples": 48,
+        "failures": 352,
+        "p50": 87.04620000000068,
+        "p95": 106.76540000000023,
+        "p99": 110.57999999999993
+      },
+      "/api/projects": {
+        "samples": 0,
+        "failures": 400,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/weeks": {
+        "samples": 0,
+        "failures": 400,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "25": {
+      "/api/auth/me": {
+        "samples": 0,
+        "failures": 1000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/documents": {
+        "samples": 0,
+        "failures": 1000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/issues": {
+        "samples": 0,
+        "failures": 1000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/projects": {
+        "samples": 0,
+        "failures": 1000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/weeks": {
+        "samples": 0,
+        "failures": 1000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "50": {
+      "/api/auth/me": {
+        "samples": 0,
+        "failures": 2000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/documents": {
+        "samples": 0,
+        "failures": 2000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/issues": {
+        "samples": 0,
+        "failures": 2000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/projects": {
+        "samples": 0,
+        "failures": 2000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      },
+      "/api/weeks": {
+        "samples": 0,
+        "failures": 2000,
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    }
+  }
+}

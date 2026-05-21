@@ -1,0 +1,2403 @@
+{
+  "runAt": "2026-05-20T22:32:28.675Z",
+  "tool": "NVDA via Guidepup",
+  "baseUrl": "http://localhost:5173",
+  "login": {
+    "success": true,
+    "finalUrl": "http://localhost:5173/docs",
+    "speech": [
+      {
+        "label": "login-page-loaded",
+        "phrase": "￼"
+      },
+      {
+        "label": "email-focused",
+        "phrase": "￼"
+      },
+      {
+        "label": "password-focused",
+        "phrase": "￼"
+      },
+      {
+        "label": "post-login",
+        "phrase": "button, POST STANDUP. panel. Show Speech Viewer on Startup. panel. NVDA Speech Viewer. Show Speech Viewer on Startup, check box, checked, Alt plus s. Show Speech Viewer on Startup. panel"
+      }
+    ],
+    "spokenPhraseLog": [
+      "￼",
+      "button, POST STANDUP. panel. Show Speech Viewer on Startup. panel. NVDA Speech Viewer. Show Speech Viewer on Startup, check box, checked, Alt plus s. Show Speech Viewer on Startup. panel"
+    ],
+    "itemTextLog": [
+      "￼",
+      "button, POST STANDUP. panel. Show Speech Viewer on Startup. panel. NVDA Speech Viewer. Show Speech Viewer on Startup, check box, checked, Alt plus s. Show Speech Viewer on Startup. panel"
+    ]
+  },
+  "routes": [
+    {
+      "route": "/login",
+      "finalUrl": "http://localhost:5173/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "edit, read only, multi line, blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank. panel"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank. Show Speech Viewer on Startup check box checked Alt plus s. NVDA Speech Viewer. Show Speech Viewer on Startup check box checked Alt plus s. Chrome Legacy Window. Chrome Legacy Window. Position Indicates the current vertical position, and can be dragged to change it directly. Page up Moves the vertical position up a couple of lines. Show Speech Viewer on Startup check box checked Alt plus s. NVDA Speech Viewer. panel. NVDA Speech Viewer. panel. NVDA Speech Viewer. Close Closes the window. You have. Action Items. category 2 bundle treemap dot png"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "edit, read only, multi line, blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank. panel",
+        "blank",
+        "blank. Show Speech Viewer on Startup check box checked Alt plus s. NVDA Speech Viewer. Show Speech Viewer on Startup check box checked Alt plus s. Chrome Legacy Window. Chrome Legacy Window. Position Indicates the current vertical position, and can be dragged to change it directly. Page up Moves the vertical position up a couple of lines. Show Speech Viewer on Startup check box checked Alt plus s. NVDA Speech Viewer. panel. NVDA Speech Viewer. panel. NVDA Speech Viewer. Close Closes the window. You have. Action Items. category 2 bundle treemap dot png",
+        "blank"
+      ],
+      "itemTextLog": [
+        "edit, read only, multi line, blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank. panel",
+        "blank",
+        "blank. Show Speech Viewer on Startup check box checked Alt plus s. NVDA Speech Viewer. Show Speech Viewer on Startup check box checked Alt plus s. Chrome Legacy Window. Chrome Legacy Window. Position Indicates the current vertical position, and can be dragged to change it directly. Page up Moves the vertical position up a couple of lines. Show Speech Viewer on Startup check box checked Alt plus s. NVDA Speech Viewer. panel. NVDA Speech Viewer. panel. NVDA Speech Viewer. Close Closes the window. You have. Action Items. category 2 bundle treemap dot png",
+        "blank"
+      ]
+    },
+    {
+      "route": "/setup",
+      "finalUrl": "http://localhost:5173/setup",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/my-week",
+      "finalUrl": "http://localhost:5173/my-week",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/dashboard",
+      "finalUrl": "http://localhost:5173/dashboard",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/docs",
+      "finalUrl": "http://localhost:5173/docs",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/issues",
+      "finalUrl": "http://localhost:5173/issues",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/projects",
+      "finalUrl": "http://localhost:5173/projects",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/programs",
+      "finalUrl": "http://localhost:5173/programs",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/documents",
+      "finalUrl": "http://localhost:5173/documents",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/team-allocation",
+      "finalUrl": "http://localhost:5173/team-allocation",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/team-directory",
+      "finalUrl": "http://localhost:5173/team-directory",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/team-status",
+      "finalUrl": "http://localhost:5173/team-status",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/team-reviews",
+      "finalUrl": "http://localhost:5173/team-reviews",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/team-org-chart",
+      "finalUrl": "http://localhost:5173/team-org-chart",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Open Tanstack query devtools"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/admin",
+      "finalUrl": "http://localhost:5173/admin",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Workspaces"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Users"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Audit Logs"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "New Workspace"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "A",
+            "id": null,
+            "role": null,
+            "label": "Ship Workspace"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Archive"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/settings",
+      "finalUrl": "http://localhost:5173/settings",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/settings/conversions",
+      "finalUrl": "http://localhost:5173/settings/conversions",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Close"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Post standupPost standup for Week 14 (5 issues assigned)Week 14Due today"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Got it"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank",
+        "blank"
+      ]
+    }
+  ],
+  "notes": [
+    "Run uses Guidepup capture mode and stores spoken/item logs per route."
+  ]
+}

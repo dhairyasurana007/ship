@@ -1,0 +1,138 @@
+[
+  {
+    "key": "login",
+    "requestedUrl": "http://localhost:5173/login",
+    "finalUrl": "http://localhost:5173/docs",
+    "file": "axe-login.json",
+    "violations": 0,
+    "passes": 35
+  },
+  {
+    "key": "setup",
+    "requestedUrl": "http://localhost:5173/setup",
+    "finalUrl": "http://localhost:5173/docs",
+    "file": "axe-setup.json",
+    "violations": 0,
+    "passes": 35
+  },
+  {
+    "key": "my-week",
+    "requestedUrl": "http://localhost:5173/my-week",
+    "finalUrl": "http://localhost:5173/my-week",
+    "file": "axe-my-week.json",
+    "violations": 1,
+    "passes": 29
+  },
+  {
+    "key": "dashboard",
+    "requestedUrl": "http://localhost:5173/dashboard",
+    "finalUrl": "http://localhost:5173/dashboard",
+    "file": "axe-dashboard.json",
+    "violations": 1,
+    "passes": 29
+  },
+  {
+    "key": "docs",
+    "requestedUrl": "http://localhost:5173/docs",
+    "finalUrl": "http://localhost:5173/docs",
+    "file": "axe-docs.json",
+    "violations": 0,
+    "passes": 35
+  },
+  {
+    "key": "issues",
+    "requestedUrl": "http://localhost:5173/issues",
+    "finalUrl": "http://localhost:5173/issues",
+    "file": "axe-issues.json",
+    "violations": 0,
+    "passes": 33
+  },
+  {
+    "key": "projects",
+    "requestedUrl": "http://localhost:5173/projects",
+    "finalUrl": "http://localhost:5173/projects",
+    "file": "axe-projects.json",
+    "violations": 1,
+    "passes": 33
+  },
+  {
+    "key": "programs",
+    "requestedUrl": "http://localhost:5173/programs",
+    "finalUrl": "http://localhost:5173/programs",
+    "file": "axe-programs.json",
+    "violations": 0,
+    "passes": 32
+  },
+  {
+    "key": "document",
+    "requestedUrl": "http://localhost:5173/documents/0c399ee7-f357-4501-9017-f6cdb605a0a5",
+    "finalUrl": "http://localhost:5173/documents/0c399ee7-f357-4501-9017-f6cdb605a0a5",
+    "file": "axe-document.json",
+    "violations": 1,
+    "passes": 38
+  },
+  {
+    "key": "team-allocation",
+    "requestedUrl": "http://localhost:5173/team/allocation",
+    "finalUrl": "http://localhost:5173/team/allocation",
+    "file": "axe-team-allocation.json",
+    "violations": 1,
+    "passes": 29
+  },
+  {
+    "key": "team-directory",
+    "requestedUrl": "http://localhost:5173/team/directory",
+    "finalUrl": "http://localhost:5173/team/directory",
+    "file": "axe-team-directory.json",
+    "violations": 0,
+    "passes": 29
+  },
+  {
+    "key": "team-status",
+    "requestedUrl": "http://localhost:5173/team/status",
+    "finalUrl": "http://localhost:5173/team/status",
+    "file": "axe-team-status.json",
+    "violations": 1,
+    "passes": 29
+  },
+  {
+    "key": "team-reviews",
+    "requestedUrl": "http://localhost:5173/team/reviews",
+    "finalUrl": "http://localhost:5173/team/reviews",
+    "file": "axe-team-reviews.json",
+    "violations": 1,
+    "passes": 29
+  },
+  {
+    "key": "team-org-chart",
+    "requestedUrl": "http://localhost:5173/team/org-chart",
+    "finalUrl": "http://localhost:5173/team/org-chart",
+    "file": "axe-team-org-chart.json",
+    "violations": 0,
+    "passes": 29
+  },
+  {
+    "key": "admin",
+    "requestedUrl": "http://localhost:5173/admin",
+    "finalUrl": "http://localhost:5173/admin",
+    "file": "axe-admin.json",
+    "violations": 2,
+    "passes": 34
+  },
+  {
+    "key": "settings",
+    "requestedUrl": "http://localhost:5173/settings",
+    "finalUrl": "http://localhost:5173/settings",
+    "file": "axe-settings.json",
+    "violations": 0,
+    "passes": 29
+  },
+  {
+    "key": "settings-conversions",
+    "requestedUrl": "http://localhost:5173/settings/conversions",
+    "finalUrl": "http://localhost:5173/settings/conversions",
+    "file": "axe-settings-conversions.json",
+    "violations": 0,
+    "passes": 29
+  }
+]

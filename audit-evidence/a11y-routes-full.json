@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-05-19T23:34:02.074Z",
+  "routes": [
+    {
+      "key": "login",
+      "url": "http://localhost:5173/login"
+    },
+    {
+      "key": "setup",
+      "url": "http://localhost:5173/setup"
+    },
+    {
+      "key": "my-week",
+      "url": "http://localhost:5173/my-week"
+    },
+    {
+      "key": "dashboard",
+      "url": "http://localhost:5173/dashboard"
+    },
+    {
+      "key": "docs",
+      "url": "http://localhost:5173/docs"
+    },
+    {
+      "key": "issues",
+      "url": "http://localhost:5173/issues"
+    },
+    {
+      "key": "projects",
+      "url": "http://localhost:5173/projects"
+    },
+    {
+      "key": "programs",
+      "url": "http://localhost:5173/programs"
+    },
+    {
+      "key": "document",
+      "url": "http://localhost:5173/documents/0c399ee7-f357-4501-9017-f6cdb605a0a5"
+    },
+    {
+      "key": "team-allocation",
+      "url": "http://localhost:5173/team/allocation"
+    },
+    {
+      "key": "team-directory",
+      "url": "http://localhost:5173/team/directory"
+    },
+    {
+      "key": "team-status",
+      "url": "http://localhost:5173/team/status"
+    },
+    {
+      "key": "team-reviews",
+      "url": "http://localhost:5173/team/reviews"
+    },
+    {
+      "key": "team-org-chart",
+      "url": "http://localhost:5173/team/org-chart"
+    },
+    {
+      "key": "admin",
+      "url": "http://localhost:5173/admin"
+    },
+    {
+      "key": "settings",
+      "url": "http://localhost:5173/settings"
+    },
+    {
+      "key": "settings-conversions",
+      "url": "http://localhost:5173/settings/conversions"
+    }
+  ],
+  "loginFinal": "http://localhost:5173/docs"
+}

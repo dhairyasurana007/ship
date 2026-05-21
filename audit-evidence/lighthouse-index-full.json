@@ -1,0 +1,121 @@
+[
+  {
+    "key": "login",
+    "requestedUrl": "http://localhost:5173/login",
+    "file": "lighthouse-login.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "setup",
+    "requestedUrl": "http://localhost:5173/setup",
+    "file": "lighthouse-setup.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "my-week",
+    "requestedUrl": "http://localhost:5173/my-week",
+    "file": "lighthouse-my-week.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "dashboard",
+    "requestedUrl": "http://localhost:5173/dashboard",
+    "file": "lighthouse-dashboard.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "docs",
+    "requestedUrl": "http://localhost:5173/docs",
+    "file": "lighthouse-docs.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "issues",
+    "requestedUrl": "http://localhost:5173/issues",
+    "file": "lighthouse-issues.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "projects",
+    "requestedUrl": "http://localhost:5173/projects",
+    "file": "lighthouse-projects.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "programs",
+    "requestedUrl": "http://localhost:5173/programs",
+    "file": "lighthouse-programs.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "document",
+    "requestedUrl": "http://localhost:5173/documents/0c399ee7-f357-4501-9017-f6cdb605a0a5",
+    "file": "lighthouse-document.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "team-allocation",
+    "requestedUrl": "http://localhost:5173/team/allocation",
+    "file": "lighthouse-team-allocation.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "team-directory",
+    "requestedUrl": "http://localhost:5173/team/directory",
+    "file": "lighthouse-team-directory.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "team-status",
+    "requestedUrl": "http://localhost:5173/team/status",
+    "file": "lighthouse-team-status.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "team-reviews",
+    "requestedUrl": "http://localhost:5173/team/reviews",
+    "file": "lighthouse-team-reviews.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "team-org-chart",
+    "requestedUrl": "http://localhost:5173/team/org-chart",
+    "file": "lighthouse-team-org-chart.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "admin",
+    "requestedUrl": "http://localhost:5173/admin",
+    "file": "lighthouse-admin.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "settings",
+    "requestedUrl": "http://localhost:5173/settings",
+    "file": "lighthouse-settings.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  },
+  {
+    "key": "settings-conversions",
+    "requestedUrl": "http://localhost:5173/settings/conversions",
+    "file": "lighthouse-settings-conversions.json",
+    "finalDisplayedUrl": "http://localhost:5173/login",
+    "accessibilityScore": 98
+  }
+]

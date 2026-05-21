@@ -1,0 +1,26 @@
+Category 7 Screen Reader Run Evidence
+Timestamp: 2026-05-20T16:23:14.1934431-05:00
+
+Action attempted:
+- Launch Windows Narrator from runtime and verify process.
+
+Narrator process check:
+
+
+Result:
+- Narrator process is running.
+- This runtime cannot capture spoken output/transcript from Narrator, so a full auditable screen-reader interaction result (announcements + control comprehension) cannot be truthfully asserted here.
+
+What is still required for strict PDF compliance:
+- Manual NVDA/Narrator pass on major routes with observed announcements logged:
+  - heading/landmark structure
+  - form labels and validation announcements
+  - dialog/menu announcements
+  - keyboard interaction outcomes
+
+Recommended evidence fields to complete manually:
+- Screen reader tool/version
+- Route tested
+- Pass/Partial/Fail
+- Notes of what was announced
+- Blocking defects with severity

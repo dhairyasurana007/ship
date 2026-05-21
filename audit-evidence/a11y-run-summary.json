@@ -1,0 +1,9 @@
+{
+  "ok": true,
+  "loginSucceeded": true,
+  "loginFinal": "http://localhost:5173/docs",
+  "totalRoutes": 17,
+  "redirectedToLogin": 0,
+  "axeScanned": 17,
+  "lighthouseScanned": 17
+}

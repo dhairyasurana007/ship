@@ -44,6 +44,7 @@ services:
       DATABASE_URL: postgres://ship:ship_dev_password@postgres:5432/ship_dev
       SESSION_SECRET: local-dev-session-secret-not-for-production
       CORS_ORIGIN: http://localhost:5173
+      E2E_TEST: "1"
     depends_on:
       postgres:
         condition: service_healthy
