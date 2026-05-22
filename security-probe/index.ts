@@ -26,6 +26,7 @@ if (!reachable) {
   process.exit(1);
 }
 
+console.log('');
 const report = await run(config);
 
 const [jsonPath, markdownPath] = await Promise.all([
@@ -74,16 +75,51 @@ console.log('Reports written:');
 console.log(`  ${jsonPath}`);
 console.log(`  ${markdownPath}`);
 
-const vulnerableFindings = report.findings.filter((f) => f.status === 'vulnerable');
-if (vulnerableFindings.length > 0) {
-  console.log('');
-  console.log('Vulnerabilities');
-  console.log('ID        Severity  Category      Title');
-  console.log('--------  --------  ------------  ----------------------------------------');
-  for (const finding of vulnerableFindings) {
-    const id = finding.id.padEnd(8);
-    const severity = finding.severity.padEnd(8);
-    const category = finding.category.padEnd(12);
-    console.log(`${id}  ${severity}  ${category}  ${finding.title}`);
+const surfacedFindings = report.findings.filter(
+  (f) => f.status === 'vulnerable' || f.status === 'inconclusive'
+);
+if (surfacedFindings.length > 0) {
+  const printTable = (title: string, rows: typeof surfacedFindings): void => {
+    if (rows.length === 0) return;
+    console.log('');
+    console.log(title);
+    console.log('ID        Status        Severity  Category      Title');
+    console.log('--------  ------------  --------  ------------  ----------------------------------------');
+    for (const finding of rows) {
+      const id = finding.id.padEnd(8);
+      const status = finding.status.padEnd(12);
+      const severity = finding.severity.padEnd(8);
+      const category = finding.category.padEnd(12);
+      console.log(`${id}  ${status}  ${severity}  ${category}  ${finding.title}`);
+    }
+  };
+
+  const categoryTitles: Record<Category, string> = {
+    dependency: 'Dependency Vulnerabilities',
+    auth: 'Authentication Vulnerabilities',
+    websocket: 'WebSocket Vulnerabilities',
+    input: 'Input Sanitization Vulnerabilities',
+    'cors-csp': 'CORS/CSP Vulnerabilities',
+    secrets: 'Secrets Exposure Vulnerabilities',
+    'rate-limiting': 'Rate Limiting Vulnerabilities',
+    'error-verbosity': 'Error Verbosity Vulnerabilities'
+  };
+
+  const categoriesInDisplayOrder: Category[] = [
+    'dependency',
+    'auth',
+    'websocket',
+    'input',
+    'cors-csp',
+    'secrets',
+    'rate-limiting',
+    'error-verbosity'
+  ];
+
+  for (const category of categoriesInDisplayOrder) {
+    const rows = surfacedFindings.filter((f) => f.category === category);
+    printTable(categoryTitles[category], rows);
   }
 }
+
+console.log('');
