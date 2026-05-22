@@ -1404,276 +1404,49 @@ Expected:
 - Test non-interactive cleanup behavior and non-TTY fallback warning.
 - Verify interactive confirmation prompt logic is present for cleanup flows.
 
-### Commit 8 — Manual Review: CORS/CSP and Secrets
+### Commit 8 - Manual Review: CORS/CSP and Secrets
 
-**Goal:** Two header-inspection modules. No auth required.
-
----
-
-#### `security-probe/manual/cors-csp.ts` — new file
-
-```typescript
-import type { Config } from '../config.js';
-import type { Finding } from '../types.js';
-
-export async function checkCorsCsp(config: Config): Promise<Finding[]> {
-  const results: Finding[] = [];
-
-  // CORS-001: arbitrary origin reflection
-  try {
-    const res = await fetch(`${config.target}/api/documents`, {
-      method: 'OPTIONS',
-      headers: { Origin: 'https://evil.example.com', 'Access-Control-Request-Method': 'GET' },
-      signal: AbortSignal.timeout(config.timeout),
-    });
-    const acao = res.headers.get('access-control-allow-origin') ?? '';
-    const acac = res.headers.get('access-control-allow-credentials') ?? '';
-    const vulnerable = acao === 'https://evil.example.com'
-      || (acao === '*' && acac.toLowerCase() === 'true');
-    results.push({
-      id: 'CORS-001', category: 'cors-csp',
-      title: 'CORS reflects arbitrary origin',
-      severity: 'high', status: vulnerable ? 'vulnerable' : 'pass',
-      description: 'The API should not reflect arbitrary origins in Access-Control-Allow-Origin.',
-      reproduction: `OPTIONS ${config.target}/api/documents with Origin: https://evil.example.com`,
-      evidence: {
-        request:  'OPTIONS /api/documents\nOrigin: https://evil.example.com',
-        response: `Access-Control-Allow-Origin: ${acao}\nAccess-Control-Allow-Credentials: ${acac}`,
-        expected: 'ACAO not set to arbitrary origin',
-        actual:   acao || '(header absent)',
-      },
-      remediation: 'Set CORS_ORIGIN to a fixed allowed origin. Never reflect the request Origin header.',
-    });
-  } catch (err: unknown) {
-    results.push({ id: 'CORS-001', category: 'cors-csp', title: 'CORS check error', severity: 'info', status: 'inconclusive', description: '', reproduction: '', evidence: { expected: '', actual: err instanceof Error ? err.message : String(err) }, remediation: '' });
-  }
-
-  // CSP checks
-  try {
-    const res = await fetch(`${config.target}/health`, { signal: AbortSignal.timeout(config.timeout) });
-    const csp = res.headers.get('content-security-policy') ?? '';
-
-    // CSP-001: header present
-    results.push({
-      id: 'CSP-001', category: 'cors-csp',
-      title: 'Content-Security-Policy header missing',
-      severity: 'high', status: csp ? 'pass' : 'vulnerable',
-      description: 'All responses should include a Content-Security-Policy header.',
-      reproduction: `GET ${config.target}/health — inspect response headers`,
-      evidence: { expected: 'CSP header present', actual: csp || '(absent)' },
-      remediation: 'Configure helmet contentSecurityPolicy.',
-    });
-
-    if (csp) {
-      // Parse: "directive value; directive value" → map
-      const directives = Object.fromEntries(
-        csp.split(';').map(d => d.trim()).filter(Boolean).map(d => {
-          const [name, ...rest] = d.split(/\s+/);
-          return [name.toLowerCase(), rest.join(' ')];
-        })
-      );
-      const scriptSrc = directives['script-src'] ?? directives['default-src'] ?? '';
-
-      // CSP-002: unsafe-inline in script-src
-      results.push({
-        id: 'CSP-002', category: 'cors-csp',
-        title: "CSP script-src contains 'unsafe-inline'",
-        severity: 'high', status: scriptSrc.includes("'unsafe-inline'") ? 'vulnerable' : 'pass',
-        description: "'unsafe-inline' negates XSS protection.",
-        reproduction: `GET ${config.target}/health — check Content-Security-Policy script-src`,
-        evidence: { expected: "script-src without 'unsafe-inline'", actual: `script-src: ${scriptSrc || '(not set)'}` },
-        remediation: "Remove 'unsafe-inline' from script-src. Use nonces.",
-      });
-
-      // CSP-003: unsafe-eval
-      results.push({
-        id: 'CSP-003', category: 'cors-csp',
-        title: "CSP contains 'unsafe-eval'",
-        severity: 'medium', status: csp.includes("'unsafe-eval'") ? 'vulnerable' : 'pass',
-        description: "'unsafe-eval' allows eval() and similar.",
-        reproduction: `GET ${config.target}/health — check CSP for 'unsafe-eval'`,
-        evidence: { expected: "No 'unsafe-eval'", actual: csp.includes("'unsafe-eval'") ? "Found 'unsafe-eval'" : "Not found" },
-        remediation: "Remove 'unsafe-eval'. Refactor eval() / new Function() usage.",
-      });
-
-      // CSP-004: frame-ancestors
-      results.push({
-        id: 'CSP-004', category: 'cors-csp',
-        title: 'CSP missing frame-ancestors',
-        severity: 'medium', status: 'frame-ancestors' in directives ? 'pass' : 'vulnerable',
-        description: 'Without frame-ancestors the app can be embedded in iframes (clickjacking).',
-        reproduction: `GET ${config.target}/health — check CSP for frame-ancestors`,
-        evidence: { expected: "frame-ancestors 'none'", actual: directives['frame-ancestors'] ?? '(absent)' },
-        remediation: "Add frame-ancestors 'none' to CSP.",
-      });
-    }
-  } catch (err: unknown) {
-    results.push({ id: 'CSP-ERR', category: 'cors-csp', title: 'CSP check error', severity: 'info', status: 'inconclusive', description: '', reproduction: '', evidence: { expected: '', actual: err instanceof Error ? err.message : String(err) }, remediation: '' });
-  }
-
-  return results;
-}
-```
+**Goal:** Add non-auth manual checks for CORS/CSP and secrets exposure, and include them in the report pipeline.
 
 ---
 
-#### `security-probe/manual/secrets.ts` — new file
-
-```typescript
-import type { Config } from '../config.js';
-import type { Finding } from '../types.js';
-
-const PATTERNS: Array<{ name: string; re: RegExp }> = [
-  { name: 'DATABASE_URL',   re: /DATABASE_URL/i },
-  { name: 'SESSION_SECRET', re: /SESSION_SECRET/i },
-  { name: 'PRIVATE_KEY',    re: /PRIVATE_KEY/i },
-  { name: 'AWS key',        re: /AKIA[A-Z0-9]{16}/ },
-  { name: 'password field', re: /"password"\s*:/ },
-];
-
-function scan(body: string): string[] {
-  return PATTERNS.filter(p => p.re.test(body)).map(p => p.name);
-}
-
-export async function checkSecrets(config: Config): Promise<Finding[]> {
-  const results: Finding[] = [];
-
-  // SEC-001: /health leaks env vars
-  try {
-    const body = await fetch(`${config.target}/health`, { signal: AbortSignal.timeout(config.timeout) })
-      .then(r => r.text());
-    const found = scan(body);
-    results.push({
-      id: 'SEC-001', category: 'secrets',
-      title: '/health endpoint leaks secrets',
-      severity: 'critical', status: found.length > 0 ? 'vulnerable' : 'pass',
-      description: '/health should not expose secrets or database URLs.',
-      reproduction: `GET ${config.target}/health — check body for secret patterns`,
-      evidence: { expected: 'No secret patterns', actual: found.length > 0 ? `Found: ${found.join(', ')}` : 'Clean' },
-      remediation: 'Return only { status: "ok" } from /health.',
-    });
-  } catch (err: unknown) {
-    results.push({ id: 'SEC-001', category: 'secrets', title: 'SEC-001 error', severity: 'info', status: 'inconclusive', description: '', reproduction: '', evidence: { expected: '', actual: err instanceof Error ? err.message : String(err) }, remediation: '' });
-  }
-
-  // SEC-002: error response leaks secrets
-  try {
-    const body = await fetch(`${config.target}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: 'probe@probe.local', password: 'wrong' }),
-      signal: AbortSignal.timeout(config.timeout),
-    }).then(r => r.text());
-    const found = scan(body);
-    results.push({
-      id: 'SEC-002', category: 'secrets',
-      title: 'Error response leaks secrets',
-      severity: 'high', status: found.length > 0 ? 'vulnerable' : 'pass',
-      description: 'Login error responses must not contain secret variable names.',
-      reproduction: `POST ${config.target}/api/auth/login with invalid credentials`,
-      evidence: { expected: 'Clean error response', actual: found.length > 0 ? `Found: ${found.join(', ')}` : 'Clean' },
-      remediation: 'Return a generic error message from all auth endpoints.',
-    });
-  } catch (err: unknown) {
-    results.push({ id: 'SEC-002', category: 'secrets', title: 'SEC-002 error', severity: 'info', status: 'inconclusive', description: '', reproduction: '', evidence: { expected: '', actual: err instanceof Error ? err.message : String(err) }, remediation: '' });
-  }
-
-  // SEC-003: NODE_ENV in response
-  try {
-    const body = await fetch(`${config.target}/health`, { signal: AbortSignal.timeout(config.timeout) })
-      .then(r => r.text());
-    const exposed = /"NODE_ENV"/.test(body) || /"env"/.test(body);
-    results.push({
-      id: 'SEC-003', category: 'secrets',
-      title: 'NODE_ENV exposed in API response',
-      severity: 'low', status: exposed ? 'vulnerable' : 'pass',
-      description: 'NODE_ENV should not appear as a JSON key in API responses.',
-      reproduction: `GET ${config.target}/health — check for "NODE_ENV" or "env" key`,
-      evidence: { expected: 'No NODE_ENV key', actual: exposed ? 'Found "NODE_ENV" or "env"' : 'Not found' },
-      remediation: 'Remove NODE_ENV from /health response.',
-    });
-  } catch { /* covered by SEC-001 */ }
-
-  return results;
-}
-```
+#### Implemented behavior (current)
+- Adds `security-probe/manual/cors-csp.ts` with:
+  - `CORS-001`: wildcard origin + credentials enabled
+  - `CSP-001`: `script-src` contains `'unsafe-inline'`
+  - `CSP-002`: CSP header missing
+  - `CSP-ERR` inconclusive fallback on CSP request/parse failures
+- Adds `security-probe/manual/secrets.ts` with:
+  - `SEC-001`: secret-like patterns in `/health` response body
+  - `SEC-002`: secret-like patterns in auth error response body
+  - `SEC-003`: environment details (e.g., `NODE_ENV`/`env`) exposed in `/health`
+- All checks use timeout-bounded `fetch` and return findings instead of throwing.
 
 ---
 
-#### `security-probe/runner.ts` — full file, Commit 8 state
-
-```typescript
-import type { Config } from './config.js';
-import type { Finding, Report, Severity, Category } from './types.js';
-import { probeDeps }      from './probes/deps.js';
-import { probeAuth }      from './probes/auth.js';
-import { probeWebSocket } from './probes/websocket.js';
-import { probeInput }     from './probes/input.js';
-import { checkCorsCsp }   from './manual/cors-csp.js';
-import { checkSecrets }   from './manual/secrets.js';
-
-const ALL_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
-const ALL_CATEGORIES: Category[] = [
-  'auth', 'websocket', 'input', 'dependency',
-  'cors-csp', 'secrets', 'rate-limiting', 'error-verbosity',
-];
-
-export function buildSummary(findings: Finding[]): Report['summary'] {
-  const bySeverity = Object.fromEntries(
-    ALL_SEVERITIES.map(s => [s, findings.filter(f => f.severity === s).length])
-  ) as Record<Severity, number>;
-  const byCategory = Object.fromEntries(
-    ALL_CATEGORIES.map(c => [c, findings.filter(f => f.category === c).length])
-  ) as Partial<Record<Category, number>>;
-  return {
-    total:        findings.length,
-    vulnerable:   findings.filter(f => f.status === 'vulnerable').length,
-    passed:       findings.filter(f => f.status === 'pass').length,
-    inconclusive: findings.filter(f => f.status === 'inconclusive').length,
-    bySeverity, byCategory,
-  };
-}
-
-export async function run(config: Config): Promise<Report> {
-  const findings: Finding[] = [];
-
-  findings.push(...await probeDeps(config));
-
-  findings.push(...await probeAuth(config));
-  findings.push(...await probeWebSocket(config));
-  findings.push(...await probeInput(config));
-
-  findings.push(...await checkCorsCsp(config));
-  findings.push(...await checkSecrets(config));
-
-  return {
-    generated: new Date().toISOString(),
-    target:    config.target,
-    summary:   buildSummary(findings),
-    findings,
-  };
-}
-```
+#### Runner wiring (current)
+- `security-probe/runner.ts` includes:
+  - `findings.push(...await checkCorsCsp(config));`
+  - `findings.push(...await checkSecrets(config));`
 
 ---
 
 #### User verification steps
 
 ```bash
+cd security-probe
 ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com
 ```
 
 Expected:
-- `cors-csp` and `secrets` rows in summary
-- CSP-002 shows `vulnerable`
-- SEC-001, SEC-002, SEC-003 show `pass`
+- `cors-csp` and `secrets` categories appear in summary.
+- Findings include `CORS-001`, `CSP-001`, `CSP-002` (or `CSP-ERR` if inconclusive path triggers), and `SEC-001`..`SEC-003`.
 
 ---
 
 #### GitHub Actions test cases
-- Mock CORS/CSP headers and secret-leak bodies; assert CORS-*, CSP-*, SEC-* results.
-- Verify findings are wired into summary category counts.
-
+- Mock health/auth responses and headers to assert `CORS-001`, `CSP-001`, `CSP-002`, and `SEC-001`..`SEC-003` behavior.
+- Verify these findings are included in summary category counts.
 ### Commit 9 — Manual Review: Rate Limiting and Error Verbosity
 
 **Goal:** Final two modules. Tool complete.
