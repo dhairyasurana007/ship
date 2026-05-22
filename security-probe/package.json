@@ -17,6 +17,6 @@
     "typescript": "^5.0.0"
   },
   "scripts": {
-    "test": "tsx --test tests/**/*.test.ts"
+    "test": "tsx --test tests/*.test.ts"
   }
 }
