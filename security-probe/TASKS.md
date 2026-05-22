@@ -161,7 +161,7 @@ export function parseConfig(): Config {
 
   const target = positionals[0];
   if (!target) {
-    console.error('Usage: ship-security-probe <target-url> [options]');
+    console.error('Usage: ship-security-probe <target-url>');
     console.error('Example: ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com');
     process.exit(1);
   }
@@ -178,7 +178,7 @@ export function parseConfig(): Config {
 }
 ```
 
-Note: `--admin-email` / `--admin-password` are legacy optional fallback fields. Current bootstrap flow auto-registers generated credentials and does not require these flags for normal runs.
+Note: Current bootstrap flow auto-registers generated credentials and does not require extra CLI flags for normal runs.
 
 ---
 
@@ -354,7 +354,7 @@ function findRepoRoot(startDir: string): string {
     if (existsSync(join(current, 'pnpm-lock.yaml'))) return current;
     const parent = dirname(current);
     if (parent === current) throw new Error(
-      'Could not find pnpm-lock.yaml. Run from inside the Ship repo, or pass --repo <path>.'
+      'Could not find pnpm-lock.yaml. Run from inside the Ship repo.'
     );
     current = parent;
   }
@@ -478,7 +478,7 @@ export async function probeDeps(config: Config): Promise<Finding[]> {
       title: 'Dependency probe failed',
       severity: 'info', status: 'inconclusive',
       description: 'The dependency probe encountered an unexpected error.',
-      reproduction: 'Run ship-security-probe with --verbose for details.',
+      reproduction: 'Run ship-security-probe and review console logs for details.',
       evidence: {
         expected: 'Successful pnpm audit run',
         actual: err instanceof Error ? err.message : String(err),
@@ -1195,7 +1195,7 @@ Expected:
 
 ### Commit 7 — Input Sanitization Probe
 
-**Goal:** Payload matrix across write endpoints. Interactive cleanup prompt after run.
+**Goal:** Payload matrix across write endpoints. After analysis completes, ask for confirmation before deleting probe-created user/test data in interactive runs.
 
 ---
 
@@ -1393,13 +1393,16 @@ ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstal
 
 Expected:
 - INP row with 30 tests (10 payloads × 3 endpoints)
-- Cleanup prompt appears; `y` deletes, `n` lists IDs
+- Cleanup confirmation prompts appear for probe-created test data.
+- In interactive runs: user can confirm or skip deletion.
+- In non-interactive runs (CI): cleanup proceeds automatically to avoid blocking.
 
 ---
 
 #### GitHub Actions test cases
 - Mock payload matrix across endpoints and assert deterministic finding IDs.
 - Test non-interactive cleanup behavior and non-TTY fallback warning.
+- Verify interactive confirmation prompt logic is present for cleanup flows.
 
 ### Commit 8 — Manual Review: CORS/CSP and Secrets
 
@@ -1929,14 +1932,13 @@ export async function run(config: Config): Promise<Report> {
 #### User verification steps
 
 ```bash
-ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com \
-  --output ./audit-output
+ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com
 ```
 
 Expected:
 - All 8 categories in summary table
-- `audit-output/security-probe-report.md` has no `Not yet tested` entries
-- `node -e "JSON.parse(require('fs').readFileSync('audit-output/security-probe-report.json','utf8')); console.log('valid')"` exits 0
+- `security-probe/reports/security-probe-report.md` has no `Not yet tested` entries
+- JSON report parses successfully
 - Exit code 0
 #### GitHub Actions test cases
 - Mock rate-limit and error-verbosity endpoints to cover all RL-*/ERR-* findings.

@@ -1,3 +1,4 @@
+import readline from 'node:readline/promises';
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
 import { createHttpClient } from '../http-client.js';
@@ -433,7 +434,21 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
     }
   } finally {
     if (testUserId) {
-      await admin.del(`/api/admin/users/${testUserId}`).catch(() => {});
+      let shouldDelete = true;
+      if (process.stdin.isTTY) {
+        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+        try {
+          const answer = await rl.question('\nAuth probe created test user data. Delete it now? [Y/n] ');
+          shouldDelete = answer.trim().toLowerCase() !== 'n';
+        } finally {
+          rl.close();
+        }
+      }
+      if (shouldDelete) {
+        await admin.del(`/api/admin/users/${testUserId}`).catch(() => {});
+      } else {
+        console.log(`Auth probe cleanup skipped. Manual delete path: /api/admin/users/${testUserId}`);
+      }
     }
     await admin.logout();
   }

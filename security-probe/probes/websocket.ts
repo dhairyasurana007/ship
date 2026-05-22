@@ -1,3 +1,4 @@
+import readline from 'node:readline/promises';
 import WebSocket from 'ws';
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
@@ -416,9 +417,31 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
       )
     );
   } finally {
-    if (docId) await admin.del(`/api/documents/${docId}`).catch(() => {});
-    if (privateDocId) await admin.del(`/api/documents/${privateDocId}`).catch(() => {});
-    if (testUserId) await admin.del(`/api/admin/users/${testUserId}`).catch(() => {});
+    const cleanupPaths: string[] = [];
+    if (docId) cleanupPaths.push(`/api/documents/${docId}`);
+    if (privateDocId) cleanupPaths.push(`/api/documents/${privateDocId}`);
+    if (testUserId) cleanupPaths.push(`/api/admin/users/${testUserId}`);
+
+    let shouldDelete = true;
+    if (cleanupPaths.length > 0 && process.stdin.isTTY) {
+      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+      try {
+        const answer = await rl.question(
+          `\nWebSocket probe created ${cleanupPaths.length} test resources. Delete them now? [Y/n] `
+        );
+        shouldDelete = answer.trim().toLowerCase() !== 'n';
+      } finally {
+        rl.close();
+      }
+    }
+
+    if (shouldDelete) {
+      for (const p of cleanupPaths) {
+        await admin.del(p).catch(() => {});
+      }
+    } else if (cleanupPaths.length > 0) {
+      console.log(`WebSocket probe cleanup skipped. Manual delete paths: ${cleanupPaths.join(', ')}`);
+    }
     await admin.logout();
   }
 

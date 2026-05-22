@@ -3,6 +3,7 @@ import type { Category, Finding, Report, Severity } from './types.js';
 import { probeDeps } from './probes/deps.js';
 import { probeAuth } from './probes/auth.js';
 import { probeWebSocket } from './probes/websocket.js';
+import { probeInput } from './probes/input.js';
 
 const ALL_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
 const ALL_CATEGORIES: Category[] = [
@@ -39,6 +40,7 @@ export async function run(config: Config): Promise<Report> {
   const findings: Finding[] = [...(await probeDeps(config))];
   findings.push(...(await probeAuth(config)));
   findings.push(...(await probeWebSocket(config)));
+  findings.push(...(await probeInput(config)));
 
   return {
     generated: new Date().toISOString(),
