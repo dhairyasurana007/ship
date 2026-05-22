@@ -6,6 +6,8 @@ import { probeWebSocket } from './probes/websocket.js';
 import { probeInput } from './probes/input.js';
 import { checkCorsCsp } from './manual/cors-csp.js';
 import { checkSecrets } from './manual/secrets.js';
+import { checkRateLimit } from './manual/rate-limit.js';
+import { checkErrorVerbosity } from './manual/error-verbosity.js';
 
 const ALL_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
 const ALL_CATEGORIES: Category[] = [
@@ -45,6 +47,8 @@ export async function run(config: Config): Promise<Report> {
   findings.push(...(await probeInput(config)));
   findings.push(...(await checkCorsCsp(config)));
   findings.push(...(await checkSecrets(config)));
+  findings.push(...(await checkRateLimit(config)));
+  findings.push(...(await checkErrorVerbosity(config)));
 
   return {
     generated: new Date().toISOString(),
