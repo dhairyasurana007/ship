@@ -5,7 +5,27 @@ import { writeMarkdown } from './reporter/markdown.js';
 import { run } from './runner.js';
 import type { Category } from './types.js';
 
+async function ensureTargetReachable(target: string, timeoutMs: number): Promise<boolean> {
+  const urls = [`${target}/health`, target];
+  for (const url of urls) {
+    try {
+      await fetch(url, { signal: AbortSignal.timeout(timeoutMs) });
+      return true;
+    } catch {
+      // try next URL candidate
+    }
+  }
+  return false;
+}
+
 const config = parseConfig();
+const reachable = await ensureTargetReachable(config.target, config.timeout);
+if (!reachable) {
+  console.error(`Target unreachable: ${config.target}`);
+  console.error('Security report was not generated.');
+  process.exit(1);
+}
+
 const report = await run(config);
 
 const [jsonPath, markdownPath] = await Promise.all([
@@ -53,3 +73,17 @@ console.log('');
 console.log('Reports written:');
 console.log(`  ${jsonPath}`);
 console.log(`  ${markdownPath}`);
+
+const vulnerableFindings = report.findings.filter((f) => f.status === 'vulnerable');
+if (vulnerableFindings.length > 0) {
+  console.log('');
+  console.log('Vulnerabilities');
+  console.log('ID        Severity  Category      Title');
+  console.log('--------  --------  ------------  ----------------------------------------');
+  for (const finding of vulnerableFindings) {
+    const id = finding.id.padEnd(8);
+    const severity = finding.severity.padEnd(8);
+    const category = finding.category.padEnd(12);
+    console.log(`${id}  ${severity}  ${category}  ${finding.title}`);
+  }
+}

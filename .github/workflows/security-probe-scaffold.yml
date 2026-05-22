@@ -46,4 +46,3 @@ jobs:
           test -f ./reports-ci/security-probe-report.json
           test -f ./reports-ci/security-probe-report.md
           node -e "JSON.parse(require('fs').readFileSync('./reports-ci/security-probe-report.json','utf8')); console.log('json valid')"
-          grep -q "No findings yet." ./reports-ci/security-probe-report.md
