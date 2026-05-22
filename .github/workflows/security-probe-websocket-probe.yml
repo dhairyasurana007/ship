@@ -1,0 +1,41 @@
+name: security-probe-websocket-probe
+
+on:
+  pull_request:
+    paths:
+      - "security-probe/**"
+      - ".github/workflows/security-probe-websocket-probe.yml"
+  push:
+    branches:
+      - "**"
+    paths:
+      - "security-probe/**"
+      - ".github/workflows/security-probe-websocket-probe.yml"
+
+jobs:
+  websocket-probe-ci:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: security-probe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: security-probe/package-lock.json
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Run tests
+        run: npm test

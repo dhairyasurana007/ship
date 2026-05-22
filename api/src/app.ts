@@ -25,6 +25,7 @@ import { filesRouter } from './routes/files.js';
 import caiaAuthRoutes from './routes/caia-auth.js';
 import apiTokensRoutes from './routes/api-tokens.js';
 import adminCredentialsRoutes from './routes/admin-credentials.js';
+import internalProbeRoutes from './routes/internal-probe.js';
 import claudeRoutes from './routes/claude.js';
 import activityRoutes from './routes/activity.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -171,6 +172,9 @@ export function createApp(corsOrigin: string = 'http://localhost:5173'): express
 
   // Setup routes (CSRF protected - first-time setup only)
   app.use('/api/setup', conditionalCsrf, setupRoutes);
+
+  // Internal probe route: token-protected service endpoint, intentionally not CSRF-gated.
+  app.use('/api/internal/probe', internalProbeRoutes);
 
   // Public feedback routes - no auth or CSRF required (must be before protected routes)
   app.use('/api/feedback', publicFeedbackRouter);

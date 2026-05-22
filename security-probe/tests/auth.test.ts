@@ -21,7 +21,7 @@ function response(status: number, body: unknown = {}, headers?: Headers): Respon
   return new Response(JSON.stringify(body), { status, headers: h });
 }
 
-test('probeAuth can auto-bootstrap without admin credentials', async () => {
+test('probeAuth works without admin credentials when bootstrap login works', async () => {
   const originalFetch = globalThis.fetch;
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input.toString();
@@ -32,10 +32,10 @@ test('probeAuth can auto-bootstrap without admin credentials', async () => {
     if (method === 'POST' && path === '/api/auth/register') return response(201, {});
     if (method === 'POST' && path === '/api/auth/login') {
       const h = new Headers();
-      h.append('set-cookie', 'sid=auto-boot; HttpOnly; Secure; SameSite=Strict; Path=/');
+      h.append('set-cookie', 'sid=boot-abc; HttpOnly; Secure; SameSite=Strict; Path=/');
       return response(200, { ok: true }, h);
     }
-    if (method === 'POST' && path === '/api/admin/users') return response(500, {});
+    if (method === 'POST' && path === '/api/admin/users') return response(500, { error: 'create failed' });
     if (method === 'POST' && path === '/api/auth/logout') return response(200, {});
     if (method === 'GET' && path === '/api/documents') return response(401, {});
     if (method === 'GET' && path === '/api/admin/users') return response(401, {});
@@ -45,7 +45,8 @@ test('probeAuth can auto-bootstrap without admin credentials', async () => {
 
   try {
     const findings = await probeAuth(cfg('https://example.test', { adminEmail: null, adminPassword: null }));
-    assert.equal(findings.length, 9);
+    assert.equal(findings.length, 10);
+    assert.ok(findings.some((f) => f.id === 'AUTH-SETUP'));
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -54,6 +55,7 @@ test('probeAuth can auto-bootstrap without admin credentials', async () => {
 test('probeAuth emits AUTH-001..AUTH-009 and tears down created user', async () => {
   const calls: Array<{ method: string; path: string; headers?: HeadersInit }> = [];
   let authLoginAttempts = 0;
+  let probeLoginCount = 0;
   const originalFetch = globalThis.fetch;
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -71,8 +73,13 @@ test('probeAuth emits AUTH-001..AUTH-009 and tears down created user', async () 
         return response(200, { ok: true }, h);
       }
       if (body.email && String(body.email).startsWith('probe-test-')) {
+        probeLoginCount += 1;
         const h = new Headers();
-        h.append('set-cookie', 'sid=member-xyz; HttpOnly; Secure; SameSite=Strict; Path=/');
+        if (probeLoginCount <= 2) {
+          h.append('set-cookie', 'sid=admin-abc; HttpOnly; Secure; SameSite=Strict; Path=/');
+        } else {
+          h.append('set-cookie', 'sid=member-xyz; HttpOnly; Secure; SameSite=Strict; Path=/');
+        }
         return response(200, { ok: true }, h);
       }
       authLoginAttempts += 1;
@@ -121,6 +128,7 @@ test('probeAuth emits AUTH-001..AUTH-009 and tears down created user', async () 
   try {
     const findings = await probeAuth(cfg('https://example.test'));
     assert.equal(findings.length, 9);
+    assert.ok(!findings.some((f) => f.id === 'AUTH-SETUP'));
     for (let i = 1; i <= 9; i++) {
       const id = `AUTH-${String(i).padStart(3, '0')}`;
       assert.ok(findings.some((f) => f.id === id), `missing finding ${id}`);
@@ -144,7 +152,7 @@ test('probeAuth still emits AUTH-004 and AUTH-005 as inconclusive when user crea
 
     if (method === 'POST' && path === '/api/auth/login') {
       const body = init?.body ? JSON.parse(String(init.body)) : {};
-      if (body.email === 'admin@example.gov' && body.password === 'secret') {
+      if (body.email && String(body.email).startsWith('probe-test-')) {
         const h = new Headers();
         h.append('set-cookie', 'sid=admin-abc; HttpOnly; Secure; SameSite=Strict; Path=/');
         return response(200, { ok: true }, h);
@@ -163,7 +171,8 @@ test('probeAuth still emits AUTH-004 and AUTH-005 as inconclusive when user crea
 
   try {
     const findings = await probeAuth(cfg('https://example.test'));
-    assert.equal(findings.length, 9);
+    assert.equal(findings.length, 10);
+    assert.ok(findings.some((f) => f.id === 'AUTH-SETUP'));
     const f4 = findings.find((f) => f.id === 'AUTH-004');
     const f5 = findings.find((f) => f.id === 'AUTH-005');
     assert.equal(f4?.status, 'inconclusive');

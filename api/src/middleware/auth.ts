@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 import { pool } from '../db/client.js';
 import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS, ERROR_CODES, HTTP_STATUS } from '@ship/shared';
+import { cleanupExpiredProbeElevations } from '../services/internal-probe.js';
 
 // Extend Express Request to include session info
 declare global {
@@ -31,9 +32,12 @@ async function validateApiToken(token: string): Promise<{
   const tokenHash = hashToken(token);
 
   const result = await pool.query(
-    `SELECT t.id, t.user_id, t.workspace_id, t.expires_at, t.revoked_at, u.is_super_admin
+    `SELECT t.id, t.user_id, t.workspace_id, t.expires_at, t.revoked_at,
+            (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin
      FROM api_tokens t
      JOIN users u ON t.user_id = u.id
+     LEFT JOIN internal_probe_admin_elevations pe
+       ON pe.user_id = u.id AND pe.expires_at > NOW()
      WHERE t.token_hash = $1`,
     [tokenHash]
   );
@@ -122,12 +126,16 @@ export async function authMiddleware(
   }
 
   try {
+    await cleanupExpiredProbeElevations();
+
     // Get session and check if it's valid
     const result = await pool.query(
       `SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at,
-              u.is_super_admin
+              (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin
        FROM sessions s
        JOIN users u ON s.user_id = u.id
+       LEFT JOIN internal_probe_admin_elevations pe
+         ON pe.user_id = u.id AND pe.expires_at > NOW()
        WHERE s.id = $1`,
       [sessionId]
     );

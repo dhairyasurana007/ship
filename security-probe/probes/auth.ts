@@ -14,6 +14,44 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function elevateBootstrapUser(target: string, email: string): Promise<void> {
+  const token = process.env.PROBE_INTERNAL_ELEVATION_TOKEN;
+  if (!token) {
+    console.log('Auth probe: PROBE_INTERNAL_ELEVATION_TOKEN not set; skipping internal admin elevation call.');
+    return;
+  }
+
+  console.log('Auth probe: requesting internal bootstrap admin elevation...');
+  const res = await fetch(`${target}/api/internal/probe/elevate-admin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify({ email, ttlMinutes: 10 })
+  });
+  console.log(`Auth probe elevate-admin response: HTTP ${res.status}`);
+}
+
+async function verifyAdminAccessWithRetry(
+  client: ReturnType<typeof createHttpClient>,
+  attempts: number,
+  baseDelayMs: number
+): Promise<{ ok: boolean; lastStatus: number | null }> {
+  let lastStatus: number | null = null;
+  for (let i = 1; i <= attempts; i++) {
+    const res = await client.get('/api/admin/users');
+    lastStatus = res.status;
+    if (res.status === 200) {
+      return { ok: true, lastStatus };
+    }
+    const wait = Math.min(baseDelayMs * i, 2000);
+    console.log(`Auth probe: admin verification attempt ${i}/${attempts} got HTTP ${res.status}; retrying in ${wait}ms...`);
+    await sleep(wait);
+  }
+  return { ok: false, lastStatus };
+}
+
 function finding(
   id: string,
   title: string,
@@ -64,86 +102,102 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
   const admin = createHttpClient(config);
   const testCreds = makeTestCredentials();
-  const bootstrapCreds = config.adminEmail && config.adminPassword
-    ? { email: config.adminEmail, password: config.adminPassword, source: 'provided-admin' as const }
-    : { ...makeTestCredentials(), source: 'auto-register' as const };
+  const bootstrapCreds = makeTestCredentials();
 
   console.log(`Auth probe test user email: ${testCreds.email}`);
   console.log(`Auth probe test user password: ${testCreds.password}`);
-  if (bootstrapCreds.source === 'auto-register') {
-    console.log('Auth probe: using auto-register bootstrap mode.');
-    console.log(`Auth probe bootstrap email: ${bootstrapCreds.email}`);
-    console.log(`Auth probe bootstrap password: ${bootstrapCreds.password}`);
-    try {
-      console.log('Auth probe: registering bootstrap user...');
-      const registerRes = await fetch(`${config.target}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: bootstrapCreds.email,
-          password: bootstrapCreds.password
-        })
-      });
-      if (![200, 201, 409].includes(registerRes.status)) {
-        console.log(`Auth probe register response: HTTP ${registerRes.status}`);
-      } else {
-        console.log(`Auth probe register response: HTTP ${registerRes.status} (accepted)`);
-      }
-    } catch (err) {
-      console.log(
-        `Auth probe register request failed: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
-    console.log('Auth probe: waiting 1500ms before login attempt...');
+  console.log(`Auth probe bootstrap email: ${bootstrapCreds.email}`);
+  console.log(`Auth probe bootstrap password: ${bootstrapCreds.password}`);
+  console.log('Auth probe: attempting bootstrap auto-register...');
+  try {
+    const registerRes = await fetch(`${config.target}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: bootstrapCreds.email,
+        password: bootstrapCreds.password
+      })
+    });
+    console.log(`Auth probe bootstrap register response: HTTP ${registerRes.status}`);
+    await elevateBootstrapUser(config.target, bootstrapCreds.email);
+    console.log('Auth probe: waiting 1500ms before bootstrap login...');
     await sleep(1500);
-    console.log('Auth probe: wait complete. Attempting login...');
-  } else {
-    console.log('Auth probe: using provided admin credentials.');
-    console.log('Auth probe: attempting login...');
+    const bootstrapClient = createHttpClient(config);
+    const bootstrapLoggedIn = await bootstrapClient.login(bootstrapCreds.email, bootstrapCreds.password);
+    console.log(`Auth probe bootstrap login ${bootstrapLoggedIn ? 'succeeded' : 'failed'}.`);
+    await bootstrapClient.logout().catch(() => {});
+  } catch (err) {
+    console.log(
+      `Auth probe bootstrap auto-register failed: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
 
+  console.log('Auth probe: attempting runtime login...');
   const loggedIn = await admin.login(bootstrapCreds.email, bootstrapCreds.password);
-  console.log(`Auth probe: login ${loggedIn ? 'succeeded' : 'failed'}.`);
+  console.log(`Auth probe: runtime login ${loggedIn ? 'succeeded' : 'failed'}.`);
 
   if (!loggedIn) {
     return [
       {
         id: 'AUTH-000',
         category: 'auth',
-        title: 'Admin login failed',
+        title: 'Bootstrap login failed',
         severity: 'info',
         status: 'inconclusive',
-        description: 'Could not log in with the provided admin credentials.',
-        reproduction: 'Check provided credentials or auto-register endpoint availability.',
+        description: 'Could not log in with generated bootstrap credentials.',
+        reproduction: 'Check /api/auth/register and /api/auth/login availability.',
         evidence: {
-          expected: 'HTTP 200 from POST /api/auth/login for bootstrap credentials',
+          expected: 'HTTP 200 from POST /api/auth/login with generated credentials',
           actual: 'Non-200 response'
         },
-        remediation:
-          'Provide valid admin credentials or enable /api/auth/register for auto-bootstrap.'
+        remediation: 'Ensure auth registration/login flow is available for probe bootstrap.'
       }
     ];
+  }
+
+  console.log('Auth probe: verifying bootstrap account has admin access...');
+  const adminCheck = await verifyAdminAccessWithRetry(admin, 4, 500);
+  const adminReady = adminCheck.ok;
+  if (!adminReady) {
+    console.log(
+      `Auth probe: admin verification failed (last status: ${adminCheck.lastStatus ?? 'unknown'}).`
+    );
+    results.push(
+      inconclusiveFinding(
+        'AUTH-SETUP',
+        'Bootstrap admin setup not confirmed',
+        'Bootstrap login succeeded but privileged access could not be verified.',
+        'Login bootstrap account, then verify GET /api/admin/users returns 200.',
+        'HTTP 200',
+        adminCheck.lastStatus == null ? 'No response status' : `HTTP ${adminCheck.lastStatus}`,
+        'Ensure bootstrap account has admin role before running admin-dependent checks.'
+      )
+    );
+  } else {
+    console.log('Auth probe: bootstrap admin access verified.');
   }
 
   let testUserId: string | null = null;
 
   try {
-    const createRes = await admin.post('/api/admin/users', {
-      email: testCreds.email,
-      password: testCreds.password,
-      role: 'member'
-    });
-    if (createRes.ok) {
-      try {
-        const raw = await createRes.text();
-        if (raw.trim()) {
-          const body = JSON.parse(raw) as { data?: { id?: string }; id?: string };
-          testUserId = body?.data?.id ?? body?.id ?? null;
-        } else {
+    if (adminReady) {
+      const createRes = await admin.post('/api/admin/users', {
+        email: testCreds.email,
+        password: testCreds.password,
+        role: 'member'
+      });
+      if (createRes.ok) {
+        try {
+          const raw = await createRes.text();
+          if (raw.trim()) {
+            const body = JSON.parse(raw) as { data?: { id?: string }; id?: string };
+            testUserId = body?.data?.id ?? body?.id ?? null;
+          } else {
+            testUserId = null;
+          }
+        } catch {
           testUserId = null;
         }
-      } catch {
-        testUserId = null;
       }
     }
 
@@ -235,8 +289,10 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
           'Member-role test user could not be created, so privilege escalation test could not run.',
           'Create throwaway member user, login as member, GET /api/admin/users.',
           'HTTP 403',
-          'Test user creation failed',
-          'Fix admin user creation path for the probe and rerun.'
+          adminReady ? 'Test user creation failed' : 'Bootstrap admin verification failed',
+          adminReady
+            ? 'Fix admin user creation path for the probe and rerun.'
+            : 'Fix bootstrap admin setup and rerun.'
         )
       );
     }
@@ -267,8 +323,10 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
           'Member-role test user could not be created, so CSRF test could not run.',
           'Create throwaway member user, login as member, POST /api/documents without x-csrf-token.',
           'HTTP 401 or 403',
-          'Test user creation failed',
-          'Fix admin user creation path for the probe and rerun.'
+          adminReady ? 'Test user creation failed' : 'Bootstrap admin verification failed',
+          adminReady
+            ? 'Fix admin user creation path for the probe and rerun.'
+            : 'Fix bootstrap admin setup and rerun.'
         )
       );
     }

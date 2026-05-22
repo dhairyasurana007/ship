@@ -178,6 +178,8 @@ export function parseConfig(): Config {
 }
 ```
 
+Note: `--admin-email` / `--admin-password` are legacy optional fallback fields. Current bootstrap flow auto-registers generated credentials and does not require these flags for normal runs.
+
 ---
 
 #### `security-probe/runner.ts` — full file, Commit 1 state
@@ -807,315 +809,74 @@ Expected: zero errors.
 - Use mock HTTP server to test cookie jar propagation, timeout aborts, and verbose logs.
 - Assert helper methods (login, logout, getCookies) behavior.
 
-### Commit 5 — Auth Probe
+### Commit 5 - Auth Probe
 
-**Goal:** 9 auth/session tests. Probe creates a throwaway test user with admin credentials, uses that user's known credentials for member-role tests, then deletes the user in `finally`.
-
----
-
-#### `security-probe/probes/auth.ts` — new file
-
-```typescript
-import type { Config } from '../config.js';
-import type { Finding } from '../types.js';
-import { createHttpClient } from '../http-client.js';
-
-// Credentials for the throwaway test user created by this probe
-const TEST_USER_EMAIL    = `probe-test-${Date.now()}@probe.local`;
-const TEST_USER_PASSWORD = 'ProbePass123!';
-
-function finding(
-  id: string, title: string, vulnerable: boolean,
-  severity: Finding['severity'], description: string,
-  reproduction: string, expected: string, actual: string,
-  remediation: string
-): Finding {
-  return {
-    id, category: 'auth', title, severity,
-    status: vulnerable ? 'vulnerable' : 'pass',
-    description, reproduction,
-    evidence: { expected, actual },
-    remediation,
-  };
-}
-
-export async function probeAuth(config: Config): Promise<Finding[]> {
-  if (!config.adminEmail || !config.adminPassword) {
-    throw new Error('Auth probe requires --admin-email and --admin-password');
-  }
-
-  const results: Finding[] = [];
-  const admin = createHttpClient(config);
-
-  const loggedIn = await admin.login(config.adminEmail, config.adminPassword);
-  if (!loggedIn) {
-    return [{
-      id: 'AUTH-000', category: 'auth', title: 'Admin login failed',
-      severity: 'info', status: 'inconclusive',
-      description: 'Could not log in with the provided admin credentials.',
-      reproduction: 'Check --admin-email and --admin-password.',
-      evidence: { expected: 'HTTP 200 from POST /api/auth/login', actual: 'Non-200 response' },
-      remediation: 'Provide valid admin credentials.',
-    }];
-  }
-
-  let testUserId: string | null = null;
-
-  try {
-    // Create throwaway test user (member role)
-    const createRes = await admin.post('/api/admin/users', {
-      email: TEST_USER_EMAIL,
-      password: TEST_USER_PASSWORD,
-      role: 'member',
-    });
-    if (createRes.ok) {
-      const body = await createRes.json() as { data?: { id?: string } };
-      testUserId = body?.data?.id ?? null;
-    }
-
-    // AUTH-001: Unauthenticated access to protected route
-    {
-      const c = createHttpClient(config);
-      const res = await c.get('/api/documents');
-      results.push(finding(
-        'AUTH-001', 'Unauthenticated access to protected route',
-        res.status !== 401, 'high',
-        'GET /api/documents without a session cookie should return 401.',
-        'Send GET /api/documents with no Cookie header.',
-        'HTTP 401', `HTTP ${res.status}`,
-        'Ensure all non-public routes use authMiddleware.',
-      ));
-    }
-
-    // AUTH-002: Unauthenticated access to admin route
-    {
-      const c = createHttpClient(config);
-      const res = await c.get('/api/admin/users');
-      results.push(finding(
-        'AUTH-002', 'Unauthenticated access to admin route',
-        res.status !== 401 && res.status !== 403, 'high',
-        'GET /api/admin/users without auth should return 401 or 403.',
-        'Send GET /api/admin/users with no Cookie header.',
-        'HTTP 401 or 403', `HTTP ${res.status}`,
-        'Ensure admin routes use superAdminMiddleware.',
-      ));
-    }
-
-    // AUTH-003: Session cookie flags
-    {
-      const raw = await fetch(`${config.target}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: config.adminEmail, password: config.adminPassword }),
-      });
-      const cookieStr = (raw.headers.getSetCookie?.() ?? []).join('; ').toLowerCase();
-      const missing: string[] = [];
-      if (!cookieStr.includes('httponly'))       missing.push('HttpOnly');
-      if (!cookieStr.includes('secure'))         missing.push('Secure');
-      if (!cookieStr.includes('samesite=strict')) missing.push('SameSite=Strict');
-      results.push(finding(
-        'AUTH-003', 'Session cookie missing security flags',
-        missing.length > 0,
-        missing.includes('HttpOnly') || missing.includes('Secure') ? 'high' : 'medium',
-        'Session cookies must have HttpOnly, Secure, and SameSite=Strict.',
-        'POST /api/auth/login — inspect Set-Cookie header.',
-        'Cookie flags: HttpOnly; Secure; SameSite=Strict',
-        missing.length === 0 ? 'All flags present' : `Missing: ${missing.join(', ')}`,
-        'Set all three flags in the session cookie configuration.',
-      ));
-    }
-
-    // AUTH-004: Privilege escalation — test user (member) accesses admin endpoint
-    // Uses TEST_USER_EMAIL / TEST_USER_PASSWORD — the user created above, not config flags
-    if (testUserId) {
-      const member = createHttpClient(config);
-      await member.login(TEST_USER_EMAIL, TEST_USER_PASSWORD);
-      const res = await member.get('/api/admin/users');
-      await member.logout();
-      results.push(finding(
-        'AUTH-004', 'Privilege escalation: member accessing admin endpoint',
-        res.status === 200, 'critical',
-        'A member-role user should receive 403 on GET /api/admin/users.',
-        `1. Login as ${TEST_USER_EMAIL} (member role)\n2. GET /api/admin/users`,
-        'HTTP 403', `HTTP ${res.status}`,
-        'Ensure admin routes check role before responding.',
-      ));
-    }
-
-    // AUTH-005: CSRF missing on state-changing POST
-    if (testUserId) {
-      const member = createHttpClient(config);
-      await member.login(TEST_USER_EMAIL, TEST_USER_PASSWORD);
-      // Deliberately omit x-csrf-token header
-      const res = await member.post('/api/documents', { title: 'probe-csrf', document_type: 'wiki' }, {});
-      await member.logout();
-      results.push(finding(
-        'AUTH-005', 'State-changing POST accepted without CSRF token',
-        res.status === 201 || res.status === 200, 'high',
-        'POST /api/documents without x-csrf-token should be rejected.',
-        `1. Login as ${TEST_USER_EMAIL}\n2. POST /api/documents with no x-csrf-token header`,
-        'HTTP 401 or 403', `HTTP ${res.status}`,
-        'Ensure csrf-sync middleware applies to all state-changing routes.',
-      ));
-    }
-
-    // AUTH-006: Invalid Bearer token
-    {
-      const res = await fetch(`${config.target}/api/documents`, {
-        headers: { Authorization: 'Bearer invalid-probe-token-00000' },
-      });
-      results.push(finding(
-        'AUTH-006', 'Invalid Bearer token correctly rejected',
-        res.status !== 401, 'info',
-        'An invalid Bearer token should return 401.',
-        'GET /api/documents with Authorization: Bearer invalid-probe-token-00000',
-        'HTTP 401', `HTTP ${res.status}`,
-        'No action required if 401.',
-      ));
-    }
-
-    // AUTH-007: Brute force — expect 429 by attempt 7
-    {
-      const c = createHttpClient(config);
-      let firstLimit = -1;
-      for (let i = 1; i <= 8; i++) {
-        const res = await c.post('/api/auth/login', { email: 'nobody@probe.local', password: 'wrong' });
-        if (res.status === 429 && firstLimit === -1) { firstLimit = i; break; }
-      }
-      results.push(finding(
-        'AUTH-007', 'Login endpoint allows brute force',
-        firstLimit === -1, 'high',
-        'Login should rate-limit after 5 failed attempts within 15 minutes.',
-        'Send 8 rapid failed POST /api/auth/login requests.',
-        'HTTP 429 by attempt 6',
-        firstLimit === -1 ? 'No 429 after 8 attempts' : `429 at attempt ${firstLimit}`,
-        'Ensure express-rate-limit applies to POST /api/auth/login.',
-      ));
-    }
-
-    // AUTH-008: Session valid after logout
-    {
-      const c = createHttpClient(config);
-      await c.login(config.adminEmail, config.adminPassword);
-      const oldCookie = c.getSessionCookieHeader();
-      await c.logout();
-      const res = await fetch(`${config.target}/api/documents`, { headers: { Cookie: oldCookie } });
-      results.push(finding(
-        'AUTH-008', 'Session cookie still valid after logout',
-        res.status === 200, 'critical',
-        'A cookie replayed after logout should return 401.',
-        '1. Login\n2. Logout\n3. Replay old Cookie header on GET /api/documents',
-        'HTTP 401', `HTTP ${res.status}`,
-        'Destroy the session server-side on logout.',
-      ));
-    }
-
-    // AUTH-009: Token entropy
-    {
-      const c1 = createHttpClient(config);
-      const c2 = createHttpClient(config);
-      await c1.login(config.adminEmail, config.adminPassword);
-      await c2.login(config.adminEmail, config.adminPassword);
-      const t1 = c1.getSessionCookieHeader();
-      const t2 = c2.getSessionCookieHeader();
-      await c1.logout(); await c2.logout();
-      let shared = false;
-      for (let i = 0; i <= t1.length - 4; i++) {
-        if (t2.includes(t1.slice(i, i + 4))) { shared = true; break; }
-      }
-      results.push(finding(
-        'AUTH-009', 'Session tokens appear predictable',
-        shared, 'medium',
-        'Two consecutive tokens should share no 4+ character substring.',
-        '1. Login twice\n2. Compare session cookie values',
-        'No shared 4+ char substrings',
-        shared ? 'Tokens share a substring' : 'Tokens appear random',
-        'Use a cryptographically random session secret of at least 32 bytes.',
-      ));
-    }
-
-  } finally {
-    if (testUserId) await admin.del(`/api/admin/users/${testUserId}`).catch(() => {});
-    await admin.logout();
-  }
-
-  return results;
-}
-```
+**Goal:** Implement auth/session probe with bootstrap auto-registration and runtime admin setup checks. Core finding set is `AUTH-001` to `AUTH-009`, with conditional setup findings when bootstrap/admin readiness is not achieved.
 
 ---
 
-#### `security-probe/runner.ts` — full file, Commit 5 state
+#### Implemented behavior (current)
+- Generates and prints throwaway member test credentials (`probe-test-*`) and bootstrap credentials (`probe-test-*`).
+- Calls `POST /api/auth/register` with generated bootstrap credentials.
+- Calls internal elevation endpoint when token is available:
+  - `POST /api/internal/probe/elevate-admin`
+  - `Authorization: Bearer ${PROBE_INTERNAL_ELEVATION_TOKEN}`
+  - body `{ email, ttlMinutes: 10 }`
+- Waits (`1500ms`) between register/elevate and bootstrap login.
+- Logs in with bootstrap credentials for runtime checks.
+- Verifies privileged readiness by retrying `GET /api/admin/users` up to 4 times.
+- Creates throwaway member user for member-role checks, then always attempts teardown in `finally`.
 
-```typescript
-import type { Config } from './config.js';
-import type { Finding, Report, Severity, Category } from './types.js';
-import { probeDeps } from './probes/deps.js';
-import { probeAuth } from './probes/auth.js';
+---
 
-const ALL_SEVERITIES: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
-const ALL_CATEGORIES: Category[] = [
-  'auth', 'websocket', 'input', 'dependency',
-  'cors-csp', 'secrets', 'rate-limiting', 'error-verbosity',
-];
+#### Finding IDs and counts
+- Base auth tests: `AUTH-001` to `AUTH-009`.
+- Conditional setup findings:
+  - `AUTH-000` (`inconclusive`): bootstrap login failed.
+  - `AUTH-SETUP` (`inconclusive`): bootstrap login succeeded but admin verification failed.
 
-export function buildSummary(findings: Finding[]): Report['summary'] {
-  const bySeverity = Object.fromEntries(
-    ALL_SEVERITIES.map(s => [s, findings.filter(f => f.severity === s).length])
-  ) as Record<Severity, number>;
-  const byCategory = Object.fromEntries(
-    ALL_CATEGORIES.map(c => [c, findings.filter(f => f.category === c).length])
-  ) as Partial<Record<Category, number>>;
-  return {
-    total:        findings.length,
-    vulnerable:   findings.filter(f => f.status === 'vulnerable').length,
-    passed:       findings.filter(f => f.status === 'pass').length,
-    inconclusive: findings.filter(f => f.status === 'inconclusive').length,
-    bySeverity, byCategory,
-  };
-}
+Expected count behavior:
+- Typical successful path: 9 findings (`AUTH-001`..`AUTH-009`).
+- If bootstrap login fails: returns only `AUTH-000`.
+- If bootstrap login succeeds but admin verification fails: includes `AUTH-SETUP`; member-dependent checks may be inconclusive.
 
-export async function run(config: Config): Promise<Report> {
-  const findings: Finding[] = [];
+---
 
-  findings.push(...await probeDeps(config));
-
-  if (config.adminEmail && config.adminPassword) {
-    findings.push(...await probeAuth(config));
-  }
-
-  return {
-    generated: new Date().toISOString(),
-    target:    config.target,
-    summary:   buildSummary(findings),
-    findings,
-  };
-}
-```
+#### `security-probe/runner.ts` note for current repo state
+- Current codebase runner already includes `probeWebSocket` in addition to deps+auth.
+- Commit sections are historical milestones; live runner may include later-commit wiring.
 
 ---
 
 #### User verification steps
 
 ```bash
-ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com \
-  --admin-email admin@example.gov \
-  --admin-password <password>
+cd security-probe
+ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com
 ```
 
-Expected:
-- AUTH row in summary with 9 tests
-- No `probe-test-*@probe.local` users remain in admin user list after run
+Expected on configured target:
+- Console shows bootstrap register + elevate flow:
+  - `Auth probe: attempting bootstrap auto-register...`
+  - `Auth probe: requesting internal bootstrap admin elevation...` (if token set)
+  - `Auth probe: bootstrap admin access verified.`
+- Auth findings include `AUTH-001`..`AUTH-009` on successful admin-ready path.
+- Throwaway member user is cleaned up in `finally` (best-effort delete).
 
 ---
 
-#### GitHub Actions test cases
-- Mock auth endpoints to emit all Authentication-* findings.
-- Verify admin-credential guard and inally teardown for auto-created test user.
-
+#### GitHub Actions test cases (under auth workflow)
+- Mock auth endpoints and assert:
+  - `AUTH-001`..`AUTH-009` emitted on success path.
+  - `AUTH-SETUP` emitted when admin verification is not confirmed.
+  - `AUTH-000` behavior when bootstrap login cannot be established.
+- Verify bootstrap credential generation/use and `finally` teardown delete call.
 ### Commit 6 — WebSocket Probe
 
 **Goal:** 8 WebSocket tests against the live collaboration endpoint.
+Bootstrap precondition behavior:
+- If bootstrap authentication fails, the probe returns a single WS-000 finding (inconclusive) and does not execute WS-001 through WS-008.
+
 
 ---
 
@@ -1158,14 +919,11 @@ function connect(
 }
 
 export async function probeWebSocket(config: Config): Promise<Finding[]> {
-  if (!config.adminEmail || !config.adminPassword) {
-    throw new Error('WebSocket probe requires --admin-email and --admin-password');
-  }
 
   const results: Finding[] = [];
   const base = wsBase(config.target);
   const admin = createHttpClient(config);
-  await admin.login(config.adminEmail, config.adminPassword);
+  // Bootstrap login credentials are auto-registered and generated at runtime.
 
   let docId: string | null = null;
   let privateDocId: string | null = null;
@@ -1403,10 +1161,8 @@ export async function run(config: Config): Promise<Report> {
 
   findings.push(...await probeDeps(config));
 
-  if (config.adminEmail && config.adminPassword) {
-    findings.push(...await probeAuth(config));
-    findings.push(...await probeWebSocket(config));
-  }
+  findings.push(...await probeAuth(config));
+  findings.push(...await probeWebSocket(config));
 
   return {
     generated: new Date().toISOString(),
@@ -1422,9 +1178,7 @@ export async function run(config: Config): Promise<Report> {
 #### User verification steps
 
 ```bash
-ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com \
-  --admin-email admin@example.gov \
-  --admin-password <password>
+ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com
 ```
 
 Expected:
@@ -1487,13 +1241,9 @@ function isVulnerable(type: string, value: string, status: number, body: string)
 }
 
 export async function probeInput(config: Config): Promise<Finding[]> {
-  if (!config.adminEmail || !config.adminPassword) {
-    throw new Error('Input probe requires --admin-email and --admin-password');
-  }
-
   const results: Finding[] = [];
   const client = createHttpClient(config);
-  await client.login(config.adminEmail, config.adminPassword);
+  // Bootstrap login credentials are auto-registered and generated at runtime.
 
   const created: Array<{ deletePath: string }> = [];
 
@@ -1526,7 +1276,7 @@ export async function probeInput(config: Config): Promise<Finding[]> {
             severity: payload.type === 'sqli' ? 'critical' : payload.type.startsWith('xss') ? 'high' : 'low',
             status: vulnerable ? 'vulnerable' : 'pass',
             description: `Payload type "${payload.type}" submitted to POST ${ep.path} field "${ep.field}".`,
-            reproduction: `1. Login as admin\n2. POST ${ep.path} with ${ep.field}: "${payload.value.slice(0, 60)}"\n3. ${payload.type === 'xss-stored' ? 'GET resource and inspect response' : 'Inspect response status and body'}`,
+            reproduction: `1. Login using bootstrap probe account\n2. POST ${ep.path} with ${ep.field}: "${payload.value.slice(0, 60)}"\n3. ${payload.type === 'xss-stored' ? 'GET resource and inspect response' : 'Inspect response status and body'}`,
             evidence: {
               request:  `POST ${ep.path}\n${JSON.stringify(ep.body(payload.value.slice(0, 80)), null, 2)}`,
               response: `HTTP ${status}\n${checkBody.slice(0, 400)}`,
@@ -1564,7 +1314,7 @@ export async function probeInput(config: Config): Promise<Finding[]> {
       rl.close();
       if (answer.trim().toLowerCase() === 'y') {
         const c = createHttpClient(config);
-        await c.login(config.adminEmail!, config.adminPassword!);
+        await c.login(bootstrapCreds.email, bootstrapCreds.password);
         for (const r of created) await c.del(r.deletePath).catch(() => {});
         await c.logout();
         console.log('Test resources deleted.');
@@ -1620,11 +1370,9 @@ export async function run(config: Config): Promise<Report> {
 
   findings.push(...await probeDeps(config));
 
-  if (config.adminEmail && config.adminPassword) {
-    findings.push(...await probeAuth(config));
-    findings.push(...await probeWebSocket(config));
-    findings.push(...await probeInput(config));
-  }
+  findings.push(...await probeAuth(config));
+  findings.push(...await probeWebSocket(config));
+  findings.push(...await probeInput(config));
 
   return {
     generated: new Date().toISOString(),
@@ -1640,9 +1388,7 @@ export async function run(config: Config): Promise<Report> {
 #### User verification steps
 
 ```bash
-ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com \
-  --admin-email admin@example.gov \
-  --admin-password <password>
+ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com
 ```
 
 Expected:
@@ -1653,7 +1399,7 @@ Expected:
 
 #### GitHub Actions test cases
 - Mock payload matrix across endpoints and assert deterministic finding IDs.
-- Test --yes non-interactive cleanup and non-TTY fallback warning.
+- Test non-interactive cleanup behavior and non-TTY fallback warning.
 
 ### Commit 8 — Manual Review: CORS/CSP and Secrets
 
@@ -1890,11 +1636,9 @@ export async function run(config: Config): Promise<Report> {
 
   findings.push(...await probeDeps(config));
 
-  if (config.adminEmail && config.adminPassword) {
-    findings.push(...await probeAuth(config));
-    findings.push(...await probeWebSocket(config));
-    findings.push(...await probeInput(config));
-  }
+  findings.push(...await probeAuth(config));
+  findings.push(...await probeWebSocket(config));
+  findings.push(...await probeInput(config));
 
   findings.push(...await checkCorsCsp(config));
   findings.push(...await checkSecrets(config));
@@ -2162,11 +1906,9 @@ export async function run(config: Config): Promise<Report> {
 
   findings.push(...await probeDeps(config));
 
-  if (config.adminEmail && config.adminPassword) {
-    findings.push(...await probeAuth(config));
-    findings.push(...await probeWebSocket(config));
-    findings.push(...await probeInput(config));
-  }
+  findings.push(...await probeAuth(config));
+  findings.push(...await probeWebSocket(config));
+  findings.push(...await probeInput(config));
 
   findings.push(...await checkCorsCsp(config));
   findings.push(...await checkSecrets(config));
@@ -2188,8 +1930,6 @@ export async function run(config: Config): Promise<Report> {
 
 ```bash
 ship-security-probe https://ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com \
-  --admin-email admin@example.gov \
-  --admin-password <password> \
   --output ./audit-output
 ```
 
@@ -2201,6 +1941,3 @@ Expected:
 #### GitHub Actions test cases
 - Mock rate-limit and error-verbosity endpoints to cover all RL-*/ERR-* findings.
 - Add end-to-end mocked CLI smoke to assert valid JSON and full markdown sections.
-
-
-

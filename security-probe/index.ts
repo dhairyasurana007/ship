@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+import { loadLocalEnv } from './env.js';
 import { parseConfig } from './config.js';
 import { writeJson } from './reporter/json.js';
 import { writeMarkdown } from './reporter/markdown.js';
@@ -18,6 +19,7 @@ async function ensureTargetReachable(target: string, timeoutMs: number): Promise
   return false;
 }
 
+loadLocalEnv();
 const config = parseConfig();
 const reachable = await ensureTargetReachable(config.target, config.timeout);
 if (!reachable) {
@@ -123,3 +125,4 @@ if (surfacedFindings.length > 0) {
 }
 
 console.log('');
+process.exit(0);
