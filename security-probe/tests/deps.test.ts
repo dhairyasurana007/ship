@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import * as childProcess from 'node:child_process';
-import { filterHighCritical, parseAuditJson, probeDeps } from '../probes/deps.js';
+import {
+  __setExecSyncForTests,
+  filterHighCritical,
+  parseAuditJson,
+  probeDeps
+} from '../probes/deps.js';
 import { buildSummary } from '../runner.js';
 
 test('parseAuditJson returns advisories array', () => {
@@ -39,7 +43,7 @@ test('empty advisories produces empty parsed output', () => {
 });
 
 test('probeDeps handles non-zero pnpm audit exit and parses stdout', async (t) => {
-  t.mock.method(childProcess, 'execSync', ((command: string) => {
+  __setExecSyncForTests(((command: string) => {
     if (command === 'pnpm audit --json') {
       const err = new Error('audit exit 1') as Error & { stdout?: string };
       err.stdout = JSON.stringify({
@@ -60,7 +64,8 @@ test('probeDeps handles non-zero pnpm audit exit and parses stdout', async (t) =
       throw err;
     }
     throw new Error('no matches');
-  }) as typeof childProcess.execSync);
+  }) as unknown as typeof import('node:child_process').execSync);
+  t.after(() => __setExecSyncForTests(null));
 
   const findings = await probeDeps({
     target: 'https://example.test',
@@ -79,7 +84,7 @@ test('probeDeps handles non-zero pnpm audit exit and parses stdout', async (t) =
 });
 
 test('probeDeps returns DEP-000 pass when no high/critical advisories', async (t) => {
-  t.mock.method(childProcess, 'execSync', ((command: string) => {
+  __setExecSyncForTests(((command: string) => {
     if (command === 'pnpm audit --json') {
       return JSON.stringify({
         advisories: {
@@ -88,7 +93,8 @@ test('probeDeps returns DEP-000 pass when no high/critical advisories', async (t
       });
     }
     throw new Error('no matches');
-  }) as typeof childProcess.execSync);
+  }) as unknown as typeof import('node:child_process').execSync);
+  t.after(() => __setExecSyncForTests(null));
 
   const findings = await probeDeps({
     target: 'https://example.test',

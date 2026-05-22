@@ -20,6 +20,14 @@ type AuditJson = {
   advisories?: Record<string, Advisory>;
 };
 
+let execSyncImpl: typeof childProcess.execSync = childProcess.execSync;
+
+export function __setExecSyncForTests(
+  fn: typeof childProcess.execSync | null
+): void {
+  execSyncImpl = fn ?? childProcess.execSync;
+}
+
 export function findRepoRoot(startDir: string): string {
   let current = startDir;
   while (true) {
@@ -64,7 +72,7 @@ function mapFeatureFromFiles(files: string[]): string {
 function grepImportFiles(repoRoot: string, moduleName: string): string[] {
   const escaped = moduleName.replace(/'/g, "\\'");
   try {
-    const out = childProcess.execSync(`rg -l "from '${escaped}'" "${repoRoot}"`, {
+    const out = execSyncImpl(`rg -l "from '${escaped}'" "${repoRoot}"`, {
       stdio: ['ignore', 'pipe', 'ignore'],
       encoding: 'utf8'
     });
@@ -83,7 +91,7 @@ export async function probeDeps(config: Config): Promise<Finding[]> {
     let stdout = '';
 
     try {
-      stdout = childProcess.execSync('pnpm audit --json', {
+      stdout = execSyncImpl('pnpm audit --json', {
         cwd: repoRoot,
         stdio: ['ignore', 'pipe', 'ignore'],
         encoding: 'utf8'
