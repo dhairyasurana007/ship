@@ -39,7 +39,14 @@ jobs:
         run: npx tsc --noEmit
 
       - name: CLI smoke run
-        run: npx tsx ./index.ts https://example.test --output ./reports-ci
+        run: npx tsx ./index.ts https://ship-web-ak37.onrender.com --output ./reports-ci
+
+      - name: Non-existent URL smoke run
+        run: |
+          if npx tsx ./index.ts https://example.test --output ./reports-ci-nonexistent; then
+            echo "Expected unreachable URL run to fail, but it succeeded"
+            exit 1
+          fi
 
       - name: Assert reports exist and JSON is valid
         run: |
