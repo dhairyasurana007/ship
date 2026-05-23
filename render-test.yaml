@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: ship-api
+    name: ship-api-test
     runtime: node
     plan: starter
     rootDir: .
@@ -21,17 +21,16 @@ services:
         value: development
       - key: DATABASE_URL
         fromDatabase:
-          name: ship-postgres
+          name: ship-postgres-test
           property: connectionString
       - key: SESSION_SECRET
         sync: false
-      # Set to your static site's public URL during Blueprint creation
-      # (example: https://ship-web.onrender.com).
+      # Set to your test static site's public URL during Blueprint creation.
       - key: CORS_ORIGIN
         sync: false
 
   - type: web
-    name: ship-web
+    name: ship-web-test
     runtime: static
     rootDir: .
     buildCommand: |
@@ -47,13 +46,12 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20
-      # Set to your API public URL during Blueprint creation
-      # (example: https://ship-api.onrender.com).
+      # Set to your test API public URL during Blueprint creation.
       - key: VITE_API_URL
         sync: false
       - key: VITE_APP_ENV
         value: production
 
 databases:
-  - name: ship-postgres
+  - name: ship-postgres-test
     plan: free
