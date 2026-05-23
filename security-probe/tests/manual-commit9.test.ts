@@ -32,7 +32,7 @@ test('checkRateLimit returns RL-001..RL-003 with expected statuses', async () =>
       handler();
     }
     return 0 as unknown as ReturnType<typeof setTimeout>;
-  }) as typeof setTimeout);
+  }) as unknown as typeof setTimeout);
 
   globalThis.fetch = (async (input: RequestInfo | URL) => {
     const url = typeof input === 'string' ? input : input.toString();
