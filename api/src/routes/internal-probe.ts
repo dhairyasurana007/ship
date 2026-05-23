@@ -212,10 +212,10 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
     );
 
     await logAuditEvent({
-      actorUserId: null,
+      actorUserId: undefined,
       action: 'internal.probe.cleanup_test_users',
       resourceType: 'user',
-      resourceId: null,
+      resourceId: undefined,
       details: {
         emailPrefix,
         deletedCount: deleted.length,
