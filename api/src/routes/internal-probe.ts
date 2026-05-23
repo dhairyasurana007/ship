@@ -181,35 +181,44 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
   const auth = authorizeInternalProbe(req, res);
   if (!auth) return;
 
-  const emailPrefix = 'probe-test-';
-  const emailLike = `${emailPrefix}%`;
+  const emailPrefixes = ['probe-test-', 'probe-input-bootstrap-', 'probe-ws-bootstrap-', 'probe-ws-'];
+  const emailLikes = emailPrefixes.map((p) => `${p}%`);
 
+  const client = await pool.connect();
   try {
-    const candidates = await pool.query(
+    await client.query('BEGIN');
+
+    const candidates = await client.query(
       `SELECT id, email
        FROM users
-       WHERE LOWER(email) LIKE LOWER($1)
+       WHERE LOWER(email) LIKE ANY($1::text[])
        ORDER BY email`,
-      [emailLike]
+      [emailLikes.map((v) => v.toLowerCase())]
     );
+    const matchedBefore = candidates.rows.map((row) => ({
+      id: row.id as string,
+      email: row.email as string
+    }));
 
     const deleted: Array<{ id: string; email: string }> = [];
     for (const row of candidates.rows) {
       const userId = row.id as string;
       const email = row.email as string;
-      await pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
-      await pool.query('DELETE FROM workspace_memberships WHERE user_id = $1', [userId]);
-      await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+      await client.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM workspace_memberships WHERE user_id = $1', [userId]);
+      await client.query('DELETE FROM users WHERE id = $1', [userId]);
       deleted.push({ id: userId, email });
     }
 
-    const remaining = await pool.query(
+    const remaining = await client.query(
       `SELECT id, email
        FROM users
-       WHERE LOWER(email) LIKE LOWER($1)
+       WHERE LOWER(email) LIKE ANY($1::text[])
        ORDER BY email`,
-      [emailLike]
+      [emailLikes.map((v) => v.toLowerCase())]
     );
+
+    await client.query('COMMIT');
 
     await logAuditEvent({
       actorUserId: undefined,
@@ -217,7 +226,9 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
       resourceType: 'user',
       resourceId: undefined,
       details: {
-        emailPrefix,
+        emailPrefixes,
+        matchedBeforeCount: matchedBefore.length,
+        matchedBeforeEmails: matchedBefore.map((x) => x.email),
         deletedCount: deleted.length,
         deletedEmails: deleted.map((x) => x.email),
         remainingCount: remaining.rows.length,
@@ -230,7 +241,9 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
     res.status(HTTP_STATUS.OK).json({
       success: true,
       data: {
-        emailPrefix,
+        emailPrefixes,
+        matchedBeforeCount: matchedBefore.length,
+        matchedBefore: matchedBefore,
         deletedCount: deleted.length,
         deleted,
         remainingCount: remaining.rows.length,
@@ -238,6 +251,11 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
       }
     });
   } catch (error) {
+    try {
+      await client.query('ROLLBACK');
+    } catch {
+      // ignore rollback errors
+    }
     console.error('Internal probe cleanup test users error:', error);
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
       success: false,
@@ -246,6 +264,8 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
         message: 'Failed to cleanup probe test users',
       },
     });
+  } finally {
+    client.release();
   }
 });
 

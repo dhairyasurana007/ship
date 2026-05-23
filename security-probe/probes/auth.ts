@@ -100,12 +100,6 @@ function inconclusiveFinding(
   };
 }
 
-interface AdminUserLike {
-  id?: string;
-  user_id?: string;
-  email?: string;
-}
-
 export async function probeAuth(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
   const apiTarget = getApiTarget(config);
@@ -123,63 +117,123 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
         return;
       }
 
-      console.log('Auth probe cleanup debug: requesting POST /api/internal/probe/cleanup-test-users');
-      const res = await fetch(`${apiTarget}/api/internal/probe/cleanup-test-users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({})
-      }).catch((err: unknown) => {
-        console.log(`Auth probe cleanup: internal cleanup request failed: ${err instanceof Error ? err.message : String(err)}`);
-        return null;
-      });
-
-      if (!res) {
-        return;
-      }
-
-      const contentType = res.headers.get('content-type') ?? '(missing)';
-      let bodyText = '';
-      try {
-        bodyText = await res.text();
-      } catch {
-        bodyText = '';
-      }
-      const preview = bodyText.slice(0, 300).replace(/\s+/g, ' ').trim();
-      console.log(
-        `Auth probe cleanup debug: internal cleanup response status=${res.status} ok=${res.ok} content-type=${contentType} body-preview="${preview || '(empty)'}"`
+      const cleanupOrigins = Array.from(
+        new Set([apiTarget.replace(/\/$/, ''), config.target.replace(/\/$/, '')])
       );
 
-      if (!res.ok) {
-        console.log(`Auth probe cleanup: internal cleanup endpoint failed (HTTP ${res.status}).`);
+      let totalDeletedCount = 0;
+      let totalRemainingCount = 0;
+      const deletedUsers: Array<{ id?: string; email?: string; origin: string }> = [];
+      let validResponseCount = 0;
+      let primaryOriginValid = false;
+
+      for (const origin of cleanupOrigins) {
+        console.log(`Auth probe cleanup debug: requesting POST ${origin}/api/internal/probe/cleanup-test-users`);
+        const res = await fetch(`${origin}/api/internal/probe/cleanup-test-users`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({})
+        }).catch((err: unknown) => {
+          console.log(`Auth probe cleanup: internal cleanup request failed on ${origin}: ${err instanceof Error ? err.message : String(err)}`);
+          return null;
+        });
+
+        if (!res) {
+          continue;
+        }
+
+        const contentType = res.headers.get('content-type') ?? '(missing)';
+        let bodyText = '';
+        try {
+          bodyText = await res.text();
+        } catch {
+          bodyText = '';
+        }
+        const preview = bodyText.slice(0, 300).replace(/\s+/g, ' ').trim();
+        console.log(
+          `Auth probe cleanup debug: internal cleanup response origin=${origin} status=${res.status} ok=${res.ok} content-type=${contentType} body-preview="${preview || '(empty)'}"`
+        );
+
+        if (!res.ok) {
+          console.log(`Auth probe cleanup: internal cleanup endpoint failed on ${origin} (HTTP ${res.status}).`);
+          continue;
+        }
+
+        let parsed: unknown = null;
+        try {
+          parsed = bodyText ? JSON.parse(bodyText) : null;
+        } catch {
+          console.log(`Auth probe cleanup: internal cleanup response was not valid JSON on ${origin}.`);
+          continue;
+        }
+
+        const root = parsed as { success?: unknown; data?: unknown } | null;
+        const data = (root?.data ?? null) as {
+          matchedBeforeCount?: unknown;
+          matchedBefore?: unknown;
+          deletedCount?: unknown;
+          deleted?: unknown;
+          remainingCount?: unknown;
+        } | null;
+        if (
+          root?.success !== true ||
+          !data ||
+          typeof data.matchedBeforeCount !== 'number' ||
+          !Array.isArray(data.matchedBefore) ||
+          typeof data.deletedCount !== 'number' ||
+          typeof data.remainingCount !== 'number' ||
+          !Array.isArray(data.deleted)
+        ) {
+          console.log(`Auth probe cleanup: internal cleanup response on ${origin} was missing expected schema; skipped from totals.`);
+          continue;
+        }
+
+        const matchedBefore = (data.matchedBefore as Array<{ id?: string; email?: string }>);
+        const deleted = (data.deleted as Array<{ id?: string; email?: string }>);
+        const remainingCount = data.remainingCount as number;
+        validResponseCount += 1;
+        if (origin === apiTarget.replace(/\/$/, '')) {
+          primaryOriginValid = true;
+        }
+        console.log(`Auth probe cleanup: probe-test-* users found before delete on ${origin}: ${data.matchedBeforeCount as number}`);
+        if (matchedBefore.length > 0) {
+          for (const u of matchedBefore) {
+            console.log(`  - ${u.email ?? '(unknown email)'} (${u.id ?? 'unknown-id'}) [origin: ${origin}]`);
+          }
+        } else {
+          console.log('  - none');
+        }
+
+        totalDeletedCount += data.deletedCount as number;
+        totalRemainingCount += remainingCount;
+        deletedUsers.push(...deleted.map((d) => ({ ...d, origin })));
+      }
+
+      if (!primaryOriginValid) {
+        console.log(`Auth probe cleanup verification: inconclusive (primary API origin ${apiTarget} did not return a valid cleanup response).`);
+        return;
+      }
+      if (validResponseCount === 0) {
+        console.log('Auth probe cleanup verification: inconclusive (no valid cleanup responses were received).');
         return;
       }
 
-      let parsed: unknown = null;
-      try {
-        parsed = bodyText ? JSON.parse(bodyText) : null;
-      } catch {
-        console.log('Auth probe cleanup: internal cleanup response was not valid JSON.');
-        return;
+      console.log(`Auth probe cleanup: deleted probe-test-* users count=${totalDeletedCount}`);
+      console.log('Auth probe cleanup: deleted users:');
+      if (deletedUsers.length > 0) {
+        for (const d of deletedUsers) {
+          console.log(`  - ${d.email ?? '(unknown email)'} (${d.id ?? 'unknown-id'}) [origin: ${d.origin}]`);
+        }
+      } else {
+        console.log('  - none');
       }
-
-      const data = (parsed as { data?: { deletedCount?: number; deleted?: Array<{ id?: string; email?: string }>; remainingCount?: number } } | null)?.data;
-      const deleted = data?.deleted ?? [];
-      const remainingCount = data?.remainingCount ?? 0;
-      const deletedSummary = deleted
-        .map((d) => `${d.email ?? '(unknown email)'} (${d.id ?? 'unknown-id'})`)
-        .join(', ');
-
-      console.log(`Auth probe cleanup: deleted probe-test-* users count=${data?.deletedCount ?? deleted.length}`);
-      if (deletedSummary) {
-        console.log(`Auth probe cleanup verified deletions: ${deletedSummary}`);
-      }
-      if (remainingCount === 0) {
+      if (totalRemainingCount === 0 && validResponseCount > 0) {
         console.log('Auth probe cleanup verification: pass (no probe-test-* users remain).');
       } else {
-        console.log(`Auth probe cleanup verification: failed (${remainingCount} probe-test-* user(s) still present).`);
+        console.log(`Auth probe cleanup verification: failed (${totalRemainingCount} probe-test-* user(s) still present).`);
       }
     }
   });
