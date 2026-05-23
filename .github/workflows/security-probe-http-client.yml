@@ -6,8 +6,6 @@ on:
       - "security-probe/**"
       - ".github/workflows/security-probe-http-client.yml"
   push:
-    branches:
-      - "**"
     paths:
       - "security-probe/**"
       - ".github/workflows/security-probe-http-client.yml"
