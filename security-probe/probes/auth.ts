@@ -3,6 +3,7 @@ import type { Finding } from '../types.js';
 import { createHttpClient } from '../http-client.js';
 import { registerCleanupTask } from '../cleanup.js';
 import { getApiTarget } from '../targets.js';
+import { getCreatedProbeUsers, registerCreatedProbeUser } from '../created-users.js';
 
 function makeTestCredentials(): { email: string; password: string } {
   const nonce = `${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
@@ -128,6 +129,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
       let primaryOriginValid = false;
 
       for (const origin of cleanupOrigins) {
+        const createdUsers = getCreatedProbeUsers().map((u) => u.email);
         console.log(`Auth probe cleanup debug: requesting POST ${origin}/api/internal/probe/cleanup-test-users`);
         const res = await fetch(`${origin}/api/internal/probe/cleanup-test-users`, {
           method: 'POST',
@@ -135,7 +137,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({})
+          body: JSON.stringify({ users: createdUsers })
         }).catch((err: unknown) => {
           console.log(`Auth probe cleanup: internal cleanup request failed on ${origin}: ${err instanceof Error ? err.message : String(err)}`);
           return null;
@@ -254,6 +256,9 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
       })
     });
     console.log(`Auth probe bootstrap register response: HTTP ${registerRes.status}`);
+    if (registerRes.ok) {
+      registerCreatedProbeUser({ email: bootstrapCreds.email, source: 'auth-register' });
+    }
     await elevateBootstrapUser(apiTarget, bootstrapCreds.email);
     console.log('Auth probe: waiting 1500ms before bootstrap login...');
     await sleep(1500);
@@ -322,6 +327,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
         role: 'member'
       });
       if (createRes.ok) {
+        registerCreatedProbeUser({ email: testCreds.email, source: 'auth-admin-create' });
         try {
           const raw = await createRes.text();
           if (raw.trim()) {

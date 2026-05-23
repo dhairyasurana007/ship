@@ -8,6 +8,7 @@ import { run } from './runner.js';
 import type { Category } from './types.js';
 import { getCleanupTasks, resetCleanupTasks } from './cleanup.js';
 import { getApiTarget } from './targets.js';
+import { resetCreatedProbeUsers } from './created-users.js';
 
 async function ensureTargetReachable(target: string, timeoutMs: number): Promise<boolean> {
   const urls = [`${target}/health`, target];
@@ -26,6 +27,7 @@ loadLocalEnv();
 const config = parseConfig();
 const apiTarget = getApiTarget(config);
 resetCleanupTasks();
+resetCreatedProbeUsers();
 const reachable = await ensureTargetReachable(apiTarget, config.timeout);
 if (!reachable) {
   console.error(`Target unreachable: ${apiTarget}`);

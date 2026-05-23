@@ -3,6 +3,7 @@ import type { Finding } from '../types.js';
 import { createHttpClient } from '../http-client.js';
 import { registerCleanupTask } from '../cleanup.js';
 import { getApiTarget } from '../targets.js';
+import { registerCreatedProbeUser } from '../created-users.js';
 
 type PayloadType = 'xss-stored' | 'xss-reflected' | 'sqli' | 'overflow' | 'null-byte' | 'path-traversal';
 type Payload = { id: string; type: PayloadType; value: string };
@@ -110,6 +111,9 @@ export async function probeInput(config: Config): Promise<Finding[]> {
       body: JSON.stringify(bootstrapCreds)
     });
     console.log(`Input probe bootstrap register response: HTTP ${registerRes.status}`);
+    if (registerRes.ok) {
+      registerCreatedProbeUser({ email: bootstrapCreds.email, source: 'input-register' });
+    }
     await elevateBootstrapUser(apiTarget, bootstrapCreds.email);
   } catch (err: unknown) {
     console.log(

@@ -11,6 +11,7 @@ const router: RouterType = Router();
 const DEFAULT_TTL_MINUTES = 10;
 const MAX_TTL_MINUTES = 30;
 const PROBE_EMAIL_PATTERN = /^probe-[a-z0-9._%+-]+@probe\.local$/i;
+const ALLOWED_CLEANUP_EMAIL_PATTERN = /^probe-(test|input-bootstrap|ws-bootstrap|ws)-[a-z0-9._%+-]+@probe\.local$/i;
 
 function toBuffer(value: string): Buffer {
   return Buffer.from(value, 'utf8');
@@ -181,19 +182,46 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
   const auth = authorizeInternalProbe(req, res);
   if (!auth) return;
 
-  const emailPrefixes = ['probe-test-', 'probe-input-bootstrap-', 'probe-ws-bootstrap-', 'probe-ws-'];
-  const emailLikes = emailPrefixes.map((p) => `${p}%`);
+  const requestedUsers = Array.isArray(req.body?.users) ? req.body.users : [];
+  const requestedEmails = requestedUsers
+    .map((u) => {
+      if (typeof u === 'string') return u.trim().toLowerCase();
+      if (u && typeof u === 'object' && typeof (u as { email?: unknown }).email === 'string') {
+        return ((u as { email: string }).email).trim().toLowerCase();
+      }
+      return '';
+    })
+    .filter((e) => e.length > 0 && ALLOWED_CLEANUP_EMAIL_PATTERN.test(e));
+  const uniqueRequestedEmails = Array.from(new Set(requestedEmails));
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
+    if (uniqueRequestedEmails.length === 0) {
+      await client.query('COMMIT');
+      res.status(HTTP_STATUS.OK).json({
+        success: true,
+        data: {
+          requestedCount: 0,
+          requestedEmails: [],
+          matchedBeforeCount: 0,
+          matchedBefore: [],
+          deletedCount: 0,
+          deleted: [],
+          remainingCount: 0,
+          remaining: []
+        }
+      });
+      return;
+    }
+
     const candidates = await client.query(
       `SELECT id, email
        FROM users
-       WHERE LOWER(email) LIKE ANY($1::text[])
+       WHERE LOWER(email) = ANY($1::text[])
        ORDER BY email`,
-      [emailLikes.map((v) => v.toLowerCase())]
+      [uniqueRequestedEmails]
     );
     const matchedBefore = candidates.rows.map((row) => ({
       id: row.id as string,
@@ -213,9 +241,9 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
     const remaining = await client.query(
       `SELECT id, email
        FROM users
-       WHERE LOWER(email) LIKE ANY($1::text[])
+       WHERE LOWER(email) = ANY($1::text[])
        ORDER BY email`,
-      [emailLikes.map((v) => v.toLowerCase())]
+      [uniqueRequestedEmails]
     );
 
     await client.query('COMMIT');
@@ -226,7 +254,8 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
       resourceType: 'user',
       resourceId: undefined,
       details: {
-        emailPrefixes,
+        requestedCount: uniqueRequestedEmails.length,
+        requestedEmails: uniqueRequestedEmails,
         matchedBeforeCount: matchedBefore.length,
         matchedBeforeEmails: matchedBefore.map((x) => x.email),
         deletedCount: deleted.length,
@@ -241,7 +270,8 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
     res.status(HTTP_STATUS.OK).json({
       success: true,
       data: {
-        emailPrefixes,
+        requestedCount: uniqueRequestedEmails.length,
+        requestedEmails: uniqueRequestedEmails,
         matchedBeforeCount: matchedBefore.length,
         matchedBefore: matchedBefore,
         deletedCount: deleted.length,

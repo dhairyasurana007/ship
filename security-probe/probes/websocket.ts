@@ -4,6 +4,7 @@ import type { Finding } from '../types.js';
 import { createHttpClient } from '../http-client.js';
 import { registerCleanupTask } from '../cleanup.js';
 import { getApiTarget } from '../targets.js';
+import { registerCreatedProbeUser } from '../created-users.js';
 
 const TEST_USER_EMAIL = `probe-ws-${Date.now()}@probe.local`;
 const TEST_USER_PASSWORD = 'ProbePass123!';
@@ -153,6 +154,9 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
       body: JSON.stringify(bootstrapCreds)
     });
     console.log(`WebSocket probe bootstrap register response: HTTP ${registerRes.status}`);
+    if (registerRes.ok) {
+      registerCreatedProbeUser({ email: bootstrapCreds.email, source: 'ws-register' });
+    }
     await elevateBootstrapUser(apiTarget, bootstrapCreds.email);
   } catch (err) {
     console.log(
@@ -209,6 +213,7 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
       role: 'member'
     });
     if (ur.ok) {
+      registerCreatedProbeUser({ email: TEST_USER_EMAIL, source: 'ws-admin-create' });
       try {
         const body = (await ur.json()) as { data?: { id?: string }; id?: string };
         testUserId = body?.data?.id ?? body?.id ?? null;
