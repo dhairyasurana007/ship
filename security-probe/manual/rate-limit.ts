@@ -1,13 +1,15 @@
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
+import { getApiTarget } from '../targets.js';
 
 export async function checkRateLimit(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
+  const apiTarget = getApiTarget(config);
 
   try {
     let firstLimit = -1;
     for (let i = 1; i <= 120; i++) {
-      const res = await fetch(`${config.target}/api/documents`, {
+      const res = await fetch(`${apiTarget}/api/documents`, {
         signal: AbortSignal.timeout(config.timeout)
       });
       if (res.status === 429 && firstLimit === -1) {
@@ -46,7 +48,7 @@ export async function checkRateLimit(config: Config): Promise<Finding[]> {
   try {
     let firstLimit = -1;
     for (let i = 1; i <= 8; i++) {
-      const res = await fetch(`${config.target}/api/auth/login`, {
+      const res = await fetch(`${apiTarget}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: 'probe-rl@probe.local', password: 'wrong' }),
@@ -87,7 +89,7 @@ export async function checkRateLimit(config: Config): Promise<Finding[]> {
 
   try {
     await new Promise((resolve) => setTimeout(resolve, 5000));
-    const res = await fetch(`${config.target}/api/auth/login`, {
+    const res = await fetch(`${apiTarget}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'probe-rl@probe.local', password: 'wrong' }),

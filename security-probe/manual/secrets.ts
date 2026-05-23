@@ -1,5 +1,6 @@
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
+import { getApiTarget } from '../targets.js';
 
 const PATTERNS: Array<{ name: string; re: RegExp }> = [
   { name: 'DATABASE_URL', re: /DATABASE_URL/i },
@@ -39,9 +40,10 @@ function finding(
 
 export async function checkSecrets(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
+  const apiTarget = getApiTarget(config);
 
   try {
-    const body = await fetch(`${config.target}/health`, {
+    const body = await fetch(`${apiTarget}/health`, {
       signal: AbortSignal.timeout(config.timeout)
     }).then((r) => r.text());
     const found = scan(body);
@@ -52,7 +54,7 @@ export async function checkSecrets(config: Config): Promise<Finding[]> {
         found.length > 0,
         'critical',
         '/health should not expose secrets or sensitive variable names.',
-        `GET ${config.target}/health`,
+        `GET ${apiTarget}/health`,
         'No secret patterns in response body',
         found.length > 0 ? `Found: ${found.join(', ')}` : 'Clean',
         'Return minimal health payload only.'
@@ -66,14 +68,14 @@ export async function checkSecrets(config: Config): Promise<Finding[]> {
       severity: 'info',
       status: 'inconclusive',
       description: 'Secret scan request failed.',
-      reproduction: `GET ${config.target}/health`,
+      reproduction: `GET ${apiTarget}/health`,
       evidence: { expected: 'HTTP response', actual: err instanceof Error ? err.message : String(err) },
       remediation: 'Check reachability and rerun.'
     });
   }
 
   try {
-    const body = await fetch(`${config.target}/api/auth/login`, {
+    const body = await fetch(`${apiTarget}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email: 'probe@probe.local', password: 'wrong' }),
@@ -87,7 +89,7 @@ export async function checkSecrets(config: Config): Promise<Finding[]> {
         found.length > 0,
         'high',
         'Auth error responses should not leak secret names or values.',
-        `POST ${config.target}/api/auth/login with invalid credentials`,
+        `POST ${apiTarget}/api/auth/login with invalid credentials`,
         'Clean generic error body',
         found.length > 0 ? `Found: ${found.join(', ')}` : 'Clean',
         'Sanitize error messages and avoid leaking internals.'
@@ -101,14 +103,14 @@ export async function checkSecrets(config: Config): Promise<Finding[]> {
       severity: 'info',
       status: 'inconclusive',
       description: 'Auth error secret scan request failed.',
-      reproduction: `POST ${config.target}/api/auth/login`,
+      reproduction: `POST ${apiTarget}/api/auth/login`,
       evidence: { expected: 'HTTP response', actual: err instanceof Error ? err.message : String(err) },
       remediation: 'Check reachability and rerun.'
     });
   }
 
   try {
-    const body = await fetch(`${config.target}/health`, {
+    const body = await fetch(`${apiTarget}/health`, {
       signal: AbortSignal.timeout(config.timeout)
     }).then((r) => r.text());
     const exposed = /"NODE_ENV"/.test(body) || /"env"/.test(body);
@@ -119,7 +121,7 @@ export async function checkSecrets(config: Config): Promise<Finding[]> {
         exposed,
         'low',
         'Health response should not expose environment details.',
-        `GET ${config.target}/health`,
+        `GET ${apiTarget}/health`,
         'No NODE_ENV/env keys in response',
         exposed ? 'Found NODE_ENV/env pattern' : 'Not found',
         'Remove environment metadata from external responses.'
@@ -133,7 +135,7 @@ export async function checkSecrets(config: Config): Promise<Finding[]> {
       severity: 'info',
       status: 'inconclusive',
       description: 'Environment exposure scan request failed.',
-      reproduction: `GET ${config.target}/health`,
+      reproduction: `GET ${apiTarget}/health`,
       evidence: { expected: 'HTTP response', actual: err instanceof Error ? err.message : String(err) },
       remediation: 'Check reachability and rerun.'
     });

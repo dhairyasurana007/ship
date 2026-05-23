@@ -1,7 +1,8 @@
-import readline from 'node:readline/promises';
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
 import { createHttpClient } from '../http-client.js';
+import { registerCleanupTask } from '../cleanup.js';
+import { getApiTarget } from '../targets.js';
 
 type PayloadType = 'xss-stored' | 'xss-reflected' | 'sqli' | 'overflow' | 'null-byte' | 'path-traversal';
 type Payload = { id: string; type: PayloadType; value: string };
@@ -91,6 +92,7 @@ function severityForType(type: PayloadType): Finding['severity'] {
 
 export async function probeInput(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
+  const apiTarget = getApiTarget(config);
   const client = createHttpClient(config);
   const bootstrapCreds = {
     email: `probe-input-bootstrap-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}@probe.local`,
@@ -102,13 +104,13 @@ export async function probeInput(config: Config): Promise<Finding[]> {
   console.log('Input probe: attempting bootstrap auto-register...');
 
   try {
-    const registerRes = await fetch(`${config.target}/api/auth/register`, {
+    const registerRes = await fetch(`${apiTarget}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bootstrapCreds)
     });
     console.log(`Input probe bootstrap register response: HTTP ${registerRes.status}`);
-    await elevateBootstrapUser(config.target, bootstrapCreds.email);
+    await elevateBootstrapUser(apiTarget, bootstrapCreds.email);
   } catch (err: unknown) {
     console.log(
       `Input probe bootstrap register failed: ${err instanceof Error ? err.message : String(err)}`
@@ -207,31 +209,31 @@ export async function probeInput(config: Config): Promise<Finding[]> {
     await client.logout();
   }
 
-  if (created.length > 0) {
-    if (process.stdin.isTTY) {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      try {
-        const answer = await rl.question(
-          `\nInput probe created ${created.length} test resources. Delete them now? [y/N] `
-        );
-        if (answer.trim().toLowerCase() === 'y') {
-          const cleanupClient = createHttpClient(config);
-          const cleanupLoggedIn = await cleanupClient.login(bootstrapCreds.email, bootstrapCreds.password);
-          if (cleanupLoggedIn) {
-            for (const r of created) await cleanupClient.del(r.deletePath).catch(() => {});
-          }
-          await cleanupClient.logout();
-          console.log('Test resources deleted.');
-        } else {
-          console.log('Skipped. Delete manually:', created.map((r) => r.deletePath).join(', '));
-        }
-      } finally {
-        rl.close();
+  registerCleanupTask({
+    label: 'Input probe cleanup (created resources)',
+    run: async () => {
+      if (created.length === 0) {
+        console.log('Input probe cleanup: no deletable resources were created in this run.');
+        return;
       }
-    } else {
-      console.warn(`\n[WARNING] ${created.length} test resources not cleaned up:`);
-      created.forEach((r) => console.warn(' ', r.deletePath));
+
+      const cleanupClient = createHttpClient(config);
+      const cleanupLoggedIn = await cleanupClient.login(bootstrapCreds.email, bootstrapCreds.password);
+      if (!cleanupLoggedIn) {
+        console.log('Input probe cleanup: could not log in for cleanup.');
+        await cleanupClient.logout();
+        return;
+      }
+
+      for (const r of created) {
+        await cleanupClient.del(r.deletePath).catch(() => {});
+      }
+      await cleanupClient.logout();
+      console.log(`Input probe cleanup complete. Deleted ${created.length} resource(s).`);
     }
+  });
+  if (!process.stdin.isTTY && created.length > 0) {
+    console.warn(`\n[WARNING] ${created.length} test resources queued for deferred cleanup.`);
   }
 
   return results;

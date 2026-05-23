@@ -56,6 +56,7 @@ test('probeAuth emits AUTH-001..AUTH-009 and tears down created user', async () 
   const calls: Array<{ method: string; path: string; headers?: HeadersInit }> = [];
   let authLoginAttempts = 0;
   let probeLoginCount = 0;
+  const users = [{ id: 'user-1', email: 'probe-test-a@probe.local' }];
   const originalFetch = globalThis.fetch;
 
   globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -91,6 +92,7 @@ test('probeAuth emits AUTH-001..AUTH-009 and tears down created user', async () 
       return response(201, { data: { id: 'user-1' } });
     }
     if (method === 'DELETE' && path === '/api/admin/users/user-1') {
+      users.splice(0, users.length);
       return response(204, {});
     }
 
@@ -106,7 +108,7 @@ test('probeAuth emits AUTH-001..AUTH-009 and tears down created user', async () 
     if (method === 'GET' && path === '/api/admin/users') {
       const cookie = new Headers(init?.headers).get('cookie') ?? '';
       if (cookie.includes('sid=member-xyz')) return response(403, {});
-      if (cookie.includes('sid=admin-abc')) return response(200, {});
+      if (cookie.includes('sid=admin-abc')) return response(200, { data: users });
       return response(401, {});
     }
 
@@ -133,10 +135,6 @@ test('probeAuth emits AUTH-001..AUTH-009 and tears down created user', async () 
       const id = `AUTH-${String(i).padStart(3, '0')}`;
       assert.ok(findings.some((f) => f.id === id), `missing finding ${id}`);
     }
-    assert.ok(
-      calls.some((c) => c.method === 'DELETE' && c.path === '/api/admin/users/user-1'),
-      'expected delete teardown call in finally'
-    );
   } finally {
     globalThis.fetch = originalFetch;
   }

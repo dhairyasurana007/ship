@@ -1,5 +1,6 @@
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
+import { getApiTarget } from '../targets.js';
 
 function finding(
   id: string,
@@ -27,9 +28,10 @@ function finding(
 
 export async function checkCorsCsp(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
+  const apiTarget = getApiTarget(config);
 
   try {
-    const res = await fetch(`${config.target}/health`, { signal: AbortSignal.timeout(config.timeout) });
+    const res = await fetch(`${apiTarget}/health`, { signal: AbortSignal.timeout(config.timeout) });
     const aco = (res.headers.get('access-control-allow-origin') ?? '').trim();
     const acc = (res.headers.get('access-control-allow-credentials') ?? '').trim().toLowerCase();
     results.push(
@@ -39,7 +41,7 @@ export async function checkCorsCsp(config: Config): Promise<Finding[]> {
         aco === '*' && acc === 'true',
         'critical',
         'CORS must not allow credentials with wildcard origin.',
-        `GET ${config.target}/health`,
+        `GET ${apiTarget}/health`,
         'No `*` origin when credentials are true',
         `access-control-allow-origin=${aco || '(absent)'}, access-control-allow-credentials=${acc || '(absent)'}`,
         'Restrict origin to explicit trusted domain and review credentials policy.'
@@ -53,7 +55,7 @@ export async function checkCorsCsp(config: Config): Promise<Finding[]> {
       severity: 'info',
       status: 'inconclusive',
       description: 'CORS check request failed.',
-      reproduction: `GET ${config.target}/health`,
+      reproduction: `GET ${apiTarget}/health`,
       evidence: { expected: 'HTTP response', actual: err instanceof Error ? err.message : String(err) },
       remediation: 'Check reachability and rerun.'
     });
@@ -61,7 +63,7 @@ export async function checkCorsCsp(config: Config): Promise<Finding[]> {
   }
 
   try {
-    const res = await fetch(`${config.target}/health`, { signal: AbortSignal.timeout(config.timeout) });
+    const res = await fetch(`${apiTarget}/health`, { signal: AbortSignal.timeout(config.timeout) });
     const csp = res.headers.get('content-security-policy') ?? '';
     const directives = Object.fromEntries(
       csp
@@ -81,7 +83,7 @@ export async function checkCorsCsp(config: Config): Promise<Finding[]> {
         (directives['script-src'] ?? '').includes("'unsafe-inline'"),
         'high',
         'Inline script execution significantly increases XSS risk.',
-        `GET ${config.target}/health`,
+        `GET ${apiTarget}/health`,
         "script-src without 'unsafe-inline'",
         directives['script-src'] ? `script-src ${directives['script-src']}` : '(absent)',
         "Use nonces/hashes and remove 'unsafe-inline'."
@@ -95,7 +97,7 @@ export async function checkCorsCsp(config: Config): Promise<Finding[]> {
         !csp.trim(),
         'high',
         'Missing CSP leaves browser-side injection defenses weak.',
-        `GET ${config.target}/health`,
+        `GET ${apiTarget}/health`,
         'Content-Security-Policy header present',
         csp.trim() ? 'Present' : 'Missing',
         'Set strict Content-Security-Policy header.'
@@ -109,7 +111,7 @@ export async function checkCorsCsp(config: Config): Promise<Finding[]> {
       severity: 'info',
       status: 'inconclusive',
       description: 'CSP check request failed.',
-      reproduction: `GET ${config.target}/health`,
+      reproduction: `GET ${apiTarget}/health`,
       evidence: { expected: 'HTTP response', actual: err instanceof Error ? err.message : String(err) },
       remediation: 'Check reachability and rerun.'
     });

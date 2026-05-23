@@ -35,7 +35,7 @@ function isAllowedIp(ip: string, allowlist: string[]): boolean {
   return allowlist.some(candidate => candidate.trim() === ip);
 }
 
-router.post('/elevate-admin', async (req: Request, res: Response): Promise<void> => {
+function authorizeInternalProbe(req: Request, res: Response): { callerIp: string } | null {
   if (process.env.PROBE_INTERNAL_ELEVATION_ENABLED !== 'true') {
     res.status(HTTP_STATUS.NOT_FOUND).json({
       success: false,
@@ -44,7 +44,7 @@ router.post('/elevate-admin', async (req: Request, res: Response): Promise<void>
         message: 'Not found',
       },
     });
-    return;
+    return null;
   }
 
   const configuredToken = process.env.PROBE_INTERNAL_ELEVATION_TOKEN;
@@ -56,7 +56,7 @@ router.post('/elevate-admin', async (req: Request, res: Response): Promise<void>
         message: 'Internal probe endpoint is misconfigured',
       },
     });
-    return;
+    return null;
   }
 
   const authHeader = req.headers.authorization;
@@ -69,13 +69,13 @@ router.post('/elevate-admin', async (req: Request, res: Response): Promise<void>
         message: 'Unauthorized',
       },
     });
-    return;
+    return null;
   }
 
   const allowlistRaw = process.env.PROBE_INTERNAL_ELEVATION_IP_ALLOWLIST?.trim();
+  const callerIp = getClientIp(req);
   if (allowlistRaw) {
     const allowlist = allowlistRaw.split(',').map(x => x.trim()).filter(Boolean);
-    const callerIp = getClientIp(req);
     if (!isAllowedIp(callerIp, allowlist)) {
       res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
@@ -84,9 +84,15 @@ router.post('/elevate-admin', async (req: Request, res: Response): Promise<void>
           message: 'Forbidden',
         },
       });
-      return;
+      return null;
     }
   }
+  return { callerIp };
+}
+
+router.post('/elevate-admin', async (req: Request, res: Response): Promise<void> => {
+  const auth = authorizeInternalProbe(req, res);
+  if (!auth) return;
 
   const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : '';
   const rawTtl = req.body?.ttlMinutes;
@@ -148,7 +154,7 @@ router.post('/elevate-admin', async (req: Request, res: Response): Promise<void>
       action: 'internal.probe.elevate_admin',
       resourceType: 'user',
       resourceId: user.id,
-      details: { email: user.email, ttlMinutes, expiresAt: expiresAt.toISOString(), callerIp: getClientIp(req) },
+      details: { email: user.email, ttlMinutes, expiresAt: expiresAt.toISOString(), callerIp: auth.callerIp },
       req,
     });
 
@@ -166,6 +172,78 @@ router.post('/elevate-admin', async (req: Request, res: Response): Promise<void>
       error: {
         code: ERROR_CODES.INTERNAL_ERROR,
         message: 'Failed to elevate probe user',
+      },
+    });
+  }
+});
+
+router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<void> => {
+  const auth = authorizeInternalProbe(req, res);
+  if (!auth) return;
+
+  const emailPrefix = 'probe-test-';
+  const emailLike = `${emailPrefix}%`;
+
+  try {
+    const candidates = await pool.query(
+      `SELECT id, email
+       FROM users
+       WHERE LOWER(email) LIKE LOWER($1)
+       ORDER BY email`,
+      [emailLike]
+    );
+
+    const deleted: Array<{ id: string; email: string }> = [];
+    for (const row of candidates.rows) {
+      const userId = row.id as string;
+      const email = row.email as string;
+      await pool.query('DELETE FROM sessions WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM workspace_memberships WHERE user_id = $1', [userId]);
+      await pool.query('DELETE FROM users WHERE id = $1', [userId]);
+      deleted.push({ id: userId, email });
+    }
+
+    const remaining = await pool.query(
+      `SELECT id, email
+       FROM users
+       WHERE LOWER(email) LIKE LOWER($1)
+       ORDER BY email`,
+      [emailLike]
+    );
+
+    await logAuditEvent({
+      actorUserId: null,
+      action: 'internal.probe.cleanup_test_users',
+      resourceType: 'user',
+      resourceId: null,
+      details: {
+        emailPrefix,
+        deletedCount: deleted.length,
+        deletedEmails: deleted.map((x) => x.email),
+        remainingCount: remaining.rows.length,
+        remainingEmails: remaining.rows.map((x) => x.email as string),
+        callerIp: auth.callerIp
+      },
+      req
+    });
+
+    res.status(HTTP_STATUS.OK).json({
+      success: true,
+      data: {
+        emailPrefix,
+        deletedCount: deleted.length,
+        deleted,
+        remainingCount: remaining.rows.length,
+        remaining: remaining.rows
+      }
+    });
+  } catch (error) {
+    console.error('Internal probe cleanup test users error:', error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      error: {
+        code: ERROR_CODES.INTERNAL_ERROR,
+        message: 'Failed to cleanup probe test users',
       },
     });
   }

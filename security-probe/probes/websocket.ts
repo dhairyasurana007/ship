@@ -1,8 +1,9 @@
-import readline from 'node:readline/promises';
 import WebSocket from 'ws';
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
 import { createHttpClient } from '../http-client.js';
+import { registerCleanupTask } from '../cleanup.js';
+import { getApiTarget } from '../targets.js';
 
 const TEST_USER_EMAIL = `probe-ws-${Date.now()}@probe.local`;
 const TEST_USER_PASSWORD = 'ProbePass123!';
@@ -134,7 +135,8 @@ function inconclusive(
 
 export async function probeWebSocket(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
-  const base = wsBase(config.target);
+  const apiTarget = getApiTarget(config);
+  const base = wsBase(apiTarget);
   const admin = createHttpClient(config);
   const bootstrapCreds = {
     email: `probe-ws-bootstrap-${Date.now()}-${Math.floor(Math.random() * 1_000_000)}@probe.local`,
@@ -145,13 +147,13 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
   console.log(`WebSocket probe bootstrap password: ${bootstrapCreds.password}`);
   console.log('WebSocket probe: attempting bootstrap auto-register...');
   try {
-    const registerRes = await fetch(`${config.target}/api/auth/register`, {
+    const registerRes = await fetch(`${apiTarget}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bootstrapCreds)
     });
     console.log(`WebSocket probe bootstrap register response: HTTP ${registerRes.status}`);
-    await elevateBootstrapUser(config.target, bootstrapCreds.email);
+    await elevateBootstrapUser(apiTarget, bootstrapCreds.email);
   } catch (err) {
     console.log(
       `WebSocket probe bootstrap register failed: ${err instanceof Error ? err.message : String(err)}`
@@ -262,7 +264,7 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
       ws.send(Buffer.alloc(11 * 1024 * 1024));
       await new Promise((r) => setTimeout(r, 2000));
       ws.terminate();
-      const alive = await serverAliveImpl(config.target, config.timeout);
+      const alive = await serverAliveImpl(apiTarget, config.timeout);
       results.push(
         finding(
           'WS-003',
@@ -286,7 +288,7 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
       ws.send(bytes);
       await new Promise((r) => setTimeout(r, 1000));
       ws.terminate();
-      const alive = await serverAliveImpl(config.target, config.timeout);
+      const alive = await serverAliveImpl(apiTarget, config.timeout);
       results.push(
         finding(
           'WS-004',
@@ -307,7 +309,7 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
       ws.send(Buffer.from([99]));
       await new Promise((r) => setTimeout(r, 1000));
       ws.terminate();
-      const alive = await serverAliveImpl(config.target, config.timeout);
+      const alive = await serverAliveImpl(apiTarget, config.timeout);
       results.push(
         finding(
           'WS-005',
@@ -422,26 +424,28 @@ export async function probeWebSocket(config: Config): Promise<Finding[]> {
     if (privateDocId) cleanupPaths.push(`/api/documents/${privateDocId}`);
     if (testUserId) cleanupPaths.push(`/api/admin/users/${testUserId}`);
 
-    let shouldDelete = true;
-    if (cleanupPaths.length > 0 && process.stdin.isTTY) {
-      const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-      try {
-        const answer = await rl.question(
-          `\nWebSocket probe created ${cleanupPaths.length} test resources. Delete them now? [Y/n] `
-        );
-        shouldDelete = answer.trim().toLowerCase() !== 'n';
-      } finally {
-        rl.close();
-      }
-    }
+    registerCleanupTask({
+      label: 'WebSocket probe cleanup (created resources)',
+      run: async () => {
+        if (cleanupPaths.length === 0) {
+          console.log('WebSocket probe cleanup: no deletable resources were created in this run.');
+          return;
+        }
 
-    if (shouldDelete) {
-      for (const p of cleanupPaths) {
-        await admin.del(p).catch(() => {});
+        const cleanupAdmin = createHttpClient(config);
+        const cleanupLoggedIn = await cleanupAdmin.login(bootstrapCreds.email, bootstrapCreds.password);
+        if (!cleanupLoggedIn) {
+          console.log('WebSocket probe cleanup: could not log in for cleanup.');
+          await cleanupAdmin.logout();
+          return;
+        }
+        for (const p of cleanupPaths) {
+          await cleanupAdmin.del(p).catch(() => {});
+        }
+        await cleanupAdmin.logout();
+        console.log(`WebSocket probe cleanup complete. Deleted ${cleanupPaths.length} resource(s).`);
       }
-    } else if (cleanupPaths.length > 0) {
-      console.log(`WebSocket probe cleanup skipped. Manual delete paths: ${cleanupPaths.join(', ')}`);
-    }
+    });
     await admin.logout();
   }
 

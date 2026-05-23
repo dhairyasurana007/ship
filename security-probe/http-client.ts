@@ -1,5 +1,6 @@
 import { CookieJar } from 'tough-cookie';
 import type { Config } from './config.js';
+import { getApiTarget } from './targets.js';
 
 export interface HttpClient {
   get(path: string, extraHeaders?: Record<string, string>): Promise<Response>;
@@ -13,7 +14,8 @@ export interface HttpClient {
 }
 
 export function createHttpClient(config: Config): HttpClient {
-  const { target, timeout, verbose } = config;
+  const { timeout, verbose } = config;
+  const target = getApiTarget(config);
   const jar = new CookieJar();
 
   async function request(

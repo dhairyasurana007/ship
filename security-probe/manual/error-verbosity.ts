@@ -1,5 +1,6 @@
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
+import { getApiTarget } from '../targets.js';
 
 const LEAK_PATTERNS: Array<{ name: string; re: RegExp }> = [
   { name: 'stack frame', re: /at Object\.|at Module\.|at async / },
@@ -13,9 +14,10 @@ function detectLeak(body: string): string[] {
 
 export async function checkErrorVerbosity(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
+  const apiTarget = getApiTarget(config);
 
   try {
-    const res = await fetch(`${config.target}/api/auth/login`, {
+    const res = await fetch(`${apiTarget}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: 'this is not json',
@@ -30,7 +32,7 @@ export async function checkErrorVerbosity(config: Config): Promise<Finding[]> {
       severity: 'medium',
       status: leaked.length > 0 ? 'vulnerable' : 'pass',
       description: 'A malformed JSON body should produce a clean 400, not a stack trace.',
-      reproduction: `POST ${config.target}/api/auth/login\nContent-Type: application/json\n\nthis is not json`,
+      reproduction: `POST ${apiTarget}/api/auth/login\nContent-Type: application/json\n\nthis is not json`,
       evidence: {
         request: 'POST /api/auth/login\nContent-Type: application/json\n\nthis is not json',
         response: `HTTP ${res.status}\n${body.slice(0, 500)}`,
@@ -54,7 +56,7 @@ export async function checkErrorVerbosity(config: Config): Promise<Finding[]> {
   }
 
   try {
-    const res = await fetch(`${config.target}/api/nonexistent-route-probe-12345`, {
+    const res = await fetch(`${apiTarget}/api/nonexistent-route-probe-12345`, {
       signal: AbortSignal.timeout(config.timeout)
     });
     const body = await res.text();
@@ -66,7 +68,7 @@ export async function checkErrorVerbosity(config: Config): Promise<Finding[]> {
       severity: 'low',
       status: leaked.length > 0 ? 'vulnerable' : 'pass',
       description: 'A 404 for an unknown route should not reveal file paths or stack traces.',
-      reproduction: `GET ${config.target}/api/nonexistent-route-probe-12345`,
+      reproduction: `GET ${apiTarget}/api/nonexistent-route-probe-12345`,
       evidence: {
         response: `HTTP ${res.status}\n${body.slice(0, 500)}`,
         expected: 'Clean 404',
@@ -89,7 +91,7 @@ export async function checkErrorVerbosity(config: Config): Promise<Finding[]> {
   }
 
   try {
-    const res = await fetch(`${config.target}/api/documents`, {
+    const res = await fetch(`${apiTarget}/api/documents`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: '{}',
@@ -104,7 +106,7 @@ export async function checkErrorVerbosity(config: Config): Promise<Finding[]> {
       severity: 'medium',
       status: res.status >= 500 || leaked.length > 0 ? 'vulnerable' : 'pass',
       description: 'POST /api/documents with no auth and empty body should return 401, not 500.',
-      reproduction: `POST ${config.target}/api/documents\nContent-Type: application/json\n\n{}`,
+      reproduction: `POST ${apiTarget}/api/documents\nContent-Type: application/json\n\n{}`,
       evidence: {
         response: `HTTP ${res.status}\n${body.slice(0, 500)}`,
         expected: 'HTTP 401, no stack trace',

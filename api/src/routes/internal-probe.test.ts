@@ -102,4 +102,28 @@ describe('Internal Probe API', () => {
     );
     expect(elevation.rows.length).toBe(1);
   });
+
+  it('cleans up probe-test-* users via internal endpoint', async () => {
+    const cleanupEmail = `probe-test-${testRunId}@probe.local`;
+    const cleanupUser = await pool.query(
+      `INSERT INTO users (email, password_hash, name)
+       VALUES ($1, NULL, 'Probe Cleanup User')
+       RETURNING id`,
+      [cleanupEmail]
+    );
+    const cleanupUserId = cleanupUser.rows[0].id as string;
+
+    const res = await request(app)
+      .post('/api/internal/probe/cleanup-test-users')
+      .set('authorization', `Bearer ${token}`)
+      .send({});
+
+    expect(res.status).toBe(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.deletedCount).toBeGreaterThanOrEqual(1);
+    expect(Array.isArray(res.body.data.deleted)).toBe(true);
+
+    const verify = await pool.query('SELECT id FROM users WHERE id = $1', [cleanupUserId]);
+    expect(verify.rows.length).toBe(0);
+  });
 });

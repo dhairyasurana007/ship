@@ -1,10 +1,13 @@
 #!/usr/bin/env tsx
+import readline from 'node:readline/promises';
 import { loadLocalEnv } from './env.js';
 import { parseConfig } from './config.js';
 import { writeJson } from './reporter/json.js';
 import { writeMarkdown } from './reporter/markdown.js';
 import { run } from './runner.js';
 import type { Category } from './types.js';
+import { getCleanupTasks, resetCleanupTasks } from './cleanup.js';
+import { getApiTarget } from './targets.js';
 
 async function ensureTargetReachable(target: string, timeoutMs: number): Promise<boolean> {
   const urls = [`${target}/health`, target];
@@ -21,9 +24,11 @@ async function ensureTargetReachable(target: string, timeoutMs: number): Promise
 
 loadLocalEnv();
 const config = parseConfig();
-const reachable = await ensureTargetReachable(config.target, config.timeout);
+const apiTarget = getApiTarget(config);
+resetCleanupTasks();
+const reachable = await ensureTargetReachable(apiTarget, config.timeout);
 if (!reachable) {
-  console.error(`Target unreachable: ${config.target}`);
+  console.error(`Target unreachable: ${apiTarget}`);
   console.error('Security report was not generated.');
   process.exit(1);
 }
@@ -49,6 +54,7 @@ const categories: Category[] = [
 
 console.log('Shipshape Security Probe');
 console.log(`Target : ${report.target}`);
+console.log(`API    : ${apiTarget}`);
 console.log(`Run at : ${report.generated}`);
 console.log('');
 console.log('Category      Tests  Vulnerable  Inconclusive');
@@ -84,7 +90,7 @@ if (surfacedFindings.length > 0) {
   const printTable = (title: string, rows: typeof surfacedFindings): void => {
     if (rows.length === 0) return;
     console.log('');
-    console.log(title);
+    console.log(`${title} (${rows.length})`);
     console.log('ID        Status        Severity  Category      Title');
     console.log('--------  ------------  --------  ------------  ----------------------------------------');
     for (const finding of rows) {
@@ -122,7 +128,44 @@ if (surfacedFindings.length > 0) {
     const rows = surfacedFindings.filter((f) => f.category === category);
     printTable(categoryTitles[category], rows);
   }
+
+  const vulnerableCount = surfacedFindings.filter((f) => f.status === 'vulnerable').length;
+  const inconclusiveCount = surfacedFindings.filter((f) => f.status === 'inconclusive').length;
+  console.log('');
+  console.log(`Total vulnerabilities: ${vulnerableCount}`);
+  console.log(`Total surfaced findings: ${surfacedFindings.length} (vulnerable: ${vulnerableCount}, inconclusive: ${inconclusiveCount})`);
 }
 
 console.log('');
+
+const cleanupTasks = getCleanupTasks();
+let shouldRunCleanup = true;
+if (process.stdin.isTTY) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  try {
+    const answer = await rl.question('\nCleanup: delete probe-created test data now? [Y/n] ');
+    shouldRunCleanup = answer.trim().toLowerCase() !== 'n';
+  } finally {
+    rl.close();
+  }
+}
+
+if (shouldRunCleanup) {
+  if (cleanupTasks.length === 0) {
+    console.log('Cleanup: no cleanup tasks were queued in this run.');
+  } else {
+    console.log(`Cleanup: running ${cleanupTasks.length} cleanup task(s)...`);
+    for (const task of cleanupTasks) {
+      console.log(`Cleanup: ${task.label}`);
+      await task.run().catch((err: unknown) => {
+        console.log(
+          `Cleanup task failed (${task.label}): ${err instanceof Error ? err.message : String(err)}`
+        );
+      });
+    }
+  }
+} else {
+  console.log('Cleanup skipped by user.');
+}
+
 process.exit(0);

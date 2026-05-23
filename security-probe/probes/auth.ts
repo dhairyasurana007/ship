@@ -1,7 +1,8 @@
-import readline from 'node:readline/promises';
 import type { Config } from '../config.js';
 import type { Finding } from '../types.js';
 import { createHttpClient } from '../http-client.js';
+import { registerCleanupTask } from '../cleanup.js';
+import { getApiTarget } from '../targets.js';
 
 function makeTestCredentials(): { email: string; password: string } {
   const nonce = `${Date.now()}-${Math.floor(Math.random() * 1_000_000)}`;
@@ -99,11 +100,90 @@ function inconclusiveFinding(
   };
 }
 
+interface AdminUserLike {
+  id?: string;
+  user_id?: string;
+  email?: string;
+}
+
 export async function probeAuth(config: Config): Promise<Finding[]> {
   const results: Finding[] = [];
+  const apiTarget = getApiTarget(config);
   const admin = createHttpClient(config);
   const testCreds = makeTestCredentials();
   const bootstrapCreds = makeTestCredentials();
+  let cleanupTaskRegistered = false;
+
+  registerCleanupTask({
+    label: 'Auth probe cleanup (probe-test-* users)',
+    run: async () => {
+      const token = process.env.PROBE_INTERNAL_ELEVATION_TOKEN;
+      if (!token) {
+        console.log('Auth probe cleanup: PROBE_INTERNAL_ELEVATION_TOKEN not set; cannot call internal cleanup endpoint.');
+        return;
+      }
+
+      console.log('Auth probe cleanup debug: requesting POST /api/internal/probe/cleanup-test-users');
+      const res = await fetch(`${apiTarget}/api/internal/probe/cleanup-test-users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({})
+      }).catch((err: unknown) => {
+        console.log(`Auth probe cleanup: internal cleanup request failed: ${err instanceof Error ? err.message : String(err)}`);
+        return null;
+      });
+
+      if (!res) {
+        return;
+      }
+
+      const contentType = res.headers.get('content-type') ?? '(missing)';
+      let bodyText = '';
+      try {
+        bodyText = await res.text();
+      } catch {
+        bodyText = '';
+      }
+      const preview = bodyText.slice(0, 300).replace(/\s+/g, ' ').trim();
+      console.log(
+        `Auth probe cleanup debug: internal cleanup response status=${res.status} ok=${res.ok} content-type=${contentType} body-preview="${preview || '(empty)'}"`
+      );
+
+      if (!res.ok) {
+        console.log(`Auth probe cleanup: internal cleanup endpoint failed (HTTP ${res.status}).`);
+        return;
+      }
+
+      let parsed: unknown = null;
+      try {
+        parsed = bodyText ? JSON.parse(bodyText) : null;
+      } catch {
+        console.log('Auth probe cleanup: internal cleanup response was not valid JSON.');
+        return;
+      }
+
+      const data = (parsed as { data?: { deletedCount?: number; deleted?: Array<{ id?: string; email?: string }>; remainingCount?: number } } | null)?.data;
+      const deleted = data?.deleted ?? [];
+      const remainingCount = data?.remainingCount ?? 0;
+      const deletedSummary = deleted
+        .map((d) => `${d.email ?? '(unknown email)'} (${d.id ?? 'unknown-id'})`)
+        .join(', ');
+
+      console.log(`Auth probe cleanup: deleted probe-test-* users count=${data?.deletedCount ?? deleted.length}`);
+      if (deletedSummary) {
+        console.log(`Auth probe cleanup verified deletions: ${deletedSummary}`);
+      }
+      if (remainingCount === 0) {
+        console.log('Auth probe cleanup verification: pass (no probe-test-* users remain).');
+      } else {
+        console.log(`Auth probe cleanup verification: failed (${remainingCount} probe-test-* user(s) still present).`);
+      }
+    }
+  });
+  cleanupTaskRegistered = true;
 
   console.log(`Auth probe test user email: ${testCreds.email}`);
   console.log(`Auth probe test user password: ${testCreds.password}`);
@@ -111,7 +191,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
   console.log(`Auth probe bootstrap password: ${bootstrapCreds.password}`);
   console.log('Auth probe: attempting bootstrap auto-register...');
   try {
-    const registerRes = await fetch(`${config.target}/api/auth/register`, {
+    const registerRes = await fetch(`${apiTarget}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -120,7 +200,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
       })
     });
     console.log(`Auth probe bootstrap register response: HTTP ${registerRes.status}`);
-    await elevateBootstrapUser(config.target, bootstrapCreds.email);
+    await elevateBootstrapUser(apiTarget, bootstrapCreds.email);
     console.log('Auth probe: waiting 1500ms before bootstrap login...');
     await sleep(1500);
     const bootstrapClient = createHttpClient(config);
@@ -239,7 +319,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
     }
 
     {
-      const raw = await fetch(`${config.target}/api/auth/login`, {
+      const raw = await fetch(`${apiTarget}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: bootstrapCreds.email, password: bootstrapCreds.password })
@@ -333,7 +413,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
     }
 
     {
-      const res = await fetch(`${config.target}/api/documents`, {
+      const res = await fetch(`${apiTarget}/api/documents`, {
         method: 'POST',
         headers: {
           Authorization: 'Bearer invalid-probe-token-00000',
@@ -386,7 +466,7 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
       await c.login(bootstrapCreds.email, bootstrapCreds.password);
       const oldCookie = c.getSessionCookieHeader();
       await c.logout();
-      const res = await fetch(`${config.target}/api/documents`, { headers: { Cookie: oldCookie } });
+      const res = await fetch(`${apiTarget}/api/documents`, { headers: { Cookie: oldCookie } });
       results.push(
         finding(
           'AUTH-008',
@@ -433,22 +513,8 @@ export async function probeAuth(config: Config): Promise<Finding[]> {
       );
     }
   } finally {
-    if (testUserId) {
-      let shouldDelete = true;
-      if (process.stdin.isTTY) {
-        const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-        try {
-          const answer = await rl.question('\nAuth probe created test user data. Delete it now? [Y/n] ');
-          shouldDelete = answer.trim().toLowerCase() !== 'n';
-        } finally {
-          rl.close();
-        }
-      }
-      if (shouldDelete) {
-        await admin.del(`/api/admin/users/${testUserId}`).catch(() => {});
-      } else {
-        console.log(`Auth probe cleanup skipped. Manual delete path: /api/admin/users/${testUserId}`);
-      }
+    if (!cleanupTaskRegistered) {
+      console.log('Auth probe cleanup warning: cleanup task was not registered.');
     }
     await admin.logout();
   }

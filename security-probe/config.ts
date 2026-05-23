@@ -2,6 +2,7 @@ import { parseArgs } from 'node:util';
 
 export interface Config {
   target: string;
+  apiTarget?: string | null;
   output: string;
   verbose: boolean;
   timeout: number;
@@ -18,6 +19,7 @@ export function parseConfig(): Config {
       output: { type: 'string', default: 'reports' },
       verbose: { type: 'boolean', default: false },
       timeout: { type: 'string', default: '10000' },
+      'api-target': { type: 'string' },
       repo: { type: 'string' },
       'admin-email': { type: 'string' },
       'admin-password': { type: 'string' }
@@ -35,6 +37,7 @@ export function parseConfig(): Config {
 
   return {
     target: target.replace(/\/$/, ''),
+    apiTarget: ((values['api-target'] as string | undefined) ?? process.env.SHIP_PROBE_API_TARGET ?? null)?.replace(/\/$/, '') ?? null,
     output: values.output as string,
     verbose: values.verbose as boolean,
     timeout: parseInt(values.timeout as string, 10),
