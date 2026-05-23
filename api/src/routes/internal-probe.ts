@@ -184,14 +184,14 @@ router.post('/cleanup-test-users', async (req: Request, res: Response): Promise<
 
   const requestedUsers = Array.isArray(req.body?.users) ? req.body.users : [];
   const requestedEmails = requestedUsers
-    .map((u) => {
+    .map((u: unknown) => {
       if (typeof u === 'string') return u.trim().toLowerCase();
       if (u && typeof u === 'object' && typeof (u as { email?: unknown }).email === 'string') {
         return ((u as { email: string }).email).trim().toLowerCase();
       }
       return '';
     })
-    .filter((e) => e.length > 0 && ALLOWED_CLEANUP_EMAIL_PATTERN.test(e));
+    .filter((e: string) => e.length > 0 && ALLOWED_CLEANUP_EMAIL_PATTERN.test(e));
   const uniqueRequestedEmails = Array.from(new Set(requestedEmails));
 
   const client = await pool.connect();

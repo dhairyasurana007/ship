@@ -145,8 +145,8 @@ let shouldRunCleanup = true;
 if (process.stdin.isTTY) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   try {
-    const answer = await rl.question('\nCleanup: delete probe-created test data now? [Y/n] ');
-    shouldRunCleanup = answer.trim().toLowerCase() !== 'n';
+    const answer = await rl.question('\nCleanup: delete probe-created test data now? [y/N] ');
+    shouldRunCleanup = answer.trim().toLowerCase() === 'y';
   } finally {
     rl.close();
   }
