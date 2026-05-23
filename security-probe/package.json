@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "bin": {
-    "ship-security-probe": "./index.js"
+    "ship-security-probe": "./index.ts"
   },
   "dependencies": {
     "tough-cookie": "^4.1.4",
