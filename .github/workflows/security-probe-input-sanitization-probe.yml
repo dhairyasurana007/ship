@@ -6,8 +6,6 @@ on:
       - "security-probe/**"
       - ".github/workflows/security-probe-input-sanitization-probe.yml"
   push:
-    branches:
-      - "**"
     paths:
       - "security-probe/**"
       - ".github/workflows/security-probe-input-sanitization-probe.yml"
