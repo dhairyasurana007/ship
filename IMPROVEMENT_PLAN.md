@@ -9,38 +9,192 @@ status: active
 
 ## Problem Frame
 
-Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All baselines are established in `AUDIT.md`. Phase 2 delivers one atomic commit per implementation unit, ordered hardest category first so the most effort-intensive work lands before the deadline (2026-05-29).
+Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All baselines are established in `AUDIT.md`. Phase 2 delivers one atomic commit per implementation unit across all 7 tracks.
 
-**Assumption (converted from "Resolve Before Planning"):** DB indexes (Track 4) are the primary lever for hitting `/api/documents` P99 < 200ms. If P99 remains above 200ms after Track 4 is applied, the Track 3 unit expands to include query restructuring or pagination — that decision is deferred to implementation.
+**Assumption (converted from "Resolve Before Planning"):** DB indexes (Track 4 / U6) are the primary lever for hitting `/api/documents` P99 < 200ms. If P99 remains above 200ms after U6 is applied, U5 (Track 3) expands to include query restructuring or pagination — deferred to implementation.
+
+**Execution note on Track 3 / Track 4 ordering:** U5 (Track 3) is listed in track order but depends on U6 (Track 4). Execute U6 before U5.
 
 ---
 
-## Commit Ordering (Hard First)
+## Implementation Order
 
 | Unit | Track | Commit description |
 |---|---|---|
-| U1 | 5 | Fix 13 persistent web test failures |
-| U2 | 5 | Add tests: AI analysis routes |
-| U3 | 5 | Add tests: dashboard routes |
-| U4 | 5 | Add tests: CAIA/PIV auth routes |
-| U5 | 5 | Add tests: weekly plans routes |
-| U6 | 5 | Add tests: admin credentials routes |
-| U7 | 1 | Type safety: fix route hotspots (weeks + projects) |
-| U8 | 1 | Type safety: fix test hotspots (3 test files) |
-| U9 | 7 | Accessibility: fix 49 color-contrast violations |
-| U10 | 7 | Accessibility: keyboard navigation fixes |
-| U11 | 4 | DB indexes: migrations 039–041 |
-| U12 | 3 | API latency: optimize /api/documents + /api/issues |
-| U13 | 2 | Bundle: remove unused dependencies |
-| U14 | 2 | Bundle: lazy-load emoji-picker-react + highlight.js |
-| U15 | 6 | Runtime: fix CORS + add global error handlers |
-| U16 | 6 | Runtime: expand React error boundaries |
+| U1 | 1 | Type safety: fix route hotspots (weeks + projects) |
+| U2 | 1 | Type safety: fix test hotspots (3 test files) |
+| U3 | 2 | Bundle: remove unused dependencies |
+| U4 | 2 | Bundle: lazy-load emoji-picker-react + highlight.js |
+| U5 | 3 | API latency: optimize /api/documents + /api/issues ⚠️ execute after U6 |
+| U6 | 4 | DB indexes: migrations 039–041 |
+| U7 | 5 | Fix 13 persistent web test failures |
+| U8 | 5 | Add tests: AI analysis routes |
+| U9 | 5 | Add tests: dashboard routes |
+| U10 | 5 | Add tests: CAIA/PIV auth routes |
+| U11 | 5 | Add tests: weekly plans routes |
+| U12 | 5 | Add tests: admin credentials routes |
+| U13 | 6 | Runtime: fix CORS + add global error handlers |
+| U14 | 6 | Runtime: expand React error boundaries |
+| U15 | 7 | Accessibility: fix 49 color-contrast violations |
+| U16 | 7 | Accessibility: keyboard navigation fixes |
 
 ---
 
 ## Implementation Units
 
-### U1. Fix 13 Persistent Web Test Failures
+### U1. Type Safety: Fix Route Hotspots
+
+**Goal:** Eliminate `any`, `as`, and `!` violations in `api/src/routes/weeks.ts` (85 violations) and `api/src/routes/projects.ts` (51 violations).
+
+**Requirements:** R1, R2, R4, R5
+
+**Dependencies:** none
+
+**Files:**
+- `api/src/routes/weeks.ts`
+- `api/src/routes/projects.ts`
+
+**Approach:** Work file by file. Replace `any` with precise types derived from DB row shapes (use `pg` result typing or explicit interfaces). Replace `as` assertions with type narrowing (`typeof`, `in` checks, or Zod validation already present in routes). Replace `!` with optional chaining or explicit null checks. Do not change observable API behavior.
+
+**Patterns to follow:** Zod schemas already present in `api/src/routes/documents.ts` for validation patterns.
+
+**Test scenarios:**
+- `pnpm type-check` passes with zero new errors after changes
+- Existing tests for weeks and projects routes still pass
+
+**Verification:** `pnpm type-check` clean; `pnpm test` in `api/` passes.
+
+---
+
+### U2. Type Safety: Fix Test Hotspots
+
+**Goal:** Reduce `any` usage in the three highest-violation test files.
+
+**Requirements:** R3, R4, R5
+
+**Dependencies:** none
+
+**Files:**
+- `api/src/__tests__/transformIssueLinks.test.ts` (66 violations)
+- `api/src/services/accountability.test.ts` (64 violations)
+- `api/src/__tests__/auth.test.ts` (63 violations)
+
+**Approach:** Replace `any` in test fixtures and mock objects with typed equivalents. Use `Partial<T>` or explicit interfaces for partial test objects rather than `as any`. Replace `as any` casts on mock responses with correctly-typed mock factories.
+
+**Test scenarios:**
+- `pnpm type-check` passes with zero new errors
+- All tests in the three files still pass
+
+**Verification:** `pnpm type-check` clean; `pnpm test` in `api/` passes.
+
+---
+
+### U3. Bundle: Remove Unused Dependencies
+
+**Goal:** Remove `@tanstack/query-sync-storage-persister` and `@uswds/uswds` from the web bundle entirely.
+
+**Requirements:** R6, R7
+
+**Dependencies:** none
+
+**Files:**
+- `web/package.json`
+- Any `web/src/` file that imports either package (grep first; remove imports before removing packages)
+
+**Approach:** Grep `web/src/` for imports of both packages. If imports exist, remove them from source first. Then remove both from `web/package.json` and run `pnpm install`. Run `pnpm build` to confirm no missing-module errors.
+
+**Test scenarios:**
+- `pnpm build` in `web/` succeeds after removal
+- No TypeScript import errors referencing either package
+- `pnpm test` in `web/` still passes
+
+**Verification:** Neither package appears in `web/package.json`; build passes.
+
+---
+
+### U4. Bundle: Lazy-Load Heavy Imports
+
+**Goal:** Move `emoji-picker-react` (~398 KiB) and `highlight.js` (~376 KiB) out of the initial bundle, reducing the main chunk below 1 MiB.
+
+**Requirements:** R8, R9, R10
+
+**Dependencies:** U3
+
+**Files:**
+- `web/src/` components or routes that import `emoji-picker-react` (identify via grep)
+- `web/src/` components or routes that import `highlight.js` (identify via grep)
+
+**Approach:** Wrap React components using `emoji-picker-react` in `React.lazy(() => import(...))` with a `<Suspense>` fallback. For `highlight.js`, if used in a non-React utility context, use a dynamic `import()` at call-site. After changes, run a production build and verify no single JS file in `web/dist/assets/` exceeds 1,048,576 bytes (Covers AE1).
+
+**Test scenarios:**
+- Covers AE1: production build largest JS chunk < 1,048,576 bytes
+- Emoji picker renders correctly when the relevant UI is opened (manual check)
+- Code highlighting renders correctly in documents with code blocks (manual check)
+- `pnpm test` in `web/` still passes
+
+**Verification:** `web/dist/assets/` largest JS file < 1 MiB confirmed after build.
+
+---
+
+### U5. API Latency: Optimize /api/documents and /api/issues
+
+> ⚠️ **Execute after U6.** Track 4 DB indexes are the primary latency lever. Apply and verify U6 before starting this unit.
+
+**Goal:** Reduce `/api/documents` P99 to < 200ms and `/api/issues` P99 measurably, at 50 simultaneous connections.
+
+**Requirements:** R11, R12, R13
+
+**Dependencies:** U6 (indexes must be applied and verified first)
+
+**Files:**
+- `api/src/routes/documents.ts`
+- `api/src/routes/issues.ts` or the file handling `/api/issues` list queries
+
+**Approach:** Re-run the benchmark after U6 lands to isolate the index contribution. If P99 is still above 200ms: (a) audit the list query for unnecessary columns and trim the SELECT, (b) add result pagination for large workspaces if missing, (c) evaluate a short-lived response cache if the data is read-heavy. Apply the minimum change that reaches the target and record updated P50/P95/P99 values.
+
+**Test scenarios:**
+- Benchmark at 50 connections shows `/api/documents` P99 < 200ms
+- Benchmark at 50 connections shows `/api/issues` P99 lower than 329ms baseline
+- Existing documents and issues route tests still pass
+
+**Verification:** Updated benchmark numbers recorded; `pnpm test` in `api/` passes.
+
+---
+
+### U6. DB Indexes: Migrations 039–041
+
+**Goal:** Add the three missing indexes identified via `EXPLAIN ANALYZE` in the Phase 1 audit.
+
+**Requirements:** R14, R15, R16, R17
+
+**Dependencies:** none
+
+**Files:**
+- `api/src/db/migrations/039_trgm_title_search.sql` (create)
+- `api/src/db/migrations/040_issue_filter_index.sql` (create)
+- `api/src/db/migrations/041_sprint_number_expression_index.sql` (create)
+
+**Approach:**
+
+*039:* Enable `pg_trgm` extension if not present, then create a GIN trigram index on `documents.title` using `gin_trgm_ops`. First verify `pg_trgm` is available: `SELECT * FROM pg_extension WHERE extname = 'pg_trgm'`.
+
+*040:* Composite partial index on `documents (workspace_id, document_type, assignee_id, state)` filtered to `WHERE document_type = 'issue' AND deleted_at IS NULL`.
+
+*041:* Expression index on `(properties->>'sprint_number')` filtered to `WHERE document_type = 'sprint'`.
+
+Use `CREATE INDEX CONCURRENTLY IF NOT EXISTS` for all three. Wrap each migration in `BEGIN`/`COMMIT` per existing convention. Note: `CONCURRENTLY` cannot run inside a transaction block in Postgres — check the migration runner and adjust wrapping if needed.
+
+**Test scenarios:**
+- `pnpm db:migrate` applies all three migrations without error on a fresh local DB
+- `EXPLAIN ANALYZE` for `title ILIKE '%ship%'` shows index scan after 039
+- `EXPLAIN ANALYZE` for the main-page issue query shows filter improvement after 040
+- `EXPLAIN ANALYZE` for sprint-board query shows expression index usage after 041
+
+**Verification:** Migrations apply cleanly; `EXPLAIN` plans confirm index usage for each targeted query.
+
+---
+
+### U7. Fix 13 Persistent Web Test Failures
 
 **Goal:** Eliminate all 13 deterministic web test failures so the suite reaches 0 failures across 3 consecutive runs.
 
@@ -66,13 +220,13 @@ Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All ba
 
 ---
 
-### U2. Add Tests: AI Analysis Routes
+### U8. Add Tests: AI Analysis Routes
 
 **Goal:** Cover the `/api/ai/*` route module with unit/integration tests.
 
 **Requirements:** R19
 
-**Dependencies:** U1 (stable baseline required)
+**Dependencies:** U7 (stable baseline required)
 
 **Files:**
 - `api/src/routes/ai.ts` (read to understand shape)
@@ -90,19 +244,19 @@ Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All ba
 
 ---
 
-### U3. Add Tests: Dashboard Routes
+### U9. Add Tests: Dashboard Routes
 
 **Goal:** Cover `/api/dashboard/*` with unit/integration tests.
 
 **Requirements:** R20
 
-**Dependencies:** U1
+**Dependencies:** U7
 
 **Files:**
 - `api/src/routes/dashboard.ts` (read to understand shape)
 - `api/src/__tests__/dashboard.test.ts` (create)
 
-**Approach:** Same pattern as U2. Dashboard routes likely aggregate data — test that the response shape is correct and that the workspace/auth scoping is enforced.
+**Approach:** Same pattern as U8. Dashboard routes likely aggregate data — test that the response shape is correct and that workspace/auth scoping is enforced.
 
 **Test scenarios:**
 - Unauthenticated request returns 401
@@ -113,13 +267,13 @@ Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All ba
 
 ---
 
-### U4. Add Tests: CAIA/PIV Auth Routes
+### U10. Add Tests: CAIA/PIV Auth Routes
 
 **Goal:** Cover `/api/auth/caia/*` and `/api/auth/piv/*` with unit/integration tests.
 
 **Requirements:** R21
 
-**Dependencies:** U1
+**Dependencies:** U7
 
 **Files:**
 - `api/src/routes/auth.ts` or relevant CAIA/PIV route file (read to understand shape)
@@ -136,13 +290,13 @@ Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All ba
 
 ---
 
-### U5. Add Tests: Weekly Plans Routes
+### U11. Add Tests: Weekly Plans Routes
 
 **Goal:** Cover `/api/weekly-plans/*` with unit/integration tests.
 
 **Requirements:** R22
 
-**Dependencies:** U1
+**Dependencies:** U7
 
 **Files:**
 - `api/src/routes/weekly-plans.ts` (read to understand shape)
@@ -160,13 +314,13 @@ Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All ba
 
 ---
 
-### U6. Add Tests: Admin Credentials Routes
+### U12. Add Tests: Admin Credentials Routes
 
 **Goal:** Cover `/api/admin/credentials/*` with unit/integration tests; confirm web branch coverage reaches ≥ 40%.
 
 **Requirements:** R23, R24
 
-**Dependencies:** U1
+**Dependencies:** U7
 
 **Files:**
 - `api/src/routes/admin.ts` or credentials route file (read to understand shape)
@@ -178,210 +332,13 @@ Ship has measurable technical debt across 7 GFA Week 4 rubric categories. All ba
 - Non-admin authenticated request returns 403
 - Admin request returns credential list with expected shape
 - Create credential with invalid body returns 400
-- After U2–U6 land: web branch coverage ≥ 40% confirmed in JSON summary
+- After U8–U12 land: web branch coverage ≥ 40% confirmed in JSON summary
 
 **Verification:** `pnpm test` in `api/` passes; web branch coverage ≥ 40%.
 
 ---
 
-### U7. Type Safety: Fix Route Hotspots
-
-**Goal:** Eliminate `any`, `as`, and `!` violations in `api/src/routes/weeks.ts` (85 violations) and `api/src/routes/projects.ts` (51 violations).
-
-**Requirements:** R1, R2, R4, R5
-
-**Dependencies:** none
-
-**Files:**
-- `api/src/routes/weeks.ts`
-- `api/src/routes/projects.ts`
-
-**Approach:** Work file by file. Replace `any` with precise types derived from DB row shapes (use `pg` result typing or explicit interfaces). Replace `as` assertions with type narrowing (`typeof`, `in` checks, or Zod validation already present in routes). Replace `!` with optional chaining or explicit null checks. Do not change observable API behavior.
-
-**Patterns to follow:** Existing typed routes in the codebase; Zod schemas already present in `api/src/routes/documents.ts` for validation patterns.
-
-**Test scenarios:**
-- `pnpm type-check` passes with zero new errors after changes
-- Existing tests for weeks and projects routes still pass
-
-**Verification:** `pnpm type-check` clean; `pnpm test` in `api/` passes.
-
----
-
-### U8. Type Safety: Fix Test Hotspots
-
-**Goal:** Reduce `any` usage in the three highest-violation test files.
-
-**Requirements:** R3, R4, R5
-
-**Dependencies:** none
-
-**Files:**
-- `api/src/__tests__/transformIssueLinks.test.ts` (66 violations)
-- `api/src/services/accountability.test.ts` (64 violations)
-- `api/src/__tests__/auth.test.ts` (63 violations)
-
-**Approach:** Replace `any` in test fixtures and mock objects with typed equivalents. Use `Partial<T>` or explicit interfaces for partial test objects rather than `as any`. Replace `as any` casts on mock responses with correctly-typed mock factories.
-
-**Test scenarios:**
-- `pnpm type-check` passes with zero new errors
-- All tests in the three files still pass
-
-**Verification:** `pnpm type-check` clean; `pnpm test` in `api/` passes.
-
----
-
-### U9. Accessibility: Fix Color-Contrast Violations
-
-**Goal:** Fix all 49 serious + 1 critical Axe `color-contrast` failures across the 17-route inventory.
-
-**Requirements:** R28
-
-**Dependencies:** none
-
-**Files:**
-- `web/src/styles/` (global CSS/token files)
-- `web/tailwind.config.*` or theme config if contrast is defined there
-- Component files identified during the Axe component-level inventory run at implementation time
-
-**Approach:** Run Axe via `@axe-core/playwright` to produce the component-level inventory (this is the "Deferred to Planning" step from requirements). Group violations by component/token. Fix at the token/theme level first (one change fixes the most surface); then fix component-level overrides. Target WCAG AA: 4.5:1 for normal text, 3:1 for large text and UI components.
-
-**Test scenarios:**
-- After fixes, Axe full-route scan shows 0 `color-contrast` critical violations
-- After fixes, Axe total serious violations < 10 (Covers AE5 in part)
-- `pnpm build` succeeds with no new errors
-
-**Verification:** Axe scan passes AE5 criteria threshold.
-
----
-
-### U10. Accessibility: Keyboard Navigation Fixes
-
-**Goal:** Fix broken keyboard navigation paths identified in route-by-route validation.
-
-**Requirements:** R29, R30
-
-**Dependencies:** U9 (clean Axe baseline)
-
-**Files:**
-- Component files with broken focus management (identified during route validation at implementation time)
-- Potentially `web/src/components/ui/` modal, dropdown, or menu components
-
-**Approach:** Tab through each of the 17 routes with keyboard only. Document which interactions are unreachable or trap focus. Fix by adding `tabIndex`, `onKeyDown` handlers, or `aria-*` attributes where missing. Do not replace mouse-only handlers — add keyboard equivalents alongside.
-
-**Test scenarios:**
-- All interactive elements on primary routes are reachable via Tab
-- No keyboard focus traps from modals or menus
-- Covers AE5: Axe scan post-fix shows 0 critical, < 10 serious (regression check against U9)
-
-**Verification:** Manual keyboard walkthrough passes all 17 routes; Axe scan confirms R30/AE5.
-
----
-
-### U11. DB Indexes: Migrations 039–041
-
-**Goal:** Add the three missing indexes identified via `EXPLAIN ANALYZE` in the Phase 1 audit.
-
-**Requirements:** R14, R15, R16, R17
-
-**Dependencies:** none
-
-**Files:**
-- `api/src/db/migrations/039_trgm_title_search.sql` (create)
-- `api/src/db/migrations/040_issue_filter_index.sql` (create)
-- `api/src/db/migrations/041_sprint_number_expression_index.sql` (create)
-
-**Approach:**
-
-*039:* Enable `pg_trgm` extension if not present, then create a GIN trigram index on `documents.title` using `gin_trgm_ops`. First verify `pg_trgm` is available: `SELECT * FROM pg_extension WHERE extname = 'pg_trgm'`.
-
-*040:* Composite partial index on `documents (workspace_id, document_type, assignee_id, state)` filtered to `WHERE document_type = 'issue' AND deleted_at IS NULL`.
-
-*041:* Expression index on `(properties->>'sprint_number')` filtered to `WHERE document_type = 'sprint'`.
-
-Use `CREATE INDEX CONCURRENTLY IF NOT EXISTS` for all three. Wrap each migration in `BEGIN`/`COMMIT` per existing convention. Note: `CONCURRENTLY` cannot run inside a transaction block in Postgres — check existing migration runner behavior and adjust wrapping if needed.
-
-**Test scenarios:**
-- `pnpm db:migrate` applies all three migrations without error on a fresh local DB
-- `EXPLAIN ANALYZE` for `title ILIKE '%ship%'` shows index scan after 039
-- `EXPLAIN ANALYZE` for the main-page issue query shows filter improvement after 040
-- `EXPLAIN ANALYZE` for sprint-board query shows expression index usage after 041
-
-**Verification:** Migrations apply cleanly; `EXPLAIN` plans confirm index usage for each targeted query.
-
----
-
-### U12. API Latency: Optimize /api/documents and /api/issues
-
-**Goal:** Reduce `/api/documents` P99 to < 200ms and `/api/issues` P99 measurably, at 50 simultaneous connections.
-
-**Requirements:** R11, R12, R13
-
-**Dependencies:** U11 (indexes must be applied and verified first)
-
-**Files:**
-- `api/src/routes/documents.ts`
-- `api/src/routes/issues.ts` or the file handling `/api/issues` list queries
-
-**Approach:** Re-run the benchmark after U11 lands to isolate the index contribution. If P99 is still above 200ms: (a) audit the list query for unnecessary columns and trim the SELECT, (b) add result pagination for large workspaces if missing, (c) evaluate a short-lived response cache if the data is read-heavy. Apply the minimum change that reaches the target and record updated P50/P95/P99 values.
-
-**Test scenarios:**
-- Benchmark at 50 connections shows `/api/documents` P99 < 200ms
-- Benchmark at 50 connections shows `/api/issues` P99 lower than 329ms baseline
-- Existing documents and issues route tests still pass
-
-**Verification:** Updated benchmark numbers recorded; `pnpm test` in `api/` passes.
-
----
-
-### U13. Bundle: Remove Unused Dependencies
-
-**Goal:** Remove `@tanstack/query-sync-storage-persister` and `@uswds/uswds` from the web bundle entirely.
-
-**Requirements:** R6, R7
-
-**Dependencies:** none
-
-**Files:**
-- `web/package.json`
-- Any `web/src/` file that imports either package (grep first; remove imports before removing packages)
-
-**Approach:** Grep `web/src/` for imports of both packages. If imports exist, remove them from source first. Then remove both from `web/package.json` and run `pnpm install`. Run `pnpm build` to confirm no missing-module errors.
-
-**Test scenarios:**
-- `pnpm build` in `web/` succeeds after removal
-- No TypeScript import errors referencing either package
-- `pnpm test` in `web/` still passes
-
-**Verification:** Neither package appears in `web/package.json`; build passes.
-
----
-
-### U14. Bundle: Lazy-Load Heavy Imports
-
-**Goal:** Move `emoji-picker-react` (~398 KiB) and `highlight.js` (~376 KiB) out of the initial bundle, reducing the main chunk below 1 MiB.
-
-**Requirements:** R8, R9, R10
-
-**Dependencies:** U13
-
-**Files:**
-- `web/src/` components or routes that import `emoji-picker-react` (identify via grep)
-- `web/src/` components or routes that import `highlight.js` (identify via grep)
-
-**Approach:** Wrap React components using `emoji-picker-react` in `React.lazy(() => import(...))` with a `<Suspense>` fallback. For `highlight.js`, if used in a non-React utility context, use a dynamic `import()` at call-site. After changes, run a production build and check that no single JS file in `web/dist/assets/` exceeds 1,048,576 bytes (Covers AE1).
-
-**Test scenarios:**
-- Covers AE1: production build largest JS chunk < 1,048,576 bytes
-- Emoji picker renders correctly when the relevant UI is opened (manual check)
-- Code highlighting renders correctly in documents with code blocks (manual check)
-- `pnpm test` in `web/` still passes
-
-**Verification:** `web/dist/assets/` largest JS file < 1 MiB confirmed after build.
-
----
-
-### U15. Runtime: Fix CORS + Add Global Error Handlers
+### U13. Runtime: Fix CORS + Add Global Error Handlers
 
 **Goal:** Eliminate CORS-related fetch failures in local dev; prevent silent crashes from unhandled rejections.
 
@@ -394,7 +351,7 @@ Use `CREATE INDEX CONCURRENTLY IF NOT EXISTS` for all three. Wrap each migration
 
 **Approach:**
 
-*CORS (R25):* Locate the `cors()` middleware call. Update the `origin` option to accept both `http://127.0.0.1:5173` and `http://localhost:5173` using an array or an origin-checking function. Verify the fix manually: load the web app at `http://127.0.0.1:5173` and confirm no CORS errors appear in browser DevTools (Covers AE3).
+*CORS (R25):* Locate the `cors()` middleware call. Update the `origin` option to accept both `http://127.0.0.1:5173` and `http://localhost:5173` using an array or an origin-checking function. Verify manually: load the web app at `http://127.0.0.1:5173` and confirm no CORS errors in browser DevTools (Covers AE3).
 
 *Error handlers (R26):* After the server startup block, register `process.on('unhandledRejection', ...)` and `process.on('uncaughtException', ...)`. Each handler logs the error to stderr. Do not call `process.exit()` by default (Covers AE4).
 
@@ -407,7 +364,7 @@ Use `CREATE INDEX CONCURRENTLY IF NOT EXISTS` for all three. Wrap each migration
 
 ---
 
-### U16. Runtime: Expand React Error Boundaries
+### U14. Runtime: Expand React Error Boundaries
 
 **Goal:** Wrap all major route trees and async data paths in error boundaries beyond the existing two.
 
@@ -431,12 +388,59 @@ Use `CREATE INDEX CONCURRENTLY IF NOT EXISTS` for all three. Wrap each migration
 
 ---
 
+### U15. Accessibility: Fix Color-Contrast Violations
+
+**Goal:** Fix all 49 serious + 1 critical Axe `color-contrast` failures across the 17-route inventory.
+
+**Requirements:** R28
+
+**Dependencies:** none
+
+**Files:**
+- `web/src/styles/` (global CSS/token files)
+- `web/tailwind.config.*` or theme config if contrast is defined there
+- Component files identified during the Axe component-level inventory run at implementation time
+
+**Approach:** Run Axe via `@axe-core/playwright` to produce the component-level inventory (the "Deferred to Planning" step from requirements). Group violations by component/token. Fix at the token/theme level first (one change fixes the most surface); then fix component-level overrides. Target WCAG AA: 4.5:1 for normal text, 3:1 for large text and UI components.
+
+**Test scenarios:**
+- After fixes, Axe full-route scan shows 0 `color-contrast` critical violations
+- After fixes, Axe total serious violations < 10 (Covers AE5 in part)
+- `pnpm build` succeeds with no new errors
+
+**Verification:** Axe scan passes AE5 criteria threshold.
+
+---
+
+### U16. Accessibility: Keyboard Navigation Fixes
+
+**Goal:** Fix broken keyboard navigation paths identified in route-by-route validation.
+
+**Requirements:** R29, R30
+
+**Dependencies:** U15 (clean Axe baseline)
+
+**Files:**
+- Component files with broken focus management (identified during route validation at implementation time)
+- Potentially `web/src/components/ui/` modal, dropdown, or menu components
+
+**Approach:** Tab through each of the 17 routes with keyboard only. Document which interactions are unreachable or trap focus. Fix by adding `tabIndex`, `onKeyDown` handlers, or `aria-*` attributes where missing. Do not replace mouse-only handlers — add keyboard equivalents alongside.
+
+**Test scenarios:**
+- All interactive elements on primary routes are reachable via Tab
+- No keyboard focus traps from modals or menus
+- Covers AE5: Axe scan post-fix shows 0 critical, < 10 serious (regression check against U15)
+
+**Verification:** Manual keyboard walkthrough passes all 17 routes; Axe scan confirms R30/AE5.
+
+---
+
 ## Key Technical Decisions
 
-- **Track 4 before Track 3** (see `IMPROVEMENT_REQUIREMENTS.md`): DB indexes are the primary latency lever. Measuring post-index P99 before applying query-layer changes ensures indexes get credit and avoids over-engineering.
-- **Track 5 sequencing**: U1 (fix failures) must land before U2–U6 (add tests). Adding tests to a failing suite produces misleading coverage numbers.
-- **`CONCURRENTLY` for all index builds**: Avoids table locks in dev and prod. Note: `CREATE INDEX CONCURRENTLY` cannot run inside a transaction block — check the migration runner and wrap accordingly.
-- **Type safety scoped to hotspots**: Full codebase cleanup (~1,200+ remaining instances) is deferred per `IMPROVEMENT_REQUIREMENTS.md`.
+- **U6 before U5 (Track 4 before Track 3):** DB indexes are the primary latency lever. Measure post-index P99 before applying query-layer changes to avoid over-engineering.
+- **U7 before U8–U12 (Track 5 sequencing):** Fix the 13 failing tests first. Adding new tests to a failing suite produces misleading coverage numbers.
+- **`CONCURRENTLY` for all index builds:** Avoids table locks in dev and prod. `CREATE INDEX CONCURRENTLY` cannot run inside a transaction block — check the migration runner and adjust wrapping if needed.
+- **Type safety scoped to hotspots:** Full codebase cleanup (~1,200+ remaining instances) is deferred per `IMPROVEMENT_REQUIREMENTS.md`.
 
 ---
 
@@ -444,10 +448,13 @@ Use `CREATE INDEX CONCURRENTLY IF NOT EXISTS` for all three. Wrap each migration
 
 - `security-probe/` folder — excluded entirely
 - `AUDIT.md` — must not be modified
+- `IMPROVEMENT_STRATEGY.md` — planning baseline record; must not be modified
+- `IMPROVEMENT_PLAN.md` — planning baseline record; must not be modified
+- `IMPROVEMENT_REQUIREMENTS.md` — planning baseline record; must not be modified
 - New features — no new product functionality
 - Architectural refactors — document model, 4-panel layout, backend structure
 - E2E tests — unit/integration only
-- Full type-safety cleanup — top-5 hotspot files only (U7, U8)
+- Full type-safety cleanup — top-5 hotspot files only (U1, U2)
 - Screen-reader announcement quality — deferred (Track 7 covers Axe + keyboard only)
 - Production benchmarking — all metrics validated locally with seeded data
 
@@ -462,8 +469,8 @@ Use `CREATE INDEX CONCURRENTLY IF NOT EXISTS` for all three. Wrap each migration
 
 ## Dependencies / Assumptions
 
-- `pg_trgm` extension available in local dev Postgres — verify before U11 with `SELECT * FROM pg_extension WHERE extname = 'pg_trgm'`
-- U12 P99 target assumes U11 indexes are the primary latency lever; if not, U12 scope expands to query restructuring or pagination
+- `pg_trgm` extension available in local dev Postgres — verify before U6 with `SELECT * FROM pg_extension WHERE extname = 'pg_trgm'`
+- U5 P99 target assumes U6 indexes are the primary latency lever; if not, U5 scope expands to query restructuring or pagination
 - All performance metrics re-validated locally with seeded data (30 users, 750 docs, 180 issues, 16 sprints)
 - `CREATE INDEX CONCURRENTLY` behavior in migration runner — verify it is not wrapped in an explicit transaction
 

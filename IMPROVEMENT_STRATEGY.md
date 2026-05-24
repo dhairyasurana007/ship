@@ -71,5 +71,8 @@ _Why it serves the approach:_ Category 7 score; government apps have mandatory a
 
 - `security-probe/` folder (excluded entirely)
 - `AUDIT.md` (baseline record — do not modify)
+- `IMPROVEMENT_STRATEGY.md` (baseline record — do not modify)
+- `IMPROVEMENT_PLAN.md` (baseline record — do not modify)
+- `IMPROVEMENT_REQUIREMENTS.md` (baseline record — do not modify)  
 - New features (Phase 2 is improvements only)
 - Architectural refactors (document model, 4-panel layout, backend structure)

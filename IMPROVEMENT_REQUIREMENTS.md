@@ -96,6 +96,9 @@ No single category has been addressed yet. All 7 rubric dimensions have headroom
 
 - `security-probe/` folder — excluded entirely; no changes of any kind.
 - `AUDIT.md` — Phase 1 baseline record; must not be modified.
+- `IMPROVEMENT_STRATEGY.md` — planning baseline record; must not be modified.
+- `IMPROVEMENT_PLAN.md` — planning baseline record; must not be modified.
+- `IMPROVEMENT_REQUIREMENTS.md` — planning baseline record; must not be modified.
 - New features — Phase 2 is improvements and fixes only; no new product functionality.
 - Architectural refactors — the unified document model, 4-panel layout, and backend structure are out of scope.
 - E2E tests — Track 5 targets unit and integration tests only; E2E work is a separate effort.
