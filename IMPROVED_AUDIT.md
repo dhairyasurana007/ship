@@ -86,9 +86,14 @@ Used a custom-made script: `perform-audit.cmd`
 | | | | |
 | | | | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+Both `GET /api/documents` and `GET /api/issues` list handlers previously made **two sequential DB queries** per request — one to check `isWorkspaceAdmin`, then the main query. Under 50 concurrent connections that's 100 DB roundtrips instead of 50.
+
+The fix folds the admin check into the main query as an `EXISTS` subquery, cutting DB roundtrips in half for both endpoints. The `workspace_memberships` table already has an index on `(workspace_id, user_id)` (from `schema.sql`), so the subquery is fast.
+
+The U6 indexes (039–041) handle the query-plan side; this change handles the round-trip side. Together they're the two primary levers for hitting P99 < 200ms on `/api/documents`.
+
 
 # Category 4: Database Query Efficiency
 
@@ -104,9 +109,15 @@ Used a custom-made script: `perform-audit.cmd`
 | Load sprint board| | |
 | Search content | | | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+The existing indexes on the `documents` table (`idx_documents_workspace_id`, `idx_documents_active`, etc.) covered broad workspace-level queries but missed three specific access patterns identified in the Phase 1 audit:
+
+1. **039 (title trigram)** — Title searches using `ILIKE '%term%'` can't use a B-tree index because the wildcard is on the left side. Without `pg_trgm`, every title search does a full table scan.
+
+2. **040 (issue filter)** — The issue list query filters by `workspace_id`, `assignee_id`, and `state`, but `assignee_id` and `state` live inside JSONB (`properties`). The existing GIN index on `properties` is for containment operators (`@>`, `?`), not for the `->>'key' = value` equality pattern the issues route uses. Without this index, filtering issues by assignee or state requires scanning all issues in the workspace.
+
+3. **041 (sprint number)** — Sprint lookups by number use `(properties->>'sprint_number')::int = $N`, another JSONB expression that the general `properties` GIN index doesn't cover. Without it, finding a sprint by number scans all sprint documents.
 
 
 # Category 5 Audit Deliverable

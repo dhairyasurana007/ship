@@ -118,9 +118,6 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.userId!;
     const workspaceId = req.workspaceId!;
 
-    // Get visibility context for filtering
-    const { isAdmin } = await getVisibilityContext(userId, workspaceId);
-
     let query = `
       SELECT d.id, d.title, d.properties, d.ticket_number,
              d.content,
@@ -135,9 +132,11 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
         AND person_doc.document_type = 'person'
         AND person_doc.properties->>'user_id' = d.properties->>'assignee_id'
       WHERE d.workspace_id = $1 AND d.document_type = 'issue'
-        AND ${VISIBILITY_FILTER_SQL('d', '$2', '$3')}
+        AND (d.visibility = 'workspace' OR d.created_by = $2 OR
+             EXISTS (SELECT 1 FROM workspace_memberships
+                     WHERE workspace_id = $1 AND user_id = $2 AND role = 'admin'))
     `;
-    const params: (string | boolean | null)[] = [workspaceId, userId, isAdmin];
+    const params: (string | null)[] = [workspaceId, userId];
 
     // Exclude archived and deleted issues by default
     query += ` AND d.archived_at IS NULL AND d.deleted_at IS NULL`;
