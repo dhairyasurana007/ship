@@ -134,9 +134,26 @@ The existing indexes on the `documents` table (`idx_documents_workspace_id`, `id
 | Critical flows with zero coverage| |
 | Code coverage % | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+3 consecutive runs, 141/141 passing each time. U7 is complete.
+
+**Summary of changes:**
+
+**[document-tabs.test.ts](web/src/lib/document-tabs.test.ts)** (9 fixes) — updated tests to match the sprint-to-weeks rename and the sprint tabs addition:
+- `'sprints'` tab ID → `'weeks'` in all assertions (project and program tabs)
+- Sprint now has tabs: updated "returns empty array" test to "returns tabs" with `length > 0`
+- `documentTypeHasTabs('sprint')` now returns `true`
+- First project tab is now `'issues'` (not `'details'`)
+- `'Weeks (3)'` → `'Weeks'` (project weeks tab uses a static label, not dynamic)
+
+**[DetailsExtension.test.ts](web/src/components/editor/DetailsExtension.test.ts)** (3 fixes):
+- Content schema updated from `'block+'` to `'detailsSummary detailsContent'`
+- Imported and registered `DetailsSummary`/`DetailsContent` in the two Editor instantiation tests — without those child node types registered, the schema validation throws
+
+**[useSessionTimeout.test.ts](web/src/hooks/useSessionTimeout.test.ts)** (1 fix):
+- Added `vi.mock('@/lib/api', ...)` to stub `apiPost` — `resetTimer` calls `apiPost` which internally tried to fetch a CSRF token; without proper `headers` on the mock response, `isJsonResponse` threw, landing in the catch block and calling `onTimeout` unexpectedly
+
 
 # Category 6 Audit Deliverable
 
