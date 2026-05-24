@@ -17,8 +17,6 @@ Used a custom-made script: `perform-audit.cmd`
 
 ## Changes made and why
 
-### U1 — Type Safety: Fix Route Hotspots
-
 **Files changed:** `api/src/routes/weeks.ts`, `api/src/routes/projects.ts`
 
 **Baseline violations:** `weeks.ts` had 85, `projects.ts` had 51 (136 combined).
@@ -53,15 +51,25 @@ Used a custom-made script: `perform-audit.cmd`
 
 | Metric | Your Baseline |
 |--------|---------------|
-| Total production bundle size | |
-| Largest chunk | |
-| Number of chunks | |
+| Total production bundle size | 2,190,507 bytes |
+| Largest chunk | 687,532 bytes |
+| Number of chunks | 49 (47 JS + 2 CS)|
 | Top 3 largest dependencies | |
 | Unused dependencies identified | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+
+**`web/src/components/EmojiPicker.tsx`** — `emoji-picker-react` now loaded via `React.lazy` + `<Suspense>`, split into its own 271 kB chunk.
+
+**`web/src/components/Editor.tsx`** — removed static `common` import from `lowlight`; empty lowlight instance created at startup, languages registered asynchronously via dynamic import.
+
+**`web/src/lib/highlightLanguages.ts`** (new) — isolated barrel so Vite splits highlight.js languages into their own 148 kB chunk.
+
+**`web/src/main.tsx`** — all 19 heavy page imports converted to `React.lazy`; wrapped `AppRoutes` in `<Suspense>`.
+
+**Result:** Largest JS chunk dropped from 2,041 kB → 687 kB (well under the 1,024 kB target).
+
 
 # Category 3: API Response Time
 
