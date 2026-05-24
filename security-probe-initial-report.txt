@@ -1,0 +1,115 @@
+PS C:\Users\dhair\ship\security-probe> .\ship-security-probe.cmd https://ship-web-ak37.onrender.com
+
+Auth probe test user email: probe-test-1779656270464-31549@probe.local
+Auth probe test user password: ProbePass!1779656270464-31549
+Auth probe bootstrap email: probe-test-1779656270464-864443@probe.local
+Auth probe bootstrap password: ProbePass!1779656270464-864443
+Auth probe: attempting bootstrap auto-register...
+Auth probe bootstrap register response: HTTP 403
+Auth probe: requesting internal bootstrap admin elevation...
+Auth probe elevate-admin response: HTTP 404
+Auth probe: waiting 1500ms before bootstrap login...
+Auth probe bootstrap login failed.
+Auth probe: attempting runtime login...
+Auth probe: runtime login failed.
+WebSocket probe bootstrap email: probe-ws-bootstrap-1779656272712-15728@probe.local
+WebSocket probe bootstrap password: ProbePass!1779656272712
+WebSocket probe: attempting bootstrap auto-register...
+WebSocket probe bootstrap register response: HTTP 403
+WebSocket probe: requesting internal bootstrap admin elevation...
+WebSocket probe elevate-admin response: HTTP 404
+Input probe bootstrap email: probe-input-bootstrap-1779656274502-638300@probe.local
+Input probe bootstrap password: ProbePass!1779656274502
+Input probe: attempting bootstrap auto-register...
+Input probe bootstrap register response: HTTP 403
+Input probe: requesting internal bootstrap admin elevation...
+Input probe elevate-admin response: HTTP 404
+Shipshape Security Probe
+Target : https://ship-web-ak37.onrender.com
+API    : https://ship-api-ysxi.onrender.com
+Run at : 2026-05-24T20:58:12.970Z
+
+Category      Tests  Vulnerable  Inconclusive
+------------  -----  ----------  ------------
+auth              1           0             1
+websocket         1           0             1
+input             1           0             1
+dependency       32          32             0
+cors-csp          3           1             0
+secrets           3           0             0
+rate-limiting      3           1             1
+error-verbosity      3           1             0
+
+Reports written:
+  C:\Users\dhair\ship\security-probe\reports\security-probe-report.json
+  C:\Users\dhair\ship\security-probe\reports\security-probe-report.md
+
+Dependency Vulnerabilities (32)
+ID        Status        Severity  Category      Title
+--------  ------------  --------  ------------  ----------------------------------------
+DEP-001   vulnerable    high      dependency    minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern
+DEP-002   vulnerable    high      dependency    minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern
+DEP-003   vulnerable    high      dependency    Rollup 4 has Arbitrary File Write via Path Traversal
+DEP-004   vulnerable    high      dependency    minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments
+DEP-005   vulnerable    high      dependency    minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments
+DEP-006   vulnerable    high      dependency    minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions
+DEP-007   vulnerable    high      dependency    minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions
+DEP-008   vulnerable    critical  dependency    fast-xml-parser has an entity encoding bypass via regex injection in DOCTYPE entity names
+DEP-009   vulnerable    high      dependency    fast-xml-parser affected by DoS through entity expansion in DOCTYPE (no expansion limit)
+DEP-010   vulnerable    high      dependency    Hono vulnerable to arbitrary file access via serveStatic vulnerability
+DEP-011   vulnerable    high      dependency    SVGO DoS through entity expansion in DOCTYPE (Billion Laughs)
+DEP-012   vulnerable    high      dependency    @hono/node-server has authorization bypass for protected static paths via encoded slashes in Serve Static Middleware
+DEP-013   vulnerable    high      dependency    express-rate-limit: IPv4-mapped IPv6 addresses bypass per-client rate limiting on servers with dual-stack network
+DEP-014   vulnerable    high      dependency    flatted vulnerable to unbounded recursion DoS in parse() revive phase
+DEP-015   vulnerable    high      dependency    Undici: Malicious WebSocket 64-bit length overflows parser and crashes the client
+DEP-016   vulnerable    high      dependency    Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression
+DEP-017   vulnerable    high      dependency    Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation
+DEP-018   vulnerable    high      dependency    fast-xml-parser affected by numeric entity expansion bypassing all entity expansion limits (incomplete fix for CVE-2026-26278)
+DEP-019   vulnerable    high      dependency    Prototype Pollution via parse() in NodeJS flatted
+DEP-020   vulnerable    high      dependency    path-to-regexp vulnerable to Regular Expression Denial of Service via multiple route parameters
+DEP-021   vulnerable    high      dependency    Picomatch has a ReDoS vulnerability via extglob quantifiers
+DEP-022   vulnerable    high      dependency    Picomatch has a ReDoS vulnerability via extglob quantifiers
+DEP-023   vulnerable    high      dependency    path-to-regexp vulnerable to Denial of Service via sequential optional groups
+DEP-024   vulnerable    high      dependency    lodash vulnerable to Code Injection via `_.template` imports key names
+DEP-025   vulnerable    high      dependency    Vite Vulnerable to Arbitrary File Read via Vite Dev Server WebSocket
+DEP-026   vulnerable    critical  dependency    Arbitrary code execution in protobufjs
+DEP-027   vulnerable    high      dependency    fast-uri vulnerable to path traversal via percent-encoded dot segments
+DEP-028   vulnerable    high      dependency    fast-uri vulnerable to host confusion via percent-encoded authority delimiters
+DEP-029   vulnerable    high      dependency    protobuf.js: Code injection through bytes field defaults in generated toObject code
+DEP-030   vulnerable    high      dependency    protobuf.js: Code generation gadget after prototype pollution
+DEP-031   vulnerable    high      dependency    protobuf.js: Process-wide denial of service through unsafe option paths
+DEP-032   vulnerable    high      dependency    protobuf.js: Denial of service through unbounded protobuf recursion
+
+Authentication Vulnerabilities (1)
+ID        Status        Severity  Category      Title
+--------  ------------  --------  ------------  ----------------------------------------
+AUTH-000  inconclusive  info      auth          Bootstrap login failed
+
+WebSocket Vulnerabilities (1)
+ID        Status        Severity  Category      Title
+--------  ------------  --------  ------------  ----------------------------------------
+WS-000    inconclusive  info      websocket     Bootstrap login failed for WebSocket probe
+
+Input Sanitization Vulnerabilities (1)
+ID        Status        Severity  Category      Title
+--------  ------------  --------  ------------  ----------------------------------------
+INP-000   inconclusive  info      input         Bootstrap login failed for input probe
+
+CORS/CSP Vulnerabilities (1)
+ID        Status        Severity  Category      Title
+--------  ------------  --------  ------------  ----------------------------------------
+CSP-001   vulnerable    high      cors-csp      CSP allows unsafe-inline scripts
+
+Rate Limiting Vulnerabilities (2)
+ID        Status        Severity  Category      Title
+--------  ------------  --------  ------------  ----------------------------------------
+RL-001    vulnerable    medium    rate-limiting  General API endpoint not rate-limited
+RL-003    inconclusive  info      rate-limiting  Rate limit window recovery
+
+Error Verbosity Vulnerabilities (1)
+ID        Status        Severity  Category      Title
+--------  ------------  --------  ------------  ----------------------------------------
+ERR-003   vulnerable    medium    error-verbosity  Unauthenticated empty POST returns 500 or leaks internals
+
+Total vulnerabilities: 35
+Total surfaced findings: 39 (vulnerable: 35, inconclusive: 4)
