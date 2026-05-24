@@ -9,7 +9,7 @@ import Link from '@tiptap/extension-link';
 import { ResizableImage } from './editor/ResizableImage';
 import Dropcursor from '@tiptap/extension-dropcursor';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { common, createLowlight } from 'lowlight';
+import { createLowlight } from 'lowlight';
 import Table from '@tiptap/extension-table';
 import TableRow from '@tiptap/extension-table-row';
 import TableCell from '@tiptap/extension-table-cell';
@@ -42,8 +42,9 @@ import { useCommentsQuery, useCreateComment, useUpdateComment } from '@/hooks/us
 import { BubbleMenu } from '@tiptap/react';
 import 'tippy.js/dist/tippy.css';
 
-// Create lowlight instance with common languages
-const lowlight = createLowlight(common);
+const lowlight = createLowlight({});
+// Load highlight.js languages asynchronously to keep them out of the initial bundle
+import('@/lib/highlightLanguages').then(({ common }) => { lowlight.register(common); });
 
 interface EditorProps {
   documentId: string;
