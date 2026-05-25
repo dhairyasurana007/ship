@@ -3,6 +3,8 @@
  * Handles upload flow: get presigned URL -> upload to storage -> confirm -> return CDN URL
  */
 
+import { sessionHeaders } from '@/lib/api';
+
 // In development, Vite proxy handles /api routes (see vite.config.ts)
 // In production, use VITE_API_URL or relative URLs
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
@@ -77,6 +79,7 @@ export async function uploadFile(
       headers: {
         'Content-Type': 'application/json',
         'x-csrf-token': csrfToken,
+        ...sessionHeaders(),
       },
       credentials: 'include',
       body: JSON.stringify({
@@ -111,6 +114,7 @@ export async function uploadFile(
         headers: {
           'x-csrf-token': csrfToken,
           'Content-Type': effectiveMimeType,
+          ...sessionHeaders(),
         },
         credentials: 'include',
         body: fileBuffer,
@@ -164,6 +168,7 @@ export async function uploadFile(
         method: 'POST',
         headers: {
           'x-csrf-token': csrfToken,
+          ...sessionHeaders(),
         },
         credentials: 'include',
         signal,

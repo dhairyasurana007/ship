@@ -182,7 +182,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     // Pending accountability items will be fetched via /api/accountability/action-items
     const pendingAccountabilityItems: any[] = [];
 
-    // Set cookie with hardened security options
+    // Set cookie with hardened security options (works same-origin; cross-origin uses sessionToken in body)
     res.cookie('session_id', sessionId, {
       httpOnly: true,
       secure: sessionCookieSecure,
@@ -194,6 +194,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     res.json({
       success: true,
       data: {
+        sessionToken: sessionId,
         user: {
           id: user.id,
           email: user.email,

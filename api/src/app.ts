@@ -60,6 +60,10 @@ const conditionalCsrf = (req: Request, res: Response, next: NextFunction) => {
     // Skip CSRF for API token requests - Bearer tokens are not auto-attached by browsers
     return next();
   }
+  if (req.headers['x-session-id']) {
+    // Skip CSRF for explicit session header - custom headers can't be auto-attached cross-origin
+    return next();
+  }
   // Apply CSRF protection for session-based auth
   return csrfSynchronisedProtection(req, res, next);
 };

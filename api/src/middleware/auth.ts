@@ -112,8 +112,8 @@ export async function authMiddleware(
     }
   }
 
-  // Fall back to session cookie auth
-  const sessionId = req.cookies?.session_id;
+  // Fall back to session cookie auth, with X-Session-Id header as cross-origin fallback
+  const sessionId = req.cookies?.session_id || (req.headers['x-session-id'] as string | undefined);
 
   if (!sessionId) {
     res.status(HTTP_STATUS.UNAUTHORIZED).json({

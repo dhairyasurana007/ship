@@ -7,7 +7,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
-import { api, UserInfo, Workspace } from '@/lib/api';
+import { api, setCrossOriginSessionToken, UserInfo, Workspace } from '@/lib/api';
 import { useWorkspace, WorkspaceWithRole } from '@/contexts/WorkspaceContext';
 
 // Cache key for offline auth
@@ -135,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const response = await api.auth.login(email, password);
     if (response.success && response.data) {
+      if (response.data.sessionToken) setCrossOriginSessionToken(response.data.sessionToken);
       setUser(response.data.user);
       setCurrentWorkspace(response.data.currentWorkspace);
       setWorkspaces(response.data.workspaces);
@@ -155,6 +156,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     await api.auth.logout();
+    setCrossOriginSessionToken(null);
     setUser(null);
     setCurrentWorkspace(null);
     setWorkspaces([]);

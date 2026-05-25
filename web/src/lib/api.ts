@@ -14,6 +14,24 @@ interface ApiResponse<T> {
 // CSRF token cache for state-changing requests
 let csrfToken: string | null = null;
 
+// Session token for cross-origin deployments where SameSite blocks cookie delivery
+const SESSION_STORAGE_KEY = 'ship:session';
+let crossOriginSessionToken: string | null = (() => {
+  try { return sessionStorage.getItem(SESSION_STORAGE_KEY); } catch { return null; }
+})();
+
+export function setCrossOriginSessionToken(token: string | null): void {
+  crossOriginSessionToken = token;
+  try {
+    if (token) sessionStorage.setItem(SESSION_STORAGE_KEY, token);
+    else sessionStorage.removeItem(SESSION_STORAGE_KEY);
+  } catch { /* sessionStorage unavailable */ }
+}
+
+export function sessionHeaders(): Record<string, string> {
+  return crossOriginSessionToken ? { 'X-Session-Id': crossOriginSessionToken } : {};
+}
+
 // Helper: Check if response has JSON content type
 function isJsonResponse(response: Response): boolean {
   const contentType = response.headers.get('content-type');
@@ -86,6 +104,7 @@ async function fetchWithCsrf(
     headers: {
       'Content-Type': 'application/json',
       'X-CSRF-Token': token,
+      ...sessionHeaders(),
     },
     credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
@@ -107,6 +126,7 @@ async function fetchWithCsrf(
       headers: {
         'Content-Type': 'application/json',
         'X-CSRF-Token': newToken,
+        ...sessionHeaders(),
       },
       credentials: 'include',
       body: body ? JSON.stringify(body) : undefined,
@@ -118,6 +138,7 @@ async function fetchWithCsrf(
 export async function apiGet(endpoint: string): Promise<Response> {
   const res = await fetch(`${API_URL}${endpoint}`, {
     credentials: 'include',
+    headers: sessionHeaders(),
   });
 
   // Handle session expiration - redirect to login
@@ -161,6 +182,7 @@ async function request<T>(
 ): Promise<ApiResponse<T>> {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...sessionHeaders(),
     ...(options.headers as Record<string, string>),
   };
 
@@ -313,6 +335,7 @@ export interface AccountabilityItem {
 }
 
 export interface LoginResponse {
+  sessionToken?: string;
   user: UserInfo;
   currentWorkspace: Workspace;
   workspaces: Array<Workspace & { role: 'admin' | 'member' }>;
