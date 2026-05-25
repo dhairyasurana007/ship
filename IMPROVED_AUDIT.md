@@ -224,18 +224,41 @@ All 141 web tests pass. Both units are done:
 
 # Category 7 Audit Deliverable
 
-## Methodology
 
 ## Measurements
 
 | Metric | Your Baseline |
 |--------|---------------|
-| Lighthouse accessibility score (per page) | |
-| Total Critical / Serious violations | |
-| Keyboard navigation completeness (Full / Partial / Broken) | |
-| Color contrast failures | |
-| Missing ARIA labels or roles (locations)| |
+| Lighthouse accessibility score (per page) | 16/17 scored: `97` on `login`, `my-week`, `dashboard`, `docs`, `issues`, `projects`, `programs`, `admin`, `settings`, `settings-conversions`, `team-allocation`, `team-directory`, `team-status`, `team-reviews`, `team-org-chart`; `93` on `setup`; `document` scan produced no score |
+| Total Critical / Serious violations | 0 critical / 0 serious |
+| Keyboard navigation completeness (Full / Partial / Broken) | Partial |
+| Color contrast failures | 0 |
+| Missing ARIA labels or roles (locations)| None detected as critical/serious in this run |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+web/src/index.css:
+
+#525252 → #8a8a8a (5.6:1 on #0d0d0d) in 3 locations: editor empty-state placeholder, drag-handle icon, and toggle/details placeholder text
+All comment-thread rgba(113,113,122,x) values replaced with opaque #8a8a8a — covers .comment-time, both input placeholders (reply + pending), .comment-pending-hint, and .comment-thread-resolved
+.comment-quoted-text, .comment-resolve-btn, .comment-pending-label → #a3a3a3 (7.7:1)
+.comment-resolved-icon → #4ade80 (green-400); .comment-resolved-toggle → #818cf8 (indigo-400)
+Opaque solid text colors for .comment-author and .comment-body
+web/src/components/ContentHistoryPanel.tsx:
+
+Full dark-mode migration: border-neutral-200 → border-border, text-neutral-700 → text-foreground, text-neutral-500 → text-muted, bg-neutral-50 → bg-border/20, bg-red-50/bg-green-50 → bg-red-900/20/bg-green-900/20, text-red-600/text-green-600 → text-red-400/text-green-400
+U16 — Accessibility: Keyboard Navigation Fixes
+
+web/src/components/editor/CommentDisplay.tsx:
+
+Changed <span class="comment-resolved-toggle"> → <button type="button" ...> so it's natively focusable and activatable via keyboard
+Added keydown handler for Enter/Space on .comment-resolved-toggle to trigger the unresolve action
+web/src/index.css:
+
+Added button reset (background:none; border:none; padding:0; font-family:inherit) and :focus-visible ring to .comment-resolved-toggle
+web/src/components/DocumentTreeItem.tsx:
+
+Added focus:opacity-100 to the delete button (was opacity-0 with no keyboard escape)
+web/src/components/editor/BacklinksPanel.tsx:
+
+Added focus:opacity-100 to the three-dot menu button

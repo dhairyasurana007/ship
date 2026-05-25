@@ -1,0 +1,2403 @@
+{
+  "runAt": "2026-05-25T02:01:48.763Z",
+  "tool": "NVDA via Guidepup",
+  "baseUrl": "https://ship-web-ak37.onrender.com",
+  "login": {
+    "success": false,
+    "finalUrl": "https://ship-web-ak37.onrender.com/login",
+    "speech": [
+      {
+        "label": "login-page-loaded",
+        "phrase": "blank"
+      },
+      {
+        "label": "email-focused",
+        "phrase": "blank"
+      },
+      {
+        "label": "password-focused",
+        "phrase": "blank"
+      },
+      {
+        "label": "post-login",
+        "phrase": ""
+      }
+    ],
+    "spokenPhraseLog": [
+      "blank",
+      ""
+    ],
+    "itemTextLog": [
+      "blank",
+      ""
+    ]
+  },
+  "routes": [
+    {
+      "route": "/login",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "button, Sign in"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ]
+    },
+    {
+      "route": "/setup",
+      "finalUrl": "https://ship-web-ak37.onrender.com/setup",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": ""
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login"
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login"
+        },
+        {
+          "label": "tab-7",
+          "phrase": ""
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login",
+        "",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login",
+        "",
+        "blank"
+      ]
+    },
+    {
+      "route": "/my-week",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "button, Sign in"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ]
+    },
+    {
+      "route": "/dashboard",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/docs",
+      "finalUrl": "https://ship-web-ak37.onrender.com/docs",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "Email address, edit, required, Email address, blank. blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "button, Sign in"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "Email address, edit, required, Email address, blank. blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ],
+      "itemTextLog": [
+        "Email address, edit, required, Email address, blank. blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ]
+    },
+    {
+      "route": "/issues",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/projects",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "button, Sign in"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": "5.3 Codex Medium"
+        },
+        {
+          "label": "tab-7",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2. Add files and more"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "5.3 Codex Medium",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2. Add files and more"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "5.3 Codex Medium",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2. Add files and more"
+      ]
+    },
+    {
+      "route": "/programs",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/documents",
+      "finalUrl": "https://ship-web-ak37.onrender.com/documents",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": ""
+        },
+        {
+          "label": "tab-2",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash documents. https: slash slash ship web ak 37 dot onrender dot com slash d unselected"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash documents"
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash documents"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents. https: slash slash ship web ak 37 dot onrender dot com slash d unselected",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents"
+      ],
+      "itemTextLog": [
+        "blank",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents. https: slash slash ship web ak 37 dot onrender dot com slash d unselected",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents"
+      ]
+    },
+    {
+      "route": "/team-allocation",
+      "finalUrl": "https://ship-web-ak37.onrender.com/team-allocation",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash documents search, 2 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": ""
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash documents"
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash documents"
+        },
+        {
+          "label": "tab-7",
+          "phrase": ""
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents search, 2 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents",
+        "",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents search, 2 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash documents",
+        "",
+        "blank"
+      ]
+    },
+    {
+      "route": "/team-directory",
+      "finalUrl": "https://ship-web-ak37.onrender.com/team-directory",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": ""
+        },
+        {
+          "label": "tab-2",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team directory. https: slash slash ship web ak 37 dot onrender dot com slash team d unselected"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team directory"
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team directory"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory. https: slash slash ship web ak 37 dot onrender dot com slash team d unselected",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory"
+      ],
+      "itemTextLog": [
+        "blank",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory. https: slash slash ship web ak 37 dot onrender dot com slash team d unselected",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory"
+      ]
+    },
+    {
+      "route": "/team-status",
+      "finalUrl": "https://ship-web-ak37.onrender.com/team-status",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team directory search, 2 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": ""
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team directory"
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team directory"
+        },
+        {
+          "label": "tab-7",
+          "phrase": ""
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory search, 2 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory",
+        "",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory search, 2 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team directory",
+        "",
+        "blank"
+      ]
+    },
+    {
+      "route": "/team-reviews",
+      "finalUrl": "https://ship-web-ak37.onrender.com/team-reviews",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": ""
+        },
+        {
+          "label": "tab-2",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team reviews. https: slash slash ship web ak 37 dot onrender dot com slash team unselected"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-5",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team reviews"
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team reviews"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews. https: slash slash ship web ak 37 dot onrender dot com slash team unselected",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews"
+      ],
+      "itemTextLog": [
+        "blank",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews. https: slash slash ship web ak 37 dot onrender dot com slash team unselected",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews"
+      ]
+    },
+    {
+      "route": "/team-org-chart",
+      "finalUrl": "https://ship-web-ak37.onrender.com/team-org-chart",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team reviews search, 2 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": ""
+        },
+        {
+          "label": "tab-2",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-3",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team reviews"
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-6",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash team reviews"
+        },
+        {
+          "label": "tab-7",
+          "phrase": ""
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": null
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews search, 2 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews",
+        "",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews search, 2 of 2",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews",
+        "",
+        "blank",
+        "https: slash slash ship web ak 37 dot onrender dot com slash team reviews",
+        "",
+        "blank"
+      ]
+    },
+    {
+      "route": "/admin",
+      "finalUrl": "https://ship-web-ak37.onrender.com/admin",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "button, Sign in"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ]
+    },
+    {
+      "route": "/settings",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "blank"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ],
+      "itemTextLog": [
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login, 1 of 2",
+        "",
+        "",
+        "",
+        "",
+        "blank",
+        "blank"
+      ]
+    },
+    {
+      "route": "/settings/conversions",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "title": "Ship - Project Management & Documentation",
+      "speech": [
+        {
+          "label": "route-loaded",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-1",
+          "phrase": "blank"
+        },
+        {
+          "label": "tab-2",
+          "phrase": "button, Sign in"
+        },
+        {
+          "label": "tab-3",
+          "phrase": ""
+        },
+        {
+          "label": "tab-4",
+          "phrase": ""
+        },
+        {
+          "label": "tab-5",
+          "phrase": ""
+        },
+        {
+          "label": "tab-6",
+          "phrase": ""
+        },
+        {
+          "label": "tab-7",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected"
+        },
+        {
+          "label": "tab-8",
+          "phrase": "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+        }
+      ],
+      "focusSteps": [
+        {
+          "step": 1,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 2,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 3,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 4,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        },
+        {
+          "step": 5,
+          "active": {
+            "tag": "INPUT",
+            "id": "password",
+            "role": null,
+            "label": "password"
+          }
+        },
+        {
+          "step": 6,
+          "active": {
+            "tag": "BUTTON",
+            "id": null,
+            "role": null,
+            "label": "Sign in"
+          }
+        },
+        {
+          "step": 7,
+          "active": {
+            "tag": "BODY",
+            "id": null,
+            "role": null,
+            "label": "Sign in to ShipEnter your credentials to continueEmail addressPasswordSign in"
+          }
+        },
+        {
+          "step": 8,
+          "active": {
+            "tag": "INPUT",
+            "id": "email",
+            "role": null,
+            "label": "email"
+          }
+        }
+      ],
+      "spokenPhraseLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ],
+      "itemTextLog": [
+        "blank",
+        "blank",
+        "button, Sign in",
+        "",
+        "",
+        "",
+        "",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login. https: slash slash ship web ak 37 dot onrender dot c unselected",
+        "https: slash slash ship web ak 37 dot onrender dot com slash login search, 2 of 2"
+      ]
+    }
+  ],
+  "notes": [
+    "Run uses Guidepup capture mode and stores spoken/item logs per route."
+  ]
+}
