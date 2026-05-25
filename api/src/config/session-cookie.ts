@@ -19,6 +19,7 @@ function parseSameSite(value: string | undefined, fallback: SameSite): SameSite 
 // SameSite=None; Secure so browsers will include cookies in cross-origin fetches.
 function isCrossOriginDeployment(): boolean {
   if (process.env.NODE_ENV === 'production') return true;
+  if (process.env.RENDER) return true; // Render.com always sets RENDER=true
   const origin = process.env.CORS_ORIGIN || '';
   return !!origin && !origin.includes('localhost') && !origin.includes('127.0.0.1');
 }
