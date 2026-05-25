@@ -54,8 +54,8 @@ Used a custom-made script: `perform-audit.cmd`
 | Total production bundle size | 2,190,507 bytes |
 | Largest chunk | 687,532 bytes |
 | Number of chunks | 49 (47 JS + 2 CS)|
-| Top 3 largest dependencies | |
-| Unused dependencies identified | |
+| Top 3 largest dependencies | `emoji-picker-react` (~398.4 KiB), `highlight.js` (~376.4 KiB), `react-router` (~346.7 KiB) |
+| Unused dependencies identified | `@tanstack/query-sync-storage-persister`, `@uswds/uswds` |
 
 ## Changes made and why
 
@@ -77,14 +77,32 @@ Used a custom-made script: `perform-audit.cmd`
 
 ## Measurements
 
-
+### 10 simultaneous connections
 | Endpoint | P50 | P95 | P99 |
 |----------|-----|-----|-----|
-| | | | |
-| | | | |
-| | | | |
-| | | | |
-| | | | |
+| `/api/auth/me` | 300.98 ms | 1295.00 ms | 1424.78 ms |
+| `/api/documents` | 817.47 ms | 1271.95 ms | 1436.26 ms |
+| `/api/issues` | 670.19 ms | 901.61 ms | 971.15 ms |
+| `/api/projects` | 557.61 ms | 904.59 ms | 968.53 ms |
+| `/api/weeks` | 700.86 ms | 1006.47 ms | 1052.96 ms |
+
+### 25 simultaneous connections
+| Endpoint | P50 | P95 | P99 |
+|----------|-----|-----|-----|
+| `/api/auth/me` | 552.19 ms | 709.69 ms | 762.20 ms |
+| `/api/documents` | 1688.39 ms | 2084.37 ms | 2230.05 ms |
+| `/api/issues` | 1305.69 ms | 1752.66 ms | 1770.45 ms |
+| `/api/projects` | 1100.24 ms | 1409.38 ms | 1519.79 ms |
+| `/api/weeks` | 1525.74 ms | 2117.09 ms | 2225.13 ms |
+
+### 50 simultaneous connections
+| Endpoint | P50 | P95 | P99 |
+|----------|-----|-----|-----|
+| `/api/auth/me` | 805.85 ms | 920.42 ms | 955.53 ms |
+| `/api/documents` | 1903.75 ms | 3069.88 ms | 3213.72 ms |
+| `/api/issues` | 2104.46 ms | 2594.66 ms | 2665.57 ms |
+| `/api/projects` | 1539.52 ms | 2080.63 ms | 2081.94 ms |
+| `/api/weeks` | 2065.09 ms | 3010.31 ms | 3025.51 ms |
 
 ## Changes made and why
 
@@ -103,11 +121,26 @@ The U6 indexes (039–041) handle the query-plan side; this change handles the r
 
 | User Flow | Total Queries | Slowest Query (ms) | N+1 Detected? |
 |-----------|---------------|-------------------|---------------|
-| Load main page | | | |
-| View a document| | | |
-| List issues| | | |
-| Load sprint board| | |
-| Search content | | | |
+| Load main page | 8 (raw 16; duplicated by instrumentation pairing) | 4.631 | No |
+| View a document| 4 (raw 8; duplicated by instrumentation pairing) | 1.964 | No |
+| List issues| 4 (raw 8; duplicated by instrumentation pairing) | 3.396 | No |
+| Load sprint board| 6 (raw 12; duplicated by instrumentation pairing) | 2.806 | No |
+| Search content | 6 (raw 12; duplicated by instrumentation pairing) | 94.385 | No |
+
+`EXPLAIN ANALYZE` evidence (production Render Postgres):
+
+| User Flow | Representative Query Plan Signal | Execution Time |
+|-----------|-----------------------------------|----------------|
+| Load main page (`/api/dashboard/my-work`) | `Seq Scan on documents` + in-memory sort (`Sort Method: quicksort`) | 0.087 ms |
+| View a document (`/api/documents/:id`) | `Seq Scan on documents` + in-memory sort (`Sort Method: quicksort`) | 0.148 ms |
+| List issues (`/api/issues`) | `Seq Scan on documents` + in-memory sort; filter removed non-matching rows (`Rows Removed by Filter: 1`) | 0.053 ms |
+| Load sprint board (`/api/weeks/my-week`) | `Seq Scan on documents` + in-memory sort; filter removed non-sprint rows (`Rows Removed by Filter: 1`) | 0.042 ms |
+| Search content (`/api/search/mentions?q=ship`) | `Seq Scan on documents` + in-memory sort for `ILIKE` filtered path (`Rows Removed by Filter: 1`) | 0.057 ms |
+
+Evidence artifacts:
+- `post-audit-evidence/category4-explain-latest.json`
+- `post-audit-evidence/category4-explain-rerun-2026-05-25T03-55-39-813Z/category4-explain-summary.json`
+- `post-audit-evidence/category4-explain-rerun-2026-05-25T03-55-39-813Z/category4-explain-raw.json`
 
 ## Changes made and why
 

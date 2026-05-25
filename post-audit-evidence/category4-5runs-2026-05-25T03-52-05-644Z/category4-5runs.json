@@ -1,0 +1,399 @@
+{
+  "timestamp": "2026-05-25T03:52:13.334Z",
+  "api": "https://ship-api-ysxi.onrender.com",
+  "firstDocId": null,
+  "runs": [
+    {
+      "run": 1,
+      "flows": [
+        {
+          "name": "Load main page",
+          "endpoint": "/api/dashboard/my-work",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 16,
+          "totalQueriesNormalized": 8,
+          "slowestQueryMs": 3.74,
+          "duplicateQueryCount": 8
+        },
+        {
+          "name": "View a document",
+          "endpoint": "/api/documents?limit=1",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 2.567,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "List issues",
+          "endpoint": "/api/issues",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 1.639,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "Load sprint board",
+          "endpoint": "/api/weeks/my-week",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 2.664,
+          "duplicateQueryCount": 6
+        },
+        {
+          "name": "Search content",
+          "endpoint": "/api/search/mentions?q=ship",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 1.816,
+          "duplicateQueryCount": 6
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "flows": [
+        {
+          "name": "Load main page",
+          "endpoint": "/api/dashboard/my-work",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 16,
+          "totalQueriesNormalized": 8,
+          "slowestQueryMs": 2.326,
+          "duplicateQueryCount": 8
+        },
+        {
+          "name": "View a document",
+          "endpoint": "/api/documents?limit=1",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 1.699,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "List issues",
+          "endpoint": "/api/issues",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 1.674,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "Load sprint board",
+          "endpoint": "/api/weeks/my-week",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 4.359,
+          "duplicateQueryCount": 6
+        },
+        {
+          "name": "Search content",
+          "endpoint": "/api/search/mentions?q=ship",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 2.065,
+          "duplicateQueryCount": 6
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "flows": [
+        {
+          "name": "Load main page",
+          "endpoint": "/api/dashboard/my-work",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 16,
+          "totalQueriesNormalized": 8,
+          "slowestQueryMs": 2.334,
+          "duplicateQueryCount": 8
+        },
+        {
+          "name": "View a document",
+          "endpoint": "/api/documents?limit=1",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 2.714,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "List issues",
+          "endpoint": "/api/issues",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 1.678,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "Load sprint board",
+          "endpoint": "/api/weeks/my-week",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 3.237,
+          "duplicateQueryCount": 6
+        },
+        {
+          "name": "Search content",
+          "endpoint": "/api/search/mentions?q=ship",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 16.327,
+          "duplicateQueryCount": 6
+        }
+      ]
+    },
+    {
+      "run": 4,
+      "flows": [
+        {
+          "name": "Load main page",
+          "endpoint": "/api/dashboard/my-work",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 16,
+          "totalQueriesNormalized": 8,
+          "slowestQueryMs": 2.306,
+          "duplicateQueryCount": 8
+        },
+        {
+          "name": "View a document",
+          "endpoint": "/api/documents?limit=1",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 5.912,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "List issues",
+          "endpoint": "/api/issues",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 2.544,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "Load sprint board",
+          "endpoint": "/api/weeks/my-week",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 2.367,
+          "duplicateQueryCount": 6
+        },
+        {
+          "name": "Search content",
+          "endpoint": "/api/search/mentions?q=ship",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 3.278,
+          "duplicateQueryCount": 6
+        }
+      ]
+    },
+    {
+      "run": 5,
+      "flows": [
+        {
+          "name": "Load main page",
+          "endpoint": "/api/dashboard/my-work",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 16,
+          "totalQueriesNormalized": 8,
+          "slowestQueryMs": 97.055,
+          "duplicateQueryCount": 8
+        },
+        {
+          "name": "View a document",
+          "endpoint": "/api/documents?limit=1",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 8.654,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "List issues",
+          "endpoint": "/api/issues",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 8,
+          "totalQueriesNormalized": 4,
+          "slowestQueryMs": 1.615,
+          "duplicateQueryCount": 4
+        },
+        {
+          "name": "Load sprint board",
+          "endpoint": "/api/weeks/my-week",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 2.319,
+          "duplicateQueryCount": 6
+        },
+        {
+          "name": "Search content",
+          "endpoint": "/api/search/mentions?q=ship",
+          "resetStatus": 200,
+          "callStatus": 200,
+          "snapshotStatus": 200,
+          "totalQueriesRaw": 12,
+          "totalQueriesNormalized": 6,
+          "slowestQueryMs": 1.772,
+          "duplicateQueryCount": 6
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "Load main page": {
+      "slowestMs": {
+        "mean": 21.552200000000003,
+        "median": 2.334,
+        "min": 2.306,
+        "max": 97.055,
+        "cv": 175.1811673901087
+      },
+      "queries": {
+        "mean": 8,
+        "median": 8,
+        "min": 8,
+        "max": 8,
+        "cv": 0
+      },
+      "runs": 5,
+      "consistent": false
+    },
+    "View a document": {
+      "slowestMs": {
+        "mean": 4.3092,
+        "median": 2.714,
+        "min": 1.699,
+        "max": 8.654,
+        "cv": 60.37111240498555
+      },
+      "queries": {
+        "mean": 4,
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "cv": 0
+      },
+      "runs": 5,
+      "consistent": false
+    },
+    "List issues": {
+      "slowestMs": {
+        "mean": 1.83,
+        "median": 1.674,
+        "min": 1.615,
+        "max": 2.544,
+        "cv": 19.549435220755253
+      },
+      "queries": {
+        "mean": 4,
+        "median": 4,
+        "min": 4,
+        "max": 4,
+        "cv": 0
+      },
+      "runs": 5,
+      "consistent": true
+    },
+    "Load sprint board": {
+      "slowestMs": {
+        "mean": 2.9892,
+        "median": 2.664,
+        "min": 2.319,
+        "max": 4.359,
+        "cv": 25.388798751299007
+      },
+      "queries": {
+        "mean": 6,
+        "median": 6,
+        "min": 6,
+        "max": 6,
+        "cv": 0
+      },
+      "runs": 5,
+      "consistent": true
+    },
+    "Search content": {
+      "slowestMs": {
+        "mean": 5.0516000000000005,
+        "median": 2.065,
+        "min": 1.772,
+        "max": 16.327,
+        "cv": 112.13005111612647
+      },
+      "queries": {
+        "mean": 6,
+        "median": 6,
+        "min": 6,
+        "max": 6,
+        "cv": 0
+      },
+      "runs": 5,
+      "consistent": false
+    }
+  }
+}

@@ -1,0 +1,206 @@
+[
+  {
+    "schemaname": "public",
+    "tablename": "document_associations",
+    "indexname": "document_associations_pkey",
+    "indexdef": "CREATE UNIQUE INDEX document_associations_pkey ON public.document_associations USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "document_associations",
+    "indexname": "idx_document_associations_document_id",
+    "indexdef": "CREATE INDEX idx_document_associations_document_id ON public.document_associations USING btree (document_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "document_associations",
+    "indexname": "idx_document_associations_document_type",
+    "indexdef": "CREATE INDEX idx_document_associations_document_type ON public.document_associations USING btree (document_id, relationship_type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "document_associations",
+    "indexname": "idx_document_associations_related_id",
+    "indexdef": "CREATE INDEX idx_document_associations_related_id ON public.document_associations USING btree (related_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "document_associations",
+    "indexname": "idx_document_associations_related_type",
+    "indexdef": "CREATE INDEX idx_document_associations_related_type ON public.document_associations USING btree (related_id, relationship_type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "document_associations",
+    "indexname": "idx_document_associations_type",
+    "indexdef": "CREATE INDEX idx_document_associations_type ON public.document_associations USING btree (relationship_type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "document_associations",
+    "indexname": "unique_association",
+    "indexdef": "CREATE UNIQUE INDEX unique_association ON public.document_associations USING btree (document_id, related_id, relationship_type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "documents_pkey",
+    "indexdef": "CREATE UNIQUE INDEX documents_pkey ON public.documents USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_active",
+    "indexdef": "CREATE INDEX idx_documents_active ON public.documents USING btree (workspace_id, document_type) WHERE ((archived_at IS NULL) AND (deleted_at IS NULL))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_archived_at",
+    "indexdef": "CREATE INDEX idx_documents_archived_at ON public.documents USING btree (archived_at) WHERE (archived_at IS NOT NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_converted_from",
+    "indexdef": "CREATE INDEX idx_documents_converted_from ON public.documents USING btree (converted_from_id) WHERE (converted_from_id IS NOT NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_converted_to",
+    "indexdef": "CREATE INDEX idx_documents_converted_to ON public.documents USING btree (converted_to_id) WHERE (converted_to_id IS NOT NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_deleted_at",
+    "indexdef": "CREATE INDEX idx_documents_deleted_at ON public.documents USING btree (deleted_at) WHERE (deleted_at IS NOT NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_document_type",
+    "indexdef": "CREATE INDEX idx_documents_document_type ON public.documents USING btree (document_type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_issue_filter",
+    "indexdef": "CREATE INDEX idx_documents_issue_filter ON public.documents USING btree (workspace_id, ((properties ->> 'assignee_id'::text)), ((properties ->> 'state'::text))) WHERE ((document_type = 'issue'::document_type) AND (deleted_at IS NULL))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_parent_id",
+    "indexdef": "CREATE INDEX idx_documents_parent_id ON public.documents USING btree (parent_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_person_user_id",
+    "indexdef": "CREATE INDEX idx_documents_person_user_id ON public.documents USING btree (((properties ->> 'user_id'::text))) WHERE (document_type = 'person'::document_type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_properties",
+    "indexdef": "CREATE INDEX idx_documents_properties ON public.documents USING gin (properties)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_sprint_number",
+    "indexdef": "CREATE INDEX idx_documents_sprint_number ON public.documents USING btree (((properties ->> 'sprint_number'::text))) WHERE (document_type = 'sprint'::document_type)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_title_trgm",
+    "indexdef": "CREATE INDEX idx_documents_title_trgm ON public.documents USING gin (title gin_trgm_ops)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_visibility",
+    "indexdef": "CREATE INDEX idx_documents_visibility ON public.documents USING btree (visibility)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_visibility_created_by",
+    "indexdef": "CREATE INDEX idx_documents_visibility_created_by ON public.documents USING btree (visibility, created_by)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "documents",
+    "indexname": "idx_documents_workspace_id",
+    "indexdef": "CREATE INDEX idx_documents_workspace_id ON public.documents USING btree (workspace_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_email",
+    "indexdef": "CREATE INDEX idx_users_email ON public.users USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_last_auth_provider",
+    "indexdef": "CREATE INDEX idx_users_last_auth_provider ON public.users USING btree (last_auth_provider) WHERE (last_auth_provider IS NOT NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_last_workspace_id",
+    "indexdef": "CREATE INDEX idx_users_last_workspace_id ON public.users USING btree (last_workspace_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "idx_users_x509_subject_dn",
+    "indexdef": "CREATE INDEX idx_users_x509_subject_dn ON public.users USING btree (x509_subject_dn) WHERE (x509_subject_dn IS NOT NULL)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_email_key",
+    "indexdef": "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_email_lower_unique",
+    "indexdef": "CREATE UNIQUE INDEX users_email_lower_unique ON public.users USING btree (lower(email))"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "users",
+    "indexname": "users_pkey",
+    "indexdef": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "workspace_memberships",
+    "indexname": "idx_workspace_memberships_user_id",
+    "indexdef": "CREATE INDEX idx_workspace_memberships_user_id ON public.workspace_memberships USING btree (user_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "workspace_memberships",
+    "indexname": "idx_workspace_memberships_workspace_id",
+    "indexdef": "CREATE INDEX idx_workspace_memberships_workspace_id ON public.workspace_memberships USING btree (workspace_id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "workspace_memberships",
+    "indexname": "workspace_memberships_pkey",
+    "indexdef": "CREATE UNIQUE INDEX workspace_memberships_pkey ON public.workspace_memberships USING btree (id)"
+  },
+  {
+    "schemaname": "public",
+    "tablename": "workspace_memberships",
+    "indexname": "workspace_memberships_workspace_id_user_id_key",
+    "indexdef": "CREATE UNIQUE INDEX workspace_memberships_workspace_id_user_id_key ON public.workspace_memberships USING btree (workspace_id, user_id)"
+  }
+]

@@ -1,0 +1,81 @@
+{
+  "timestamp": "2026-05-25T03:20:01.465Z",
+  "dbHost": "dpg-d87jggjbc2fs73f3i9s0-a.oregon-postgres.render.com",
+  "flows": [
+    {
+      "name": "Load main page",
+      "endpoint": "/api/dashboard/my-work",
+      "executionMs": 0.13,
+      "planningMs": 1.255,
+      "seqScanNodes": 1,
+      "indexNodes": 0,
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "name": "View a document",
+      "endpoint": "/api/documents/:id",
+      "executionMs": 0.047,
+      "planningMs": 0.214,
+      "seqScanNodes": 1,
+      "indexNodes": 0,
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "name": "List issues",
+      "endpoint": "/api/issues",
+      "executionMs": 0.056,
+      "planningMs": 0.4,
+      "seqScanNodes": 1,
+      "indexNodes": 0,
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "name": "Load sprint board",
+      "endpoint": "/api/weeks/my-week",
+      "executionMs": 0.039,
+      "planningMs": 0.18,
+      "seqScanNodes": 1,
+      "indexNodes": 0,
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "name": "Search content",
+      "endpoint": "/api/search/mentions?q=ship",
+      "executionMs": 0.054,
+      "planningMs": 1.222,
+      "seqScanNodes": 1,
+      "indexNodes": 0,
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    }
+  ],
+  "instrumentation": {
+    "endpoint": "https://ship-api-ysxi.onrender.com/api/debug/query-audit/snapshot",
+    "status": 404,
+    "bodyPreview": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<title>Error</title>\n</head>\n<body>\n<pre>Cannot GET /api/debug/query-audit/snapshot</pre>\n</body>\n</html>\n",
+    "note": "If unavailable, request-level Total Queries and N+1 cannot be measured with Category 4 instrumentation methodology."
+  },
+  "context": {
+    "workspaceId": "81afcb39-a2c7-47af-88d4-75d4ddcc58ee",
+    "userId": "a5b1319f-2448-425b-97c3-e8b35e99aa38"
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "timestamp": "2026-05-25T03:55:42.377Z",
+  "dbHost": "dpg-d87jggjbc2fs73f3i9s0-a.oregon-postgres.render.com",
+  "results": [
+    {
+      "flow": "Load main page",
+      "endpoint": "/api/dashboard/my-work",
+      "executionMs": 0.087,
+      "planningMs": 1.552,
+      "signal": "Seq Scan on documents + Sort (quicksort)",
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "flow": "View a document",
+      "endpoint": "/api/documents/:id",
+      "executionMs": 0.148,
+      "planningMs": 0.217,
+      "signal": "Seq Scan on documents + Sort (quicksort)",
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "flow": "List issues",
+      "endpoint": "/api/issues",
+      "executionMs": 0.053,
+      "planningMs": 0.266,
+      "signal": "Seq Scan on documents + Sort (quicksort); Rows Removed by Filter: 1",
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "flow": "Load sprint board",
+      "endpoint": "/api/weeks/my-week",
+      "executionMs": 0.042,
+      "planningMs": 0.187,
+      "signal": "Seq Scan on documents + Sort (quicksort); Rows Removed by Filter: 1",
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    },
+    {
+      "flow": "Search content",
+      "endpoint": "/api/search/mentions?q=ship",
+      "executionMs": 0.057,
+      "planningMs": 1.271,
+      "signal": "Seq Scan on documents + Sort (quicksort); Rows Removed by Filter: 1",
+      "nodeTypes": [
+        "Limit",
+        "Sort",
+        "Seq Scan"
+      ]
+    }
+  ]
+}

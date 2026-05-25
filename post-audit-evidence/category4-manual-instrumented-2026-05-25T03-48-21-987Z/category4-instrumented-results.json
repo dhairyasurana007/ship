@@ -1,0 +1,326 @@
+{
+  "timestamp": "2026-05-25T03:48:24.541Z",
+  "api": "https://ship-api-ysxi.onrender.com",
+  "firstDocId": null,
+  "results": [
+    {
+      "flow": "Load main page",
+      "endpoint": "/api/dashboard/my-work",
+      "resetStatus": 200,
+      "callStatus": 200,
+      "snapshotStatus": 200,
+      "latestRequest": {
+        "requestId": "5",
+        "method": "GET",
+        "path": "/api/dashboard/my-work",
+        "requestDurationMs": 19.111,
+        "totalQueries": 16,
+        "slowestQueryMs": 4.631,
+        "duplicateQueryCount": 8,
+        "queries": [
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 0.133
+          },
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 1.237
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 0.181
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 1.186
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 0.121
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 4.631
+          },
+          {
+            "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+            "durationMs": 0.184
+          },
+          {
+            "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+            "durationMs": 0.921
+          },
+          {
+            "text": "SELECT sprint_start_date FROM workspaces WHERE id = $1",
+            "durationMs": 0.109
+          },
+          {
+            "text": "SELECT sprint_start_date FROM workspaces WHERE id = $1",
+            "durationMs": 1.137
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, d.ticket_number, sprint_assoc.related_id as sprint_id, sprint.title as sprint_name, (sprint.properties->>'sprint_number')::int as sprint_number, p.title as program_",
+            "durationMs": 0.143
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, d.ticket_number, sprint_assoc.related_id as sprint_id, sprint.title as sprint_name, (sprint.properties->>'sprint_number')::int as sprint_number, p.title as program_",
+            "durationMs": 3.557
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, p.title as program_name, CASE WHEN d.archived_at IS NOT NULL THEN 'archived' ELSE COALESCE( ( SELECT CASE MAX( CASE WHEN CURRENT_DATE BETWEEN (w.sprint_start_date +",
+            "durationMs": 0.133
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, p.title as program_name, CASE WHEN d.archived_at IS NOT NULL THEN 'archived' ELSE COALESCE( ( SELECT CASE MAX( CASE WHEN CURRENT_DATE BETWEEN (w.sprint_start_date +",
+            "durationMs": 3.417
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, p.title as program_name, (d.properties->>'sprint_number')::int as sprint_number FROM documents d JOIN document_associations prog_da ON d.id = prog_da.document_id AN",
+            "durationMs": 0.231
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, p.title as program_name, (d.properties->>'sprint_number')::int as sprint_number FROM documents d JOIN document_associations prog_da ON d.id = prog_da.document_id AN",
+            "durationMs": 1.191
+          }
+        ],
+        "capturedAt": "2026-05-25T03:48:23.630Z"
+      }
+    },
+    {
+      "flow": "View a document",
+      "endpoint": "/api/documents?limit=1",
+      "resetStatus": 200,
+      "callStatus": 200,
+      "snapshotStatus": 200,
+      "latestRequest": {
+        "requestId": "8",
+        "method": "GET",
+        "path": "/api/documents?limit=1",
+        "requestDurationMs": 6.715,
+        "totalQueries": 8,
+        "slowestQueryMs": 1.964,
+        "duplicateQueryCount": 4,
+        "queries": [
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 0.113
+          },
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 0.868
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 0.113
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 1.238
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 0.137
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 1.625
+          },
+          {
+            "text": "SELECT id, workspace_id, document_type, title, parent_id, position, ticket_number, properties, created_at, updated_at, created_by, visibility FROM documents WHERE workspace_id = $1 AND archived_at IS ",
+            "durationMs": 0.09
+          },
+          {
+            "text": "SELECT id, workspace_id, document_type, title, parent_id, position, ticket_number, properties, created_at, updated_at, created_by, visibility FROM documents WHERE workspace_id = $1 AND archived_at IS ",
+            "durationMs": 1.964
+          }
+        ],
+        "capturedAt": "2026-05-25T03:48:23.933Z"
+      }
+    },
+    {
+      "flow": "List issues",
+      "endpoint": "/api/issues",
+      "resetStatus": 200,
+      "callStatus": 200,
+      "snapshotStatus": 200,
+      "latestRequest": {
+        "requestId": "11",
+        "method": "GET",
+        "path": "/api/issues",
+        "requestDurationMs": 12.308,
+        "totalQueries": 8,
+        "slowestQueryMs": 3.396,
+        "duplicateQueryCount": 4,
+        "queries": [
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 0.13
+          },
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 2.47
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 0.115
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 3.396
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 0.144
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 2.491
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, d.ticket_number, d.content, d.created_at, d.updated_at, d.created_by, d.started_at, d.completed_at, d.cancelled_at, d.reopened_at, d.converted_from_id, u.name as as",
+            "durationMs": 0.163
+          },
+          {
+            "text": "SELECT d.id, d.title, d.properties, d.ticket_number, d.content, d.created_at, d.updated_at, d.created_by, d.started_at, d.completed_at, d.cancelled_at, d.reopened_at, d.converted_from_id, u.name as as",
+            "durationMs": 2.453
+          }
+        ],
+        "capturedAt": "2026-05-25T03:48:24.243Z"
+      }
+    },
+    {
+      "flow": "Load sprint board",
+      "endpoint": "/api/weeks/my-week",
+      "resetStatus": 200,
+      "callStatus": 200,
+      "snapshotStatus": 200,
+      "latestRequest": {
+        "requestId": "14",
+        "method": "GET",
+        "path": "/api/weeks/my-week",
+        "requestDurationMs": 12.752,
+        "totalQueries": 12,
+        "slowestQueryMs": 2.806,
+        "duplicateQueryCount": 6,
+        "queries": [
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 0.211
+          },
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 1.434
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 0.185
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 1.513
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 0.178
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 2.336
+          },
+          {
+            "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+            "durationMs": 0.176
+          },
+          {
+            "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+            "durationMs": 1.268
+          },
+          {
+            "text": "SELECT sprint_start_date FROM workspaces WHERE id = $1",
+            "durationMs": 0.206
+          },
+          {
+            "text": "SELECT sprint_start_date FROM workspaces WHERE id = $1",
+            "durationMs": 0.823
+          },
+          {
+            "text": "SELECT i.id as issue_id, i.title as issue_title, i.properties as issue_properties, i.ticket_number, i.created_at as issue_created_at, i.updated_at as issue_updated_at, s.id as sprint_id, s.title as sp",
+            "durationMs": 0.184
+          },
+          {
+            "text": "SELECT i.id as issue_id, i.title as issue_title, i.properties as issue_properties, i.ticket_number, i.created_at as issue_created_at, i.updated_at as issue_updated_at, s.id as sprint_id, s.title as sp",
+            "durationMs": 2.806
+          }
+        ],
+        "capturedAt": "2026-05-25T03:48:24.572Z"
+      }
+    },
+    {
+      "flow": "Search content",
+      "endpoint": "/api/search/mentions?q=ship",
+      "resetStatus": 200,
+      "callStatus": 200,
+      "snapshotStatus": 200,
+      "latestRequest": {
+        "requestId": "17",
+        "method": "GET",
+        "path": "/api/search/mentions?q=ship",
+        "requestDurationMs": 103.206,
+        "totalQueries": 12,
+        "slowestQueryMs": 94.385,
+        "duplicateQueryCount": 6,
+        "queries": [
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 0.117
+          },
+          {
+            "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+            "durationMs": 0.85
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 0.165
+          },
+          {
+            "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+            "durationMs": 1.341
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 0.116
+          },
+          {
+            "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+            "durationMs": 2.284
+          },
+          {
+            "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+            "durationMs": 0.216
+          },
+          {
+            "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+            "durationMs": 1.372
+          },
+          {
+            "text": "SELECT d.id::text as id, d.title as name, 'person' as document_type FROM documents d WHERE d.workspace_id = $1 AND d.document_type = 'person' AND d.archived_at IS NULL AND d.deleted_at IS NULL AND d.t",
+            "durationMs": 0.094
+          },
+          {
+            "text": "SELECT d.id::text as id, d.title as name, 'person' as document_type FROM documents d WHERE d.workspace_id = $1 AND d.document_type = 'person' AND d.archived_at IS NULL AND d.deleted_at IS NULL AND d.t",
+            "durationMs": 1.569
+          },
+          {
+            "text": "SELECT id, title, document_type, visibility FROM documents WHERE workspace_id = $1 AND document_type IN ('wiki', 'issue', 'project', 'program') AND deleted_at IS NULL AND title ILIKE $2 AND (visibilit",
+            "durationMs": 0.094
+          },
+          {
+            "text": "SELECT id, title, document_type, visibility FROM documents WHERE workspace_id = $1 AND document_type IN ('wiki', 'issue', 'project', 'program') AND deleted_at IS NULL AND title ILIKE $2 AND (visibilit",
+            "durationMs": 94.385
+          }
+        ],
+        "capturedAt": "2026-05-25T03:48:25.074Z"
+      }
+    }
+  ]
+}

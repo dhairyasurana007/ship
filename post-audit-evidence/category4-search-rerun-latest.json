@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-05-25T03:50:32.115Z",
+  "api": "https://ship-api-ysxi.onrender.com",
+  "loginStatus": 200,
+  "resetStatus": 200,
+  "callStatus": 200,
+  "snapshotStatus": 200,
+  "latestRequest": {
+    "requestId": "22",
+    "method": "GET",
+    "path": "/api/search/mentions?q=ship",
+    "requestDurationMs": 23.852,
+    "totalQueries": 12,
+    "slowestQueryMs": 10.35,
+    "duplicateQueryCount": 6,
+    "queries": [
+      {
+        "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+        "durationMs": 0.146
+      },
+      {
+        "text": "DELETE FROM internal_probe_admin_elevations WHERE expires_at <= NOW()",
+        "durationMs": 1.305
+      },
+      {
+        "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+        "durationMs": 0.173
+      },
+      {
+        "text": "SELECT s.id, s.user_id, s.workspace_id, s.expires_at, s.last_activity, s.created_at, (u.is_super_admin OR pe.user_id IS NOT NULL) AS is_super_admin FROM sessions s JOIN users u ON s.user_id = u.id LEF",
+        "durationMs": 1.152
+      },
+      {
+        "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+        "durationMs": 0.131
+      },
+      {
+        "text": "UPDATE sessions SET last_activity = $1 WHERE id = $2",
+        "durationMs": 4.595
+      },
+      {
+        "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+        "durationMs": 0.115
+      },
+      {
+        "text": "SELECT role FROM workspace_memberships WHERE workspace_id = $1 AND user_id = $2",
+        "durationMs": 0.687
+      },
+      {
+        "text": "SELECT d.id::text as id, d.title as name, 'person' as document_type FROM documents d WHERE d.workspace_id = $1 AND d.document_type = 'person' AND d.archived_at IS NULL AND d.deleted_at IS NULL AND d.t",
+        "durationMs": 0.108
+      },
+      {
+        "text": "SELECT d.id::text as id, d.title as name, 'person' as document_type FROM documents d WHERE d.workspace_id = $1 AND d.document_type = 'person' AND d.archived_at IS NULL AND d.deleted_at IS NULL AND d.t",
+        "durationMs": 10.35
+      },
+      {
+        "text": "SELECT id, title, document_type, visibility FROM documents WHERE workspace_id = $1 AND document_type IN ('wiki', 'issue', 'project', 'program') AND deleted_at IS NULL AND title ILIKE $2 AND (visibilit",
+        "durationMs": 0.113
+      },
+      {
+        "text": "SELECT id, title, document_type, visibility FROM documents WHERE workspace_id = $1 AND document_type IN ('wiki', 'issue', 'project', 'program') AND deleted_at IS NULL AND title ILIKE $2 AND (visibilit",
+        "durationMs": 4.572
+      }
+    ],
+    "capturedAt": "2026-05-25T03:50:32.647Z"
+  }
+}
