@@ -67,7 +67,6 @@ const conditionalCsrf = (req: Request, res: Response, next: NextFunction) => {
 // In test/dev environment, use much higher limits to avoid issues
 // Production limits: login=5/15min (failed only), api=100/min
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.E2E_TEST === '1';
-const isDevEnv = process.env.NODE_ENV !== 'production';
 
 // Strict rate limit for login (5 failed attempts / 15 min) - brute force protection
 // skipSuccessfulRequests: true means only failed attempts count toward the limit
@@ -80,10 +79,10 @@ const loginLimiter = rateLimit({
   skipSuccessfulRequests: true, // Only count failed login attempts
 });
 
-// General API rate limit (100 req/min in prod, 1000 in dev)
+// General API rate limit (100 req/min in all non-test environments)
 const apiLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: isTestEnv ? 10000 : isDevEnv ? 1000 : 100, // High limit for tests/dev
+  max: isTestEnv ? 10000 : 100,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many requests. Please slow down.' },
@@ -118,7 +117,7 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"], // Admin credentials page uses inline scripts
+        scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'"], // TipTap editor needs inline styles
         imgSrc: ["'self'", "data:", "blob:", "https:"],
         connectSrc: ["'self'", "wss:", "ws:"], // WebSocket connections
@@ -252,6 +251,67 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
   // Initialize CAIA OAuth client at startup
   initializeCAIA().catch((err) => {
     console.warn('CAIA initialization failed:', err);
+  });
+
+  // Explicit API 404 shape to avoid framework/default HTML leakage
+  app.use('/api', (_req, res) => {
+    res.status(404).json({
+      success: false,
+      error: {
+        code: 'NOT_FOUND',
+        message: 'Endpoint not found',
+      },
+    });
+  });
+
+  // Final error handler to sanitize parser/CSRF/internal errors
+  app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    const anyErr = err as { status?: number; code?: string; type?: string; message?: string };
+    const status = typeof anyErr?.status === 'number' ? anyErr.status : 500;
+    const isBodyParseError = anyErr?.type === 'entity.parse.failed';
+    const isCsrfError = anyErr?.code === 'EBADCSRFTOKEN';
+
+    if (isBodyParseError) {
+      res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: 'Invalid JSON payload',
+        },
+      });
+      return;
+    }
+
+    if (isCsrfError) {
+      res.status(403).json({
+        success: false,
+        error: {
+          code: 'FORBIDDEN',
+          message: 'Invalid CSRF token',
+        },
+      });
+      return;
+    }
+
+    if (status >= 500) {
+      console.error('Unhandled API error:', anyErr);
+      res.status(500).json({
+        success: false,
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'Internal server error',
+        },
+      });
+      return;
+    }
+
+    res.status(status).json({
+      success: false,
+      error: {
+        code: 'REQUEST_FAILED',
+        message: anyErr?.message || 'Request failed',
+      },
+    });
   });
 
   return app;
