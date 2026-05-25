@@ -115,7 +115,7 @@ export function DocumentTreeItem({
             <button
               type="button"
               className={cn(
-                'flex-shrink-0 p-0.5 rounded hover:bg-red-100 hover:text-red-600 transition-opacity',
+                'flex-shrink-0 p-0.5 rounded hover:bg-red-900/30 hover:text-red-400 transition-opacity focus:opacity-100',
                 isHovered ? 'opacity-100' : 'opacity-0'
               )}
               onClick={(e) => {
