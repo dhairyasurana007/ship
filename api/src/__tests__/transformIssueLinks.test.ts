@@ -155,7 +155,8 @@ describe('transformIssueLinks', () => {
       await transformIssueLinks(content, workspaceId);
 
       const [call] = vi.mocked(pool.query).mock.calls;
-      const ticketNumbers = call?.[1];
+      const params = call?.[1] as unknown[] | undefined;
+      const ticketNumbers = params?.[1];
 
       // Should only query for #5 once despite appearing multiple times
       expect(ticketNumbers).toEqual([5]);

@@ -8,16 +8,19 @@ vi.mock('../db/client.js', () => ({
     query: vi.fn<(text: string | object, values?: unknown[]) => Promise<QueryResult>>(),
   },
 }));
+vi.mock('../services/internal-probe.js', () => ({
+  cleanupExpiredProbeElevations: vi.fn().mockResolvedValue(undefined),
+}));
 import { authMiddleware } from '../middleware/auth.js';
 import { pool } from '../db/client.js';
 
-const qr = (rows: unknown[]) => ({ rows } as unknown as void);
+const qr = (rows: unknown[]) => ({ rows } as unknown as QueryResult);
 import { Request, Response, NextFunction } from 'express';
 import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
 
 // Helper to create mock request/response
 function createMockReqRes(cookies: Record<string, string> = {}) {
-  const req = { cookies } as unknown as Request;
+  const req = { cookies, headers: {} } as unknown as Request;
   const res = {
     status: vi.fn().mockReturnThis(),
     json: vi.fn().mockReturnThis(),

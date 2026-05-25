@@ -202,6 +202,7 @@ describe('CAIA Auth Routes (/api/auth/caia/*)', () => {
             last_workspace_id: 'ws-id',
           }],
         } as any)
+        .mockResolvedValueOnce({ rows: [] } as any)   // pending invites for existing user
         .mockResolvedValueOnce({ rows: [] } as any)   // update last_auth_provider
         .mockResolvedValueOnce({ rows: [{ id: 'ws-id', name: 'Workspace', role: 'member' }] } as any) // workspaces
         .mockResolvedValueOnce({ rows: [] } as any)   // insert session

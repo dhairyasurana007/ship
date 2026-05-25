@@ -260,7 +260,9 @@ describe('Weekly Plans Routes', () => {
 
   describe('GET /weekly-plans/:id/history', () => {
     it('returns 200 with a history array', async () => {
-      vi.mocked(pool.query).mockResolvedValueOnce({ rows: [] } as any);
+      vi.mocked(pool.query)
+        .mockResolvedValueOnce({ rows: [{ id: 'plan-doc-id' }] } as any)
+        .mockResolvedValueOnce({ rows: [] } as any);
 
       const res = await request(app).get('/weekly-plans/plan-doc-id/history');
       expect(res.status).toBe(200);

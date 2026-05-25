@@ -116,11 +116,11 @@ describe('Internal Probe API', () => {
     const res = await request(app)
       .post('/api/internal/probe/cleanup-test-users')
       .set('authorization', `Bearer ${token}`)
-      .send({});
+      .send({ users: [cleanupEmail] });
 
     expect(res.status).toBe(200);
     expect(res.body.success).toBe(true);
-    expect(res.body.data.deletedCount).toBeGreaterThanOrEqual(1);
+    expect(res.body.data.deletedCount).toBe(1);
     expect(Array.isArray(res.body.data.deleted)).toBe(true);
 
     const verify = await pool.query('SELECT id FROM users WHERE id = $1', [cleanupUserId]);

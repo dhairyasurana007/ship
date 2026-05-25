@@ -32,6 +32,19 @@ export function sessionHeaders(): Record<string, string> {
   return crossOriginSessionToken ? { 'X-Session-Id': crossOriginSessionToken } : {};
 }
 
+// Bare fetch wrapper: adds session header + credentials but does NOT redirect on 401.
+// Use for background/non-critical requests where a 401 should fail silently.
+export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  return fetch(url, {
+    credentials: 'include',
+    ...options,
+    headers: {
+      ...sessionHeaders(),
+      ...(options.headers as Record<string, string> | undefined),
+    },
+  });
+}
+
 // Helper: Check if response has JSON content type
 function isJsonResponse(response: Response): boolean {
   const contentType = response.headers.get('content-type');
