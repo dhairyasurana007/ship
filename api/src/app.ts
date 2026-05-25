@@ -34,8 +34,10 @@ import accountabilityRoutes from './routes/accountability.js';
 import aiRoutes from './routes/ai.js';
 import weeklyPlansRoutes, { weeklyRetrosRouter } from './routes/weekly-plans.js';
 import { documentCommentsRouter, commentsRouter } from './routes/comments.js';
+import queryAuditRoutes from './routes/query-audit.js';
 import { setupSwagger } from './swagger.js';
 import { initializeCAIA } from './services/caia.js';
+import { initializeQueryAudit, queryAuditMiddleware } from './observability/query-audit.js';
 
 // Validate SESSION_SECRET in production
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
@@ -90,6 +92,7 @@ const apiLimiter = rateLimit({
 
 export function createApp(corsOrigin: string | string[] = 'http://localhost:5173'): express.Express {
   const app = express();
+  initializeQueryAudit();
 
   // Trust proxy headers (CloudFront) for secure cookies and correct protocol detection
   if (process.env.NODE_ENV === 'production') {
@@ -144,6 +147,9 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
   app.use(express.urlencoded({ extended: true, limit: '10mb' })); // For HTML form submissions
   app.use(cookieParser(sessionSecret));
 
+  // Request-level SQL audit context for debug endpoints (enabled only via env flag)
+  app.use('/api', queryAuditMiddleware);
+
   // Session middleware for CSRF token storage
   app.use(session({
     secret: sessionSecret,
@@ -175,6 +181,9 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
 
   // Internal probe route: token-protected service endpoint, intentionally not CSRF-gated.
   app.use('/api/internal/probe', internalProbeRoutes);
+
+  // Debug routes for manual performance audits (super-admin + explicit env flag required)
+  app.use('/api/debug', queryAuditRoutes);
 
   // Public feedback routes - no auth or CSRF required (must be before protected routes)
   app.use('/api/feedback', publicFeedbackRouter);
