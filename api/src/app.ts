@@ -193,7 +193,10 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
   app.use('/api/auth/login', loginLimiter);
 
   // Apply CSRF protection to all state-changing API routes
-  app.use('/api/auth', conditionalCsrf, authRoutes);
+  // Login is exempt: CSRF requires prior authentication; login needs the password, not a session
+  const authCsrf = (req: Request, res: Response, next: NextFunction) =>
+    req.method === 'POST' && req.path === '/login' ? next() : conditionalCsrf(req, res, next);
+  app.use('/api/auth', authCsrf, authRoutes);
   app.use('/api/documents', conditionalCsrf, documentsRoutes);
   app.use('/api/documents', conditionalCsrf, backlinksRoutes);
   app.use('/api/documents', conditionalCsrf, associationsRoutes);

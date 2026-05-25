@@ -205,7 +205,7 @@ async function request<T>(
   }
 
   // If CSRF token is invalid, clear and retry once
-  if (response.status === 403 && data.error?.code === 'CSRF_ERROR') {
+  if (response.status === 403 && (data.error?.code === 'CSRF_ERROR' || data.error?.message === 'Invalid CSRF token')) {
     clearCsrfToken();
     const newToken = await ensureCsrfToken();
     headers['X-CSRF-Token'] = newToken;
