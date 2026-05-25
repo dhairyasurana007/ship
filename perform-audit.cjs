@@ -628,6 +628,7 @@ async function category3() {
   const seedEnv = {
     NODE_ENV: "development",
     PGSSLMODE: "require",
+    DATABASE_URL: process.env.DATABASE_URL,
   };
   const dbHost = process.env.DATABASE_URL ? hostFromUrl(process.env.DATABASE_URL) : null;
   const apiHost = hostFromUrl(API_URL);
