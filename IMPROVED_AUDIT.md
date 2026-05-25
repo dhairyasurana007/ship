@@ -86,9 +86,14 @@ Used a custom-made script: `perform-audit.cmd`
 | | | | |
 | | | | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+Both `GET /api/documents` and `GET /api/issues` list handlers previously made **two sequential DB queries** per request — one to check `isWorkspaceAdmin`, then the main query. Under 50 concurrent connections that's 100 DB roundtrips instead of 50.
+
+The fix folds the admin check into the main query as an `EXISTS` subquery, cutting DB roundtrips in half for both endpoints. The `workspace_memberships` table already has an index on `(workspace_id, user_id)` (from `schema.sql`), so the subquery is fast.
+
+The U6 indexes (039–041) handle the query-plan side; this change handles the round-trip side. Together they're the two primary levers for hitting P99 < 200ms on `/api/documents`.
+
 
 # Category 4: Database Query Efficiency
 
@@ -104,9 +109,15 @@ Used a custom-made script: `perform-audit.cmd`
 | Load sprint board| | |
 | Search content | | | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+The existing indexes on the `documents` table (`idx_documents_workspace_id`, `idx_documents_active`, etc.) covered broad workspace-level queries but missed three specific access patterns identified in the Phase 1 audit:
+
+1. **039 (title trigram)** — Title searches using `ILIKE '%term%'` can't use a B-tree index because the wildcard is on the left side. Without `pg_trgm`, every title search does a full table scan.
+
+2. **040 (issue filter)** — The issue list query filters by `workspace_id`, `assignee_id`, and `state`, but `assignee_id` and `state` live inside JSONB (`properties`). The existing GIN index on `properties` is for containment operators (`@>`, `?`), not for the `->>'key' = value` equality pattern the issues route uses. Without this index, filtering issues by assignee or state requires scanning all issues in the workspace.
+
+3. **041 (sprint number)** — Sprint lookups by number use `(properties->>'sprint_number')::int = $N`, another JSONB expression that the general `properties` GIN index doesn't cover. Without it, finding a sprint by number scans all sprint documents.
 
 
 # Category 5 Audit Deliverable
@@ -123,9 +134,62 @@ Used a custom-made script: `perform-audit.cmd`
 | Critical flows with zero coverage| |
 | Code coverage % | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+### Fix 13 persistent web test failures
+
+**3 files modified** | `web/src/lib/document-tabs.test.ts`, `web/src/components/editor/DetailsExtension.test.ts`, `web/src/hooks/useSessionTimeout.test.ts`
+
+**`document-tabs.test.ts` — 9 failures fixed**
+Tests were written against stale assumptions. The `sprints` tab ID was renamed to `weeks`, sprint documents gained tabs (previously had none), the default project tab changed from `details` to `issues`, and the `Weeks` count label became static. Fixed by updating all `'sprints'` → `'weeks'` occurrences, correcting sprint tab presence assertions, updating the first-tab expectation to `'issues'`, and dropping the dynamic `'Weeks (3)'` expectation to `'Weeks'`.
+
+**`DetailsExtension.test.ts` — 3 failures fixed**
+The `Editor` instances only registered `DetailsExtension`, but its schema references node types `detailsSummary` and `detailsContent`. Without those registered, TipTap schema validation fails. Fixed by importing and registering `DetailsSummary` and `DetailsContent` alongside `DetailsExtension` in both `Editor` instantiations.
+
+**`useSessionTimeout.test.ts` — 1 failure fixed**
+The test mocked `fetch` but the mock response had no `headers` property. The real call chain (`apiPost` → `fetchWithCsrf` → `ensureCsrfToken` → `fetch`) eventually called `response.headers.get('content-type')` → `TypeError`. Fixed by mocking `@/lib/api` at the module boundary so `apiPost` is stubbed directly, short-circuiting the entire fetch/CSRF chain.
+
+
+
+### AI route unit tests
+
+**1 file created** | `api/src/__tests__/ai.test.ts` — 16 tests
+
+No tests existed for `/api/ai/*`. These routes handle input validation, auth gating, rate limiting, and AWS Bedrock failure recovery — all exercisable without a real Bedrock connection. Covers `GET /ai/status` (available/unavailable), `POST /ai/analyze-plan` and `POST /ai/analyze-retro` (missing input → 400, valid response shape, correct args forwarded to service, rate-limit → 429, service exception → `ai_unavailable`), plus unauthenticated 401s for all three endpoints.
+
+---
+
+### Dashboard route unit tests
+
+**1 file created** | `api/src/__tests__/dashboard.test.ts` — 14 tests
+
+The dashboard aggregates multiple sequential DB queries with non-trivial 404 branching (workspace not found, person not found) and a `?week_number` query param. Covers auth gating (401 for all three routes), `GET /my-work` workspace-not-found 404 and happy-path response shape, `GET /my-focus` person/workspace 404 paths and happy-path, `GET /my-week` 404 paths, full response shape, `?week_number` param honoured, and the 7-standup-slot count. Additional mocks required: `../middleware/visibility.js` (`getVisibilityContext`, `VISIBILITY_FILTER_SQL`) and `../utils/document-content.js` (`extractText`).
+
+---
+
+### CAIA auth route unit tests
+
+**1 file created** | `api/src/__tests__/caia-auth.test.ts` — 12 tests
+
+The CAIA OAuth flow has security-critical branches that must be verified without a live OAuth server: open-redirect prevention, invalid/expired state handling, non-.gov email rejection. Covers `GET /status` (configured/unconfigured), `GET /login` (503 when unconfigured, auth URL returned, OAuth state stored, 500 on PKCE error), and `GET /callback` (OAuth error param redirect, missing state redirect, invalid/expired state redirect, successful login redirects to `/`, exception → error redirect, non-.gov/.mil email rejected).
+
+---
+
+### Weekly plans route unit tests
+
+**1 file created** | `api/src/__tests__/weekly-plans.test.ts` — 18 tests
+
+`POST /weekly-plans` and `POST /weekly-retros` use `pool.connect()` for transactional writes — a pattern not covered elsewhere. Covers Zod validation (missing fields, bad UUID, week < 1), person-not-found 404, idempotent 200 when a plan already exists, 201 when a new plan is created (person found → no existing plan → BEGIN → INSERT → COMMIT), DB connection always released even on error, and GET routes for list/by-id/history and the retros equivalents. Used `vi.hoisted()` to make the mock transaction client available inside the `vi.mock` factory.
+
+---
+
+### Admin credentials route unit tests
+
+**1 file created** | `api/src/__tests__/admin-credentials.test.ts` — 15 tests
+
+Admin credential endpoints require both `authMiddleware` and `superAdminMiddleware` (two-layer gating) and interact with AWS Secrets Manager — all mockable without AWS. Covers 401 (unauthenticated) and 403 (authenticated but not super-admin), HTML management page returned for `GET /`, `GET /status` shape (configured true/false, `clientId` exposed), `POST /save` validation (missing `issuer_url`, missing `client_id`, no secret with no fallback → 400), successful save, save-with-warning when issuer discovery fails (credentials still saved), secret fall-through from existing credentials when no new secret is provided, and `POST /test-api` (unconfigured → 400, success → 200, discovery failure → 500).
+
+
 
 # Category 6 Audit Deliverable
 
@@ -141,9 +205,22 @@ Used a custom-made script: `perform-audit.cmd`
 | Missing error boundaries (locations) | |
 | Silent failures identified | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+All 141 web tests pass. Both units are done:
+
+---
+
+**CORS + Global Error Handlers** ([api/src/index.ts](api/src/index.ts), [api/src/app.ts](api/src/app.ts)):
+- `index.ts`: Builds a `corsOrigins` array that automatically adds the `127.0.0.1` equivalent when `localhost` is configured (and vice versa), so `http://127.0.0.1:5173` and `http://localhost:5173` are both allowed.
+- `app.ts`: Updated `createApp` signature to `string | string[]` — cors middleware accepts arrays natively.
+- `index.ts`: Added `process.on('unhandledRejection', ...)` and `process.on('uncaughtException', ...)` after `main()` — both log to stderr without calling `process.exit`.
+
+**React Error Boundaries** ([web/src/main.tsx](web/src/main.tsx)):
+- Added `ErrorBoundary` import and a small `EB` wrapper component.
+- Wrapped 14 major route elements (`dashboard`, `my-week`, `docs`, `documents/:id/*`, `issues`, `projects`, `programs`, `team/*`, `settings`, admin routes) with `<EB>`, giving each route its own isolated error boundary.
+- The existing boundary in `App.tsx` around `<Outlet />` is untouched.
+
 
 # Category 7 Audit Deliverable
 

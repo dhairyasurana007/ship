@@ -97,9 +97,6 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
     const userId = req.userId!;
     const workspaceId = req.workspaceId!;
 
-    // Check if user is admin (admins can see all documents)
-    const isAdmin = await isWorkspaceAdmin(userId, workspaceId);
-
     let query = `
       SELECT id, workspace_id, document_type, title, parent_id, position,
              ticket_number, properties,
@@ -108,9 +105,11 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
       WHERE workspace_id = $1
         AND archived_at IS NULL
         AND deleted_at IS NULL
-        AND (visibility = 'workspace' OR created_by = $2 OR $3 = TRUE)
+        AND (visibility = 'workspace' OR created_by = $2 OR
+             EXISTS (SELECT 1 FROM workspace_memberships
+                     WHERE workspace_id = $1 AND user_id = $2 AND role = 'admin'))
     `;
-    const params: (string | boolean | null)[] = [workspaceId, userId, isAdmin];
+    const params: (string | null)[] = [workspaceId, userId];
 
     if (type) {
       query += ` AND document_type = $${params.length + 1}`;

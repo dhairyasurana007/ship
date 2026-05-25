@@ -88,7 +88,7 @@ const apiLimiter = rateLimit({
 });
 
 
-export function createApp(corsOrigin: string = 'http://localhost:5173'): express.Express {
+export function createApp(corsOrigin: string | string[] = 'http://localhost:5173'): express.Express {
   const app = express();
 
   // Trust proxy headers (CloudFront) for secure cookies and correct protocol detection

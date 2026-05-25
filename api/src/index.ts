@@ -24,7 +24,15 @@ async function main() {
   const PORT = process.env.PORT || 3000;
   const CORS_ORIGIN = process.env.CORS_ORIGIN || 'http://localhost:5173';
 
-  const app = createApp(CORS_ORIGIN);
+  // Accept both localhost and 127.0.0.1 variants so the web app works from either address in local dev
+  const corsOrigins: string[] = [CORS_ORIGIN];
+  if (CORS_ORIGIN.includes('localhost:')) {
+    corsOrigins.push(CORS_ORIGIN.replace('localhost', '127.0.0.1'));
+  } else if (CORS_ORIGIN.includes('127.0.0.1:')) {
+    corsOrigins.push(CORS_ORIGIN.replace('127.0.0.1', 'localhost'));
+  }
+
+  const app = createApp(corsOrigins);
   const server = createServer(app);
 
   // DDoS protection: Set server-wide timeouts to prevent slow-read attacks (Slowloris)
@@ -38,9 +46,17 @@ async function main() {
   // Start server
   server.listen(PORT, () => {
     console.log(`API server running on http://localhost:${PORT}`);
-    console.log(`CORS origin: ${CORS_ORIGIN}`);
+    console.log(`CORS origins: ${corsOrigins.join(', ')}`);
   });
 }
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[unhandledRejection]', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[uncaughtException]', err);
+});
 
 main().catch((err) => {
   console.error('Failed to start server:', err);

@@ -208,7 +208,7 @@ export function BacklinksPanel({ documentId }: BacklinksPanelProps) {
               <button
                 type="button"
                 onClick={(e) => handleMenuClick(e, backlink)}
-                className="absolute right-1 top-1 p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-border/50 text-muted hover:text-foreground transition-opacity"
+                className="absolute right-1 top-1 p-0.5 rounded opacity-0 group-hover:opacity-100 focus:opacity-100 hover:bg-border/50 text-muted hover:text-foreground transition-opacity"
                 aria-label={`Actions for ${backlink.title || 'Untitled'}`}
               >
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">

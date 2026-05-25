@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
 import { apiPost } from '@/lib/api';
 
+const API_URL = import.meta.env.VITE_API_URL ?? '';
+
 // Warning appears 60 seconds before timeout
 const WARNING_THRESHOLD_MS = 60 * 1000;
 // Absolute timeout warning appears 5 minutes before
@@ -52,7 +54,7 @@ export function useSessionTimeout(onTimeout: () => void): SessionTimeoutState {
   useEffect(() => {
     async function fetchSessionInfo() {
       try {
-        const response = await fetch('/api/auth/session', {
+        const response = await fetch(`${API_URL}/api/auth/session`, {
           credentials: 'include',
         });
         if (response.ok) {

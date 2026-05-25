@@ -86,7 +86,7 @@ function InlineCommentThread({
       <div class="comment-thread-resolved" data-comment-id="${escapeHtml(root.comment_id)}">
         <span class="comment-resolved-icon">✓</span>
         <span class="comment-resolved-text">Resolved by ${escapeHtml(root.author.name)} · ${formatRelativeTime(root.resolved_at!)}</span>
-        <span class="comment-resolved-toggle">Show thread</span>
+        <button type="button" class="comment-resolved-toggle">Show thread</button>
       </div>
     `;
   } else {
@@ -322,6 +322,22 @@ export const CommentDisplayExtension = Extension.create<Record<string, never>, C
 
                 // Prevent other keys from propagating to ProseMirror
                 event.stopPropagation();
+                return true;
+              }
+
+              // Handle Enter/Space on "Show thread" toggle button (keyboard accessibility)
+              if (
+                target.classList.contains('comment-resolved-toggle') &&
+                (event.key === 'Enter' || event.key === ' ')
+              ) {
+                const threadEl = target.closest('.comment-thread-inline') as HTMLElement;
+                if (threadEl) {
+                  const commentId = threadEl.dataset.commentThread;
+                  if (commentId && storage.onResolve) {
+                    storage.onResolve(commentId, false);
+                  }
+                }
+                event.preventDefault();
                 return true;
               }
 

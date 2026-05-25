@@ -2,6 +2,11 @@ import { describe, it, expect, vi, beforeEach, afterEach, Mock } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useSessionTimeout } from './useSessionTimeout';
 
+// Mock apiPost so resetTimer's extend-session call succeeds without real CSRF/fetch plumbing
+vi.mock('@/lib/api', () => ({
+  apiPost: vi.fn().mockResolvedValue({ ok: true }),
+}));
+
 /**
  * Unit Tests for useSessionTimeout Hook
  *
