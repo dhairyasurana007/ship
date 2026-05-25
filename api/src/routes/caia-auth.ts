@@ -28,6 +28,7 @@ import { SESSION_TIMEOUT_MS } from '@ship/shared';
 import { logAuditEvent } from '../services/audit.js';
 
 const router: RouterType = Router();
+const sessionSameSite = process.env.NODE_ENV === 'production' ? 'none' : 'strict';
 
 /**
  * Basic email format validation
@@ -304,7 +305,7 @@ router.get('/callback', async (req: Request, res: Response): Promise<void> => {
     res.cookie('session_id', sessionId, {
       httpOnly: true,
       secure: true,
-      sameSite: 'strict',
+      sameSite: sessionSameSite,
       maxAge: SESSION_TIMEOUT_MS,
       path: '/',
     });

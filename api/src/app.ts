@@ -153,6 +153,7 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
   // Session middleware for CSRF token storage
   app.use(session({
     secret: sessionSecret,
+    proxy: process.env.NODE_ENV === 'production',
     resave: false,
     saveUninitialized: false,
     cookie: {

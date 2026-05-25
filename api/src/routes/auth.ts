@@ -8,6 +8,7 @@ import { ERROR_CODES, HTTP_STATUS, SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_
 import { logAuditEvent } from '../services/audit.js';
 
 const router: RouterType = Router();
+const sessionSameSite = process.env.NODE_ENV === 'production' ? 'none' : 'strict';
 
 // Generate cryptographically secure session ID (256 bits of entropy)
 function generateSecureSessionId(): string {
@@ -185,7 +186,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     res.cookie('session_id', sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict', // Strict for government applications
+      sameSite: sessionSameSite,
       maxAge: SESSION_TIMEOUT_MS,
       path: '/',
     });
@@ -241,7 +242,7 @@ router.post('/logout', authMiddleware, async (req: Request, res: Response): Prom
     res.clearCookie('session_id', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: sessionSameSite,
       path: '/',
     });
 
@@ -364,7 +365,7 @@ router.post('/extend-session', authMiddleware, async (req: Request, res: Respons
     res.cookie('session_id', req.sessionId, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: sessionSameSite,
       maxAge: SESSION_TIMEOUT_MS,
       path: '/',
     });
