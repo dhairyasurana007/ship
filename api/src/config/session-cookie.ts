@@ -15,18 +15,28 @@ function parseSameSite(value: string | undefined, fallback: SameSite): SameSite 
   return fallback;
 }
 
+// Cross-origin deployments (CORS_ORIGIN set to a non-localhost URL) require
+// SameSite=None; Secure so browsers will include cookies in cross-origin fetches.
+function isCrossOriginDeployment(): boolean {
+  if (process.env.NODE_ENV === 'production') return true;
+  const origin = process.env.CORS_ORIGIN || '';
+  return !!origin && !origin.includes('localhost') && !origin.includes('127.0.0.1');
+}
+
+const crossOrigin = isCrossOriginDeployment();
+
 export const sessionCookieSecure = parseBool(
   process.env.SESSION_COOKIE_SECURE,
-  process.env.NODE_ENV === 'production'
+  crossOrigin
 );
 
 export const sessionCookieProxy = parseBool(
   process.env.SESSION_COOKIE_PROXY,
-  process.env.NODE_ENV === 'production'
+  crossOrigin
 );
 
 export const sessionCookieSameSite = parseSameSite(
   process.env.SESSION_COOKIE_SAMESITE,
-  process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+  crossOrigin ? 'none' : 'strict'
 );
 
