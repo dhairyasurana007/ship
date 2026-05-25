@@ -17,10 +17,6 @@ let cleanupPending = false;
 const envMap = loadLocalEnv([
   ".env.local",
   ".env",
-  "api/.env.local",
-  "api/.env",
-  "web/.env.local",
-  "web/.env",
 ]);
 for (const [k, v] of Object.entries(envMap)) {
   if (process.env[k] == null || process.env[k] === "") {
@@ -121,6 +117,30 @@ function runPnpm(args, opts = {}) {
     return run("cmd.exe", ["/d", "/s", "/c", cmdline], opts);
   }
   return run(COREPACK_BIN, [`pnpm@${PNPM_VERSION}`, ...args], opts);
+}
+
+function ensurePlaywrightReady() {
+  // 1) Ensure node modules are present enough to run Playwright CLI.
+  let versionCheck = runPnpm(["exec", "playwright", "--version"]);
+  if (versionCheck.status !== 0) {
+    log("Playwright CLI not available; running pnpm install...");
+    const installDeps = runPnpm(["install"]);
+    if (installDeps.status !== 0) {
+      return { ok: false, reason: `pnpm install failed (exit=${installDeps.status})` };
+    }
+    versionCheck = runPnpm(["exec", "playwright", "--version"]);
+    if (versionCheck.status !== 0) {
+      return { ok: false, reason: `playwright CLI unavailable after install (exit=${versionCheck.status})` };
+    }
+  }
+
+  // 2) Ensure Chromium browser binary is installed for headless audit run.
+  const installBrowser = runPnpm(["exec", "playwright", "install", "chromium"]);
+  if (installBrowser.status !== 0) {
+    return { ok: false, reason: `playwright chromium install failed (exit=${installBrowser.status})` };
+  }
+
+  return { ok: true };
 }
 
 function quoteWinArg(v) {
@@ -1009,21 +1029,25 @@ async function category5() {
     "Capture Vitest summaries per run: test files, tests, pass/fail, runtime.",
     "Run coverage JSON-summary commands for API and Web.",
     "Detect uncovered critical flows by route-test presence scan.",
-    "Store required evidence logs under audit-evidence."
+    "Store required evidence logs under post-audit-evidence."
   ]);
 
-  const evidenceDir = path.join(ROOT, "audit-evidence");
+  const evidenceDir = path.join(ROOT, "post-audit-evidence");
   fs.mkdirSync(evidenceDir, { recursive: true });
-  const apiEnv = { NODE_ENV: "test" };
+  const apiEnv = {
+    NODE_ENV: "test",
+    DATABASE_URL: process.env.DATABASE_URL,
+    PGSSLMODE: process.env.PGSSLMODE || "require",
+  };
   const webEnv = { NODE_ENV: "test" };
 
   const runs = [];
   for (let i = 1; i <= 3; i++) {
     log(`Test run ${i}/3 (api + web)`);
-    const apiJUnitRel = `../audit-evidence/category5-run${i}-api.junit.xml`;
-    const webJUnitRel = `../audit-evidence/category5-run${i}-web.junit.xml`;
-    const apiJUnitPath = path.join(ROOT, "audit-evidence", `category5-run${i}-api.junit.xml`);
-    const webJUnitPath = path.join(ROOT, "audit-evidence", `category5-run${i}-web.junit.xml`);
+    const apiJUnitRel = `../post-audit-evidence/category5-run${i}-api.junit.xml`;
+    const webJUnitRel = `../post-audit-evidence/category5-run${i}-web.junit.xml`;
+    const apiJUnitPath = path.join(ROOT, "post-audit-evidence", `category5-run${i}-api.junit.xml`);
+    const webJUnitPath = path.join(ROOT, "post-audit-evidence", `category5-run${i}-web.junit.xml`);
     const api = runPnpm(
       ["-C", "api", "exec", "vitest", "run", "--pool=forks", "--maxWorkers=1", "--reporter=junit", `--outputFile=${apiJUnitRel}`],
       { env: apiEnv }
@@ -1149,6 +1173,8 @@ async function category6() {
     "Mark browser-network/server-log checks as blocked in CLI-only mode.",
     "Print measured table with explicit blocked reasons where applicable."
   ]);
+  const evidenceDir = path.join(ROOT, "post-audit-evidence");
+  fs.mkdirSync(evidenceDir, { recursive: true });
 
   const up = await ensureApiUp();
   if (!up) {
@@ -1282,18 +1308,64 @@ async function category6() {
     ? `Potential: script-like title payload accepted at API layer; verify render encoding. Concurrency result: ${concurrentSummary}`
     : `No silent acceptance detected in malformed script-title check. Concurrency result: ${concurrentSummary}`;
 
+  // Browser-driven reliability checks via Playwright (with graceful fallback)
+  let consoleUsageSummary = "Blocked in CLI mode (requires browser scenario + console capture).";
+  let networkRecoverySummary = "Blocked in CLI mode (requires Playwright/CDP network emulation).";
+  let browserSilentSummary = "";
+  let consoleDetailSummary = "N/A";
+  try {
+    const pwReady = ensurePlaywrightReady();
+    if (!pwReady.ok) {
+      throw new Error(pwReady.reason);
+    }
+    const pwOut = path.join(evidenceDir, "category6-playwright.json");
+    const pw = run(process.execPath, [path.join(ROOT, "scripts", "audit", "category6-playwright.mjs"), "--out", pwOut], {
+      env: {
+        WEB_URL,
+        AUDIT_EMAIL: EMAIL,
+        AUDIT_PASSWORD: PASSWORD,
+      },
+    });
+    if (pw.status === 0 && fs.existsSync(pwOut)) {
+      const parsed = JSON.parse(fs.readFileSync(pwOut, "utf8"));
+      const consoleCount = Number(parsed?.console?.errorCount || 0);
+      const pageCount = Number(parsed?.page?.errorCount || 0);
+      consoleUsageSummary = `Measured: console.error=${consoleCount}, pageerror=${pageCount}`;
+      const firstConsole = parsed?.console?.sample?.[0]?.text;
+      const firstPageError = parsed?.page?.sample?.[0]?.message;
+      if (firstConsole || firstPageError) {
+        consoleDetailSummary = `console="${String(firstConsole || "").slice(0, 220)}"${firstPageError ? ` | pageerror="${String(firstPageError).slice(0, 220)}"` : ""}`;
+      } else {
+        consoleDetailSummary = "No console/page errors captured.";
+      }
+      networkRecoverySummary = parsed?.networkRecovery?.status
+        ? `${parsed.networkRecovery.status} (offline failed requests=${parsed.networkRecovery.offlineRequestFailures || 0}, recovered=${parsed.networkRecovery.recovered ? "yes" : "no"})`
+        : networkRecoverySummary;
+      if (parsed?.scriptPayloadRendering?.status) {
+        browserSilentSummary = ` | Browser script-payload check=${parsed.scriptPayloadRendering.status} (dialogTriggered=${parsed.scriptPayloadRendering.dialogTriggered ? "yes" : "no"})`;
+      }
+    } else {
+      consoleUsageSummary = `Blocked: Playwright run failed (exit=${pw.status})`;
+      networkRecoverySummary = `Blocked: Playwright run failed (exit=${pw.status})`;
+    }
+  } catch (e) {
+    consoleUsageSummary = `Blocked: Playwright automation error (${e.message})`;
+    networkRecoverySummary = `Blocked: Playwright automation error (${e.message})`;
+  }
+
   const rows = [
     [
       "Console errors during normal usage",
-      "Blocked in CLI mode (requires browser scenario + console capture).",
+      consoleUsageSummary,
     ],
+    ["Console error sample", consoleDetailSummary],
     ["Unhandled promise rejections (server)", serverUnhandled],
     [
       "Network disconnect recovery (Pass / Partial / Fail)",
-      "Blocked in CLI mode (requires Playwright/CDP network emulation).",
+      networkRecoverySummary,
     ],
     ["Missing error boundaries (locations)", boundarySummary],
-    ["Silent failures identified", `${silentFailureSummary} | Malformed checks: ${malformedSummary}`],
+    ["Silent failures identified", `${silentFailureSummary}${browserSilentSummary} | Malformed checks: ${malformedSummary}`],
   ];
   const table = mdTable(["Metric", "Your Baseline"], rows);
   console.log(terminalTable(["Metric", "Your Baseline"], rows));
@@ -1313,14 +1385,14 @@ async function category6() {
 async function category7() {
   log("Category 7: Accessibility Compliance");
   printMethodology("Category 7", [
-    "Read Lighthouse JSON artifacts from audit-evidence and compute per-page accessibility scores.",
+    "Read Lighthouse JSON artifacts from post-audit-evidence and compute per-page accessibility scores.",
     "Read Axe JSON artifacts and aggregate critical/serious, color-contrast, and ARIA/label/role findings.",
     "Read screen-reader evidence artifact and compute route coverage status.",
     "Report keyboard/screen-reader completeness from captured route coverage.",
     "Print Category 7 measurements table."
   ]);
 
-  const evidenceDir = path.join(ROOT, "audit-evidence");
+  const evidenceDir = path.join(ROOT, "post-audit-evidence");
   const routeNames = [
     "login",
     "setup",

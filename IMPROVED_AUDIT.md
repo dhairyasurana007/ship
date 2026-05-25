@@ -1,7 +1,12 @@
-# Category 1: Type Safety
 
 ## Methodology
 Used a custom-made script: `perform-audit.cmd`
+This was made so that measurements can be made
+in a determinisitc way.
+
+# Category 1: Type Safety
+
+
 
 ## Measurements
 
@@ -45,7 +50,6 @@ Used a custom-made script: `perform-audit.cmd`
 
 # Category 2: Bundle Size
 
-## Methodology
 
 ## Measurements
 
@@ -73,7 +77,6 @@ Used a custom-made script: `perform-audit.cmd`
 
 # Category 3: API Response Time
 
-## Methodology
 
 ## Measurements
 
@@ -115,7 +118,6 @@ The U6 indexes (039–041) handle the query-plan side; this change handles the r
 
 # Category 4: Database Query Efficiency
 
-## Methodology
 
 ## Measurements
 
@@ -153,19 +155,17 @@ The existing indexes on the `documents` table (`idx_documents_workspace_id`, `id
 3. **041 (sprint number)** — Sprint lookups by number use `(properties->>'sprint_number')::int = $N`, another JSONB expression that the general `properties` GIN index doesn't cover. Without it, finding a sprint by number scans all sprint documents.
 
 
-# Category 5 Audit Deliverable
-
-## Methodology
+# Category 5: Test Coverage and Quality
 
 ## Measurements
 
 | Metric | Your Baseline |
 |--------|---------------|
-| Total tests | |
-| Pass / Fail / Flaky | |
-| Suite runtime | |
-| Critical flows with zero coverage| |
-| Code coverage % | |
+| Total tests | 672 (API: 531, Web 141) |
+| Pass / Fail / Flaky | 3 / 0 / No |
+| Suite runtime | P1 307.43s (API 287.11s, Web 20.32s) , P2 315.60s (API 294.17s, Web 21.43s) , P3 308.21s (API 291.67s, Web 16.53s) |
+| Critical flows with zero coverage| None |
+| Code coverage % |  (API lines 45.81%, branches: 36.74%), (Web lines: 27.93%, branches 19.04%) |
 
 ## Changes made and why
 
@@ -198,7 +198,6 @@ No tests existed for `/api/ai/*`. These routes handle input validation, auth gat
 
 The dashboard aggregates multiple sequential DB queries with non-trivial 404 branching (workspace not found, person not found) and a `?week_number` query param. Covers auth gating (401 for all three routes), `GET /my-work` workspace-not-found 404 and happy-path response shape, `GET /my-focus` person/workspace 404 paths and happy-path, `GET /my-week` 404 paths, full response shape, `?week_number` param honoured, and the 7-standup-slot count. Additional mocks required: `../middleware/visibility.js` (`getVisibilityContext`, `VISIBILITY_FILTER_SQL`) and `../utils/document-content.js` (`extractText`).
 
----
 
 ### CAIA auth route unit tests
 
@@ -206,7 +205,6 @@ The dashboard aggregates multiple sequential DB queries with non-trivial 404 bra
 
 The CAIA OAuth flow has security-critical branches that must be verified without a live OAuth server: open-redirect prevention, invalid/expired state handling, non-.gov email rejection. Covers `GET /status` (configured/unconfigured), `GET /login` (503 when unconfigured, auth URL returned, OAuth state stored, 500 on PKCE error), and `GET /callback` (OAuth error param redirect, missing state redirect, invalid/expired state redirect, successful login redirects to `/`, exception → error redirect, non-.gov/.mil email rejected).
 
----
 
 ### Weekly plans route unit tests
 
@@ -214,7 +212,6 @@ The CAIA OAuth flow has security-critical branches that must be verified without
 
 `POST /weekly-plans` and `POST /weekly-retros` use `pool.connect()` for transactional writes — a pattern not covered elsewhere. Covers Zod validation (missing fields, bad UUID, week < 1), person-not-found 404, idempotent 200 when a plan already exists, 201 when a new plan is created (person found → no existing plan → BEGIN → INSERT → COMMIT), DB connection always released even on error, and GET routes for list/by-id/history and the retros equivalents. Used `vi.hoisted()` to make the mock transaction client available inside the `vi.mock` factory.
 
----
 
 ### Admin credentials route unit tests
 
@@ -224,25 +221,23 @@ Admin credential endpoints require both `authMiddleware` and `superAdminMiddlewa
 
 
 
-# Category 6 Audit Deliverable
+# Category 6: Runtime Error and Edge Case Handling
 
-## Methodology
 
 ## Measurements
 
 | Metric | Your Baseline |
 |--------|---------------|
-| Console error during normal usage | High error volume in browser run; repeated CORS + fetch failures from `https://ship-web-ak37.onrender.com` to `https://ship-api-ysxi.onrender.com` (`No 'Access-Control-Allow-Origin' header`, `net::ERR_FAILED`, setup/auth session check failures). |
+| Console error during normal usage | Measured: console.error=1, pageerror=0,  console="Failed to load resource: the server responded with a status of 401 ()" |
 | Unhandled promise rejections (server) | Global handlers present (`process.on('unhandledRejection')` and `process.on('uncaughtException')` detected in `api/src/index.ts`). |
-| Network disconnect recovery (Pass / Partial / Fail) | Partial (`offline-reload-error: net::ERR_INTERNET_DISCONNECTED`; after restoring network, reload recovered to `https://ship-web-ak37.onrender.com/login`). |
+| Network disconnect recovery (Pass / Partial / Fail) | Pass (offline failed requests=1, recovered=yes) |
 | Missing error boundaries (locations) | App.tsx ErrorBoundary tags=1, Editor.tsx ErrorBoundary tags=1 |
-| Silent failures identified | Potential script-like title acceptance (`script-title=200`) while validation rejects empty/overlong titles (`400`); concurrent same-field writes both succeed (`r1=200`, `r2=200`, final title last-write-wins). |
+| Silent failures identified | Potential: script-like title payload accepted at API layer; verify render encoding. Concurrency result: r1=200, r2=200, final="audit-race-a-1779733869212" | Browser script-payload check=Pass (dialogTriggered=no) | Malformed checks: login-empty=400, empty-title=400, overlong-title=400, script-title=200 |
 
 ## Changes made and why
 
 All 141 web tests pass. Both units are done:
 
----
 
 **CORS + Global Error Handlers** ([api/src/index.ts](api/src/index.ts), [api/src/app.ts](api/src/app.ts)):
 - `index.ts`: Builds a `corsOrigins` array that automatically adds the `127.0.0.1` equivalent when `localhost` is configured (and vice versa), so `http://127.0.0.1:5173` and `http://localhost:5173` are both allowed.
@@ -255,7 +250,7 @@ All 141 web tests pass. Both units are done:
 - The existing boundary in `App.tsx` around `<Outlet />` is untouched.
 
 
-# Category 7 Audit Deliverable
+# Category 7: Accessibility Compliance
 
 
 ## Measurements

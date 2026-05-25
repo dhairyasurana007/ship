@@ -1,0 +1,30 @@
+{
+  "ok": true,
+  "login": {
+    "success": true,
+    "error": null
+  },
+  "console": {
+    "errorCount": 1,
+    "sample": [
+      {
+        "text": "Failed to load resource: the server responded with a status of 401 ()"
+      }
+    ]
+  },
+  "page": {
+    "errorCount": 0,
+    "sample": []
+  },
+  "networkRecovery": {
+    "status": "Pass",
+    "offlineRequestFailures": 1,
+    "recovered": true,
+    "error": null
+  },
+  "scriptPayloadRendering": {
+    "status": "Pass",
+    "dialogTriggered": false,
+    "dialogCount": 0
+  }
+}
