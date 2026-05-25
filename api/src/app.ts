@@ -38,6 +38,7 @@ import queryAuditRoutes from './routes/query-audit.js';
 import { setupSwagger } from './swagger.js';
 import { initializeCAIA } from './services/caia.js';
 import { initializeQueryAudit, queryAuditMiddleware } from './observability/query-audit.js';
+import { sessionCookieProxy, sessionCookieSameSite, sessionCookieSecure } from './config/session-cookie.js';
 
 // Validate SESSION_SECRET in production
 if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
@@ -67,7 +68,6 @@ const conditionalCsrf = (req: Request, res: Response, next: NextFunction) => {
 // In test/dev environment, use much higher limits to avoid issues
 // Production limits: login=5/15min (failed only), api=100/min
 const isTestEnv = process.env.NODE_ENV === 'test' || process.env.E2E_TEST === '1';
-const sessionSameSite = process.env.NODE_ENV === 'production' ? 'none' : 'strict';
 
 // Strict rate limit for login (5 failed attempts / 15 min) - brute force protection
 // skipSuccessfulRequests: true means only failed attempts count toward the limit
@@ -153,13 +153,13 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
   // Session middleware for CSRF token storage
   app.use(session({
     secret: sessionSecret,
-    proxy: process.env.NODE_ENV === 'production',
+    proxy: sessionCookieProxy,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: sessionSameSite,
+      secure: sessionCookieSecure,
+      sameSite: sessionCookieSameSite,
       maxAge: 15 * 60 * 1000, // 15 minutes
     },
   }));

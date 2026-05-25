@@ -6,9 +6,9 @@ import { pool } from '../db/client.js';
 import { authMiddleware } from '../middleware/auth.js';
 import { ERROR_CODES, HTTP_STATUS, SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
 import { logAuditEvent } from '../services/audit.js';
+import { sessionCookieSameSite, sessionCookieSecure } from '../config/session-cookie.js';
 
 const router: RouterType = Router();
-const sessionSameSite = process.env.NODE_ENV === 'production' ? 'none' : 'strict';
 
 // Generate cryptographically secure session ID (256 bits of entropy)
 function generateSecureSessionId(): string {
@@ -185,8 +185,8 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     // Set cookie with hardened security options
     res.cookie('session_id', sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: sessionSameSite,
+      secure: sessionCookieSecure,
+      sameSite: sessionCookieSameSite,
       maxAge: SESSION_TIMEOUT_MS,
       path: '/',
     });
@@ -241,8 +241,8 @@ router.post('/logout', authMiddleware, async (req: Request, res: Response): Prom
     // Clear cookie with same options used when setting it
     res.clearCookie('session_id', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: sessionSameSite,
+      secure: sessionCookieSecure,
+      sameSite: sessionCookieSameSite,
       path: '/',
     });
 
@@ -364,8 +364,8 @@ router.post('/extend-session', authMiddleware, async (req: Request, res: Respons
     // Refresh cookie with new maxAge (sliding expiration)
     res.cookie('session_id', req.sessionId, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: sessionSameSite,
+      secure: sessionCookieSecure,
+      sameSite: sessionCookieSameSite,
       maxAge: SESSION_TIMEOUT_MS,
       path: '/',
     });
