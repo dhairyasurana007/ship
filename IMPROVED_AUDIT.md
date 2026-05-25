@@ -136,10 +136,6 @@ The existing indexes on the `documents` table (`idx_documents_workspace_id`, `id
 
 ## Changes made and why
 
-## Track 5 Changes Summary (U7 – U12)
-
----
-
 ### Fix 13 persistent web test failures
 
 **3 files modified** | `web/src/lib/document-tabs.test.ts`, `web/src/components/editor/DetailsExtension.test.ts`, `web/src/hooks/useSessionTimeout.test.ts`
@@ -153,7 +149,7 @@ The `Editor` instances only registered `DetailsExtension`, but its schema refere
 **`useSessionTimeout.test.ts` — 1 failure fixed**
 The test mocked `fetch` but the mock response had no `headers` property. The real call chain (`apiPost` → `fetchWithCsrf` → `ensureCsrfToken` → `fetch`) eventually called `response.headers.get('content-type')` → `TypeError`. Fixed by mocking `@/lib/api` at the module boundary so `apiPost` is stubbed directly, short-circuiting the entire fetch/CSRF chain.
 
----
+
 
 ### AI route unit tests
 
@@ -209,9 +205,22 @@ Admin credential endpoints require both `authMiddleware` and `superAdminMiddlewa
 | Missing error boundaries (locations) | |
 | Silent failures identified | |
 
-## Specific Weaknesses / Opportunities
+## Changes made and why
 
-## Severity/Impact Rankings
+All 141 web tests pass. Both units are done:
+
+---
+
+**CORS + Global Error Handlers** ([api/src/index.ts](api/src/index.ts), [api/src/app.ts](api/src/app.ts)):
+- `index.ts`: Builds a `corsOrigins` array that automatically adds the `127.0.0.1` equivalent when `localhost` is configured (and vice versa), so `http://127.0.0.1:5173` and `http://localhost:5173` are both allowed.
+- `app.ts`: Updated `createApp` signature to `string | string[]` — cors middleware accepts arrays natively.
+- `index.ts`: Added `process.on('unhandledRejection', ...)` and `process.on('uncaughtException', ...)` after `main()` — both log to stderr without calling `process.exit`.
+
+**React Error Boundaries** ([web/src/main.tsx](web/src/main.tsx)):
+- Added `ErrorBoundary` import and a small `EB` wrapper component.
+- Wrapped 14 major route elements (`dashboard`, `my-week`, `docs`, `documents/:id/*`, `issues`, `projects`, `programs`, `team/*`, `settings`, admin routes) with `<EB>`, giving each route its own isolated error boundary.
+- The existing boundary in `App.tsx` around `<Outlet />` is untouched.
+
 
 # Category 7 Audit Deliverable
 

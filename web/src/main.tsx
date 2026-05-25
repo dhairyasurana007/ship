@@ -44,7 +44,12 @@ const ReviewsPage = lazy(() => import('@/pages/ReviewsPage').then(m => ({ defaul
 const OrgChartPage = lazy(() => import('@/pages/OrgChartPage').then(m => ({ default: m.OrgChartPage })));
 import { ToastProvider } from '@/components/ui/Toast';
 import { MutationErrorToast } from '@/components/MutationErrorToast';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import './index.css';
+
+function EB({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundary>{children}</ErrorBoundary>;
+}
 
 /**
  * Redirect component for type-specific routes to canonical /documents/:id
@@ -179,7 +184,7 @@ function AppRoutes() {
         path="/admin"
         element={
           <SuperAdminRoute>
-            <AdminDashboardPage />
+            <EB><AdminDashboardPage /></EB>
           </SuperAdminRoute>
         }
       />
@@ -187,7 +192,7 @@ function AppRoutes() {
         path="/admin/workspaces/:id"
         element={
           <SuperAdminRoute>
-            <AdminWorkspaceDetailPage />
+            <EB><AdminWorkspaceDetailPage /></EB>
           </SuperAdminRoute>
         }
       />
@@ -214,16 +219,16 @@ function AppRoutes() {
         }
       >
         <Route index element={<Navigate to="/my-week" replace />} />
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="my-week" element={<MyWeekPage />} />
-        <Route path="docs" element={<DocumentsPage />} />
+        <Route path="dashboard" element={<EB><DashboardPage /></EB>} />
+        <Route path="my-week" element={<EB><MyWeekPage /></EB>} />
+        <Route path="docs" element={<EB><DocumentsPage /></EB>} />
         <Route path="docs/:id" element={<DocumentRedirect />} />
-        <Route path="documents/:id/*" element={<UnifiedDocumentPage />} />
-        <Route path="issues" element={<IssuesPage />} />
+        <Route path="documents/:id/*" element={<EB><UnifiedDocumentPage /></EB>} />
+        <Route path="issues" element={<EB><IssuesPage /></EB>} />
         <Route path="issues/:id" element={<DocumentRedirect />} />
-        <Route path="projects" element={<ProjectsPage />} />
+        <Route path="projects" element={<EB><ProjectsPage /></EB>} />
         <Route path="projects/:id" element={<DocumentRedirect />} />
-        <Route path="programs" element={<ProgramsPage />} />
+        <Route path="programs" element={<EB><ProgramsPage /></EB>} />
         <Route path="programs/:programId/sprints/:id" element={<DocumentRedirect />} />
         <Route path="programs/:id/*" element={<ProgramTabRedirect />} />
         <Route path="sprints" element={<Navigate to="/team/allocation" replace />} />
@@ -235,16 +240,16 @@ function AppRoutes() {
         <Route path="sprints/:id/standups" element={<SprintTabRedirect tab="standups" />} />
         <Route path="sprints/:id/review" element={<SprintTabRedirect tab="review" />} />
         <Route path="team" element={<Navigate to="/team/allocation" replace />} />
-        <Route path="team/allocation" element={<TeamModePage />} />
-        <Route path="team/directory" element={<TeamDirectoryPage />} />
-        <Route path="team/status" element={<StatusOverviewPage />} />
-        <Route path="team/reviews" element={<ReviewsPage />} />
-        <Route path="team/org-chart" element={<OrgChartPage />} />
+        <Route path="team/allocation" element={<EB><TeamModePage /></EB>} />
+        <Route path="team/directory" element={<EB><TeamDirectoryPage /></EB>} />
+        <Route path="team/status" element={<EB><StatusOverviewPage /></EB>} />
+        <Route path="team/reviews" element={<EB><ReviewsPage /></EB>} />
+        <Route path="team/org-chart" element={<EB><OrgChartPage /></EB>} />
         {/* Person profile stays in Teams context - no redirect to /documents */}
-        <Route path="team/:id" element={<PersonEditorPage />} />
-        <Route path="feedback/:id" element={<FeedbackEditorPage />} />
-        <Route path="settings" element={<WorkspaceSettingsPage />} />
-        <Route path="settings/conversions" element={<ConvertedDocumentsPage />} />
+        <Route path="team/:id" element={<EB><PersonEditorPage /></EB>} />
+        <Route path="feedback/:id" element={<EB><FeedbackEditorPage /></EB>} />
+        <Route path="settings" element={<EB><WorkspaceSettingsPage /></EB>} />
+        <Route path="settings/conversions" element={<EB><ConvertedDocumentsPage /></EB>} />
       </Route>
     </Routes>
     </Suspense>
