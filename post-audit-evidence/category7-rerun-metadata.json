@@ -1,0 +1,131 @@
+{
+  "startedAt": "2026-05-25T01:20:35.127Z",
+  "baseUrl": "https://ship-web-ak37.onrender.com",
+  "email": "dev@ship.local",
+  "login": {
+    "success": false,
+    "finalUrl": "https://ship-web-ak37.onrender.com/login"
+  },
+  "routes": [
+    {
+      "key": "login",
+      "route": "/login",
+      "url": "https://ship-web-ak37.onrender.com/login",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "setup",
+      "route": "/setup",
+      "url": "https://ship-web-ak37.onrender.com/setup",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fsetup",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "my-week",
+      "route": "/my-week",
+      "url": "https://ship-web-ak37.onrender.com/my-week",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fmy-week",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "dashboard",
+      "route": "/dashboard",
+      "url": "https://ship-web-ak37.onrender.com/dashboard",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fdashboard",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "docs",
+      "route": "/docs",
+      "url": "https://ship-web-ak37.onrender.com/docs",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fdocs",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "issues",
+      "route": "/issues",
+      "url": "https://ship-web-ak37.onrender.com/issues",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fissues",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "projects",
+      "route": "/projects",
+      "url": "https://ship-web-ak37.onrender.com/projects",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fprojects",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "programs",
+      "route": "/programs",
+      "url": "https://ship-web-ak37.onrender.com/programs",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fprograms",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "document",
+      "route": "/documents",
+      "url": "https://ship-web-ak37.onrender.com/documents",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fdocuments",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "team-allocation",
+      "route": "/team/allocation",
+      "url": "https://ship-web-ak37.onrender.com/team/allocation",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fteam%2Fallocation",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "team-directory",
+      "route": "/team/directory",
+      "url": "https://ship-web-ak37.onrender.com/team/directory",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fteam%2Fdirectory",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "team-status",
+      "route": "/team/status",
+      "url": "https://ship-web-ak37.onrender.com/team/status",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fteam%2Fstatus",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "team-reviews",
+      "route": "/team/reviews",
+      "url": "https://ship-web-ak37.onrender.com/team/reviews",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fteam%2Freviews",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "team-org-chart",
+      "route": "/team/org-chart",
+      "url": "https://ship-web-ak37.onrender.com/team/org-chart",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fteam%2Forg-chart",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "admin",
+      "route": "/admin",
+      "url": "https://ship-web-ak37.onrender.com/admin",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fadmin",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "settings",
+      "route": "/settings",
+      "url": "https://ship-web-ak37.onrender.com/settings",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fsettings",
+      "axeStatus": "ok"
+    },
+    {
+      "key": "settings-conversions",
+      "route": "/settings/conversions",
+      "url": "https://ship-web-ak37.onrender.com/settings/conversions",
+      "finalUrl": "https://ship-web-ak37.onrender.com/login?expired=true&returnTo=%2Fsettings%2Fconversions",
+      "axeStatus": "ok"
+    }
+  ],
+  "finishedAt": "2026-05-25T01:21:05.979Z"
+}
