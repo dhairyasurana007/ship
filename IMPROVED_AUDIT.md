@@ -136,23 +136,63 @@ The existing indexes on the `documents` table (`idx_documents_workspace_id`, `id
 
 ## Changes made and why
 
-3 consecutive runs, 141/141 passing each time. U7 is complete.
+## Track 5 Changes Summary (U7 – U12)
 
-**Summary of changes:**
+---
 
-**[document-tabs.test.ts](web/src/lib/document-tabs.test.ts)** (9 fixes) — updated tests to match the sprint-to-weeks rename and the sprint tabs addition:
-- `'sprints'` tab ID → `'weeks'` in all assertions (project and program tabs)
-- Sprint now has tabs: updated "returns empty array" test to "returns tabs" with `length > 0`
-- `documentTypeHasTabs('sprint')` now returns `true`
-- First project tab is now `'issues'` (not `'details'`)
-- `'Weeks (3)'` → `'Weeks'` (project weeks tab uses a static label, not dynamic)
+### Fix 13 persistent web test failures
 
-**[DetailsExtension.test.ts](web/src/components/editor/DetailsExtension.test.ts)** (3 fixes):
-- Content schema updated from `'block+'` to `'detailsSummary detailsContent'`
-- Imported and registered `DetailsSummary`/`DetailsContent` in the two Editor instantiation tests — without those child node types registered, the schema validation throws
+**3 files modified** | `web/src/lib/document-tabs.test.ts`, `web/src/components/editor/DetailsExtension.test.ts`, `web/src/hooks/useSessionTimeout.test.ts`
 
-**[useSessionTimeout.test.ts](web/src/hooks/useSessionTimeout.test.ts)** (1 fix):
-- Added `vi.mock('@/lib/api', ...)` to stub `apiPost` — `resetTimer` calls `apiPost` which internally tried to fetch a CSRF token; without proper `headers` on the mock response, `isJsonResponse` threw, landing in the catch block and calling `onTimeout` unexpectedly
+**`document-tabs.test.ts` — 9 failures fixed**
+Tests were written against stale assumptions. The `sprints` tab ID was renamed to `weeks`, sprint documents gained tabs (previously had none), the default project tab changed from `details` to `issues`, and the `Weeks` count label became static. Fixed by updating all `'sprints'` → `'weeks'` occurrences, correcting sprint tab presence assertions, updating the first-tab expectation to `'issues'`, and dropping the dynamic `'Weeks (3)'` expectation to `'Weeks'`.
+
+**`DetailsExtension.test.ts` — 3 failures fixed**
+The `Editor` instances only registered `DetailsExtension`, but its schema references node types `detailsSummary` and `detailsContent`. Without those registered, TipTap schema validation fails. Fixed by importing and registering `DetailsSummary` and `DetailsContent` alongside `DetailsExtension` in both `Editor` instantiations.
+
+**`useSessionTimeout.test.ts` — 1 failure fixed**
+The test mocked `fetch` but the mock response had no `headers` property. The real call chain (`apiPost` → `fetchWithCsrf` → `ensureCsrfToken` → `fetch`) eventually called `response.headers.get('content-type')` → `TypeError`. Fixed by mocking `@/lib/api` at the module boundary so `apiPost` is stubbed directly, short-circuiting the entire fetch/CSRF chain.
+
+---
+
+### AI route unit tests
+
+**1 file created** | `api/src/__tests__/ai.test.ts` — 16 tests
+
+No tests existed for `/api/ai/*`. These routes handle input validation, auth gating, rate limiting, and AWS Bedrock failure recovery — all exercisable without a real Bedrock connection. Covers `GET /ai/status` (available/unavailable), `POST /ai/analyze-plan` and `POST /ai/analyze-retro` (missing input → 400, valid response shape, correct args forwarded to service, rate-limit → 429, service exception → `ai_unavailable`), plus unauthenticated 401s for all three endpoints.
+
+---
+
+### Dashboard route unit tests
+
+**1 file created** | `api/src/__tests__/dashboard.test.ts` — 14 tests
+
+The dashboard aggregates multiple sequential DB queries with non-trivial 404 branching (workspace not found, person not found) and a `?week_number` query param. Covers auth gating (401 for all three routes), `GET /my-work` workspace-not-found 404 and happy-path response shape, `GET /my-focus` person/workspace 404 paths and happy-path, `GET /my-week` 404 paths, full response shape, `?week_number` param honoured, and the 7-standup-slot count. Additional mocks required: `../middleware/visibility.js` (`getVisibilityContext`, `VISIBILITY_FILTER_SQL`) and `../utils/document-content.js` (`extractText`).
+
+---
+
+### CAIA auth route unit tests
+
+**1 file created** | `api/src/__tests__/caia-auth.test.ts` — 12 tests
+
+The CAIA OAuth flow has security-critical branches that must be verified without a live OAuth server: open-redirect prevention, invalid/expired state handling, non-.gov email rejection. Covers `GET /status` (configured/unconfigured), `GET /login` (503 when unconfigured, auth URL returned, OAuth state stored, 500 on PKCE error), and `GET /callback` (OAuth error param redirect, missing state redirect, invalid/expired state redirect, successful login redirects to `/`, exception → error redirect, non-.gov/.mil email rejected).
+
+---
+
+### Weekly plans route unit tests
+
+**1 file created** | `api/src/__tests__/weekly-plans.test.ts` — 18 tests
+
+`POST /weekly-plans` and `POST /weekly-retros` use `pool.connect()` for transactional writes — a pattern not covered elsewhere. Covers Zod validation (missing fields, bad UUID, week < 1), person-not-found 404, idempotent 200 when a plan already exists, 201 when a new plan is created (person found → no existing plan → BEGIN → INSERT → COMMIT), DB connection always released even on error, and GET routes for list/by-id/history and the retros equivalents. Used `vi.hoisted()` to make the mock transaction client available inside the `vi.mock` factory.
+
+---
+
+### Admin credentials route unit tests
+
+**1 file created** | `api/src/__tests__/admin-credentials.test.ts` — 15 tests
+
+Admin credential endpoints require both `authMiddleware` and `superAdminMiddleware` (two-layer gating) and interact with AWS Secrets Manager — all mockable without AWS. Covers 401 (unauthenticated) and 403 (authenticated but not super-admin), HTML management page returned for `GET /`, `GET /status` shape (configured true/false, `clientId` exposed), `POST /save` validation (missing `issuer_url`, missing `client_id`, no secret with no fallback → 400), successful save, save-with-warning when issuer discovery fails (credentials still saved), secret fall-through from existing credentials when no new secret is provided, and `POST /test-api` (unconfigured → 400, success → 200, discovery failure → 500).
+
 
 
 # Category 6 Audit Deliverable
