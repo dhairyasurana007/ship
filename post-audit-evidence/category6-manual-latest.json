@@ -1,0 +1,38 @@
+{
+  "startedAt": "2026-05-25T03:08:25.503Z",
+  "apiUrl": "https://ship-api-ysxi.onrender.com",
+  "webUrl": "https://ship-web-ak37.onrender.com",
+  "apiChecks": {
+    "loginEmpty": 400,
+    "emptyTitle": 400,
+    "overlongTitle": 400,
+    "scriptTitle": 200,
+    "concurrency": {
+      "r1": 200,
+      "r2": 200,
+      "finalTitle": "manual-race-b-1779678506860"
+    }
+  },
+  "browserChecks": {
+    "consoleErrors": [
+      "Access to fetch at 'https://ship-api-ysxi.onrender.com/api/auth/me' from origin 'https://ship-web-ak37.onrender.com' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+      "Failed to load resource: net::ERR_FAILED",
+      "[Auth] Session check failed: TypeError: Failed to fetch\n    at Pe (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:52:73283)\n    at Object.me (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:52:74053)\n    at https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:52:78437\n    at https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:52:78999\n    at za (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:41:24439)\n    at Js (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:41:42798)\n    at https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:41:41048\n    at O (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:26:1617)\n    at MessagePort.ne (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:26:1987)",
+      "Access to fetch at 'https://ship-api-ysxi.onrender.com/api/setup/status' from origin 'https://ship-web-ak37.onrender.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+      "Failed to load resource: net::ERR_FAILED",
+      "Failed to check setup status: TypeError: Failed to fetch\n    at le (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:52:122434)\n    at https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:52:122838\n    at za (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:41:24439)\n    at Js (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:41:42798)\n    at https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:41:41048\n    at O (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:26:1617)\n    at MessagePort.ne (https://ship-web-ak37.onrender.com/assets/index-5834pIcQ.js:26:1987)",
+      "Access to fetch at 'https://ship-api-ysxi.onrender.com/api/auth/caia/status' from origin 'https://ship-web-ak37.onrender.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.",
+      "Failed to load resource: net::ERR_FAILED"
+    ],
+    "pageErrors": [],
+    "offlineStatus": "offline-reload-error: Error: page.reload: net::ERR_INTERNET_DISCONNECTED\nCall log:\n\u001b[2m  - waiting for navigation until \"domcontentloaded\"\u001b[22",
+    "onlineRecoveredUrl": "https://ship-web-ak37.onrender.com/login"
+  },
+  "staticChecks": {
+    "unhandledRejectionHandler": true,
+    "uncaughtExceptionHandler": true,
+    "appErrorBoundaryTags": 1,
+    "editorErrorBoundaryTags": 1
+  },
+  "finishedAt": "2026-05-25T03:08:30.996Z"
+}

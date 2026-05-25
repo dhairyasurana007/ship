@@ -199,11 +199,11 @@ Admin credential endpoints require both `authMiddleware` and `superAdminMiddlewa
 
 | Metric | Your Baseline |
 |--------|---------------|
-| Console error during normal usage | |
-| Unhandled promise rejections (server) | |
-| Network disconnect recovery (Pass / Partial / Fail) | |
-| Missing error boundaries (locations) | |
-| Silent failures identified | |
+| Console error during normal usage | High error volume in browser run; repeated CORS + fetch failures from `https://ship-web-ak37.onrender.com` to `https://ship-api-ysxi.onrender.com` (`No 'Access-Control-Allow-Origin' header`, `net::ERR_FAILED`, setup/auth session check failures). |
+| Unhandled promise rejections (server) | Global handlers present (`process.on('unhandledRejection')` and `process.on('uncaughtException')` detected in `api/src/index.ts`). |
+| Network disconnect recovery (Pass / Partial / Fail) | Partial (`offline-reload-error: net::ERR_INTERNET_DISCONNECTED`; after restoring network, reload recovered to `https://ship-web-ak37.onrender.com/login`). |
+| Missing error boundaries (locations) | App.tsx ErrorBoundary tags=1, Editor.tsx ErrorBoundary tags=1 |
+| Silent failures identified | Potential script-like title acceptance (`script-title=200`) while validation rejects empty/overlong titles (`400`); concurrent same-field writes both succeed (`r1=200`, `r2=200`, final title last-write-wins). |
 
 ## Changes made and why
 
