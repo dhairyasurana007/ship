@@ -8,6 +8,7 @@ import { classifyConditions } from './classify-conditions.js';
 import { buildDedupStateValue, evaluateDedup, type DedupStateValue } from './dedup-worsening.js';
 import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
+import { getTraceContext } from './observability.js';
 import { getFleetGraphState, upsertFleetGraphState } from './state-store.js';
 import type { FleetGraphConfig, FleetGraphRunEnvelope, TriggerEvent, TriggerType } from './types.js';
 
@@ -133,6 +134,7 @@ export class FleetGraphTriggerRuntime {
       },
       createdAt: new Date().toISOString(),
     };
+    envelope.payload.trace = getTraceContext(envelope.runId);
 
     await insertFleetGraphRun(envelope, 'queued');
     const enqueued = this.queue.enqueue(envelope);
