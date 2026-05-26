@@ -25,3 +25,26 @@ export interface TriggerEvent {
   entityType: string;
   updatedAt?: string;
 }
+
+export type FleetGraphConditionType = 'stale_issue' | 'sprint_scope_creep' | 'unresolved_blocker' | 'orphaned_issue';
+export type FleetGraphSeverity = 'info' | 'warning' | 'critical';
+
+export interface FleetGraphCondition {
+  type: FleetGraphConditionType;
+  severity: FleetGraphSeverity;
+  entityId: string;
+  workspaceId: string;
+  details: Record<string, unknown>;
+}
+
+export interface FleetGraphIssueRecord {
+  id: string;
+  workspaceId: string;
+  updatedAt: string;
+  state: string | null;
+  sprintId: string | null;
+  projectId: string | null;
+  hasBlockerText: boolean;
+  blockerUpdatedAt?: string | null;
+  createdAt: string;
+}

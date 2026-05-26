@@ -4,6 +4,8 @@ import { pool } from '../db/client.js';
 import { logFleetGraphError, logFleetGraphInfo } from './logger.js';
 import { insertFleetGraphRun, updateFleetGraphRunStatus } from './run-store.js';
 import { FleetGraphTriggerQueue } from './trigger-queue.js';
+import { classifyConditions } from './classify-conditions.js';
+import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
 import type { FleetGraphConfig, FleetGraphRunEnvelope, TriggerEvent, TriggerType } from './types.js';
 
 const LISTEN_CHANNEL = 'document_changes';
@@ -17,6 +19,13 @@ export class FleetGraphTriggerRuntime {
   constructor(private readonly config: FleetGraphConfig) {
     this.queue = new FleetGraphTriggerQueue(config.maxConcurrency, config.queueSize, async (envelope) => {
       await updateFleetGraphRunStatus(envelope.runId, 'running');
+      if (envelope.workspaceId) {
+        await loadProjectContext(envelope.workspaceId);
+        const issues = await fetchIssues(envelope.workspaceId);
+        await fetchSprintState(envelope.workspaceId);
+        await fetchTeamState(envelope.workspaceId);
+        envelope.payload.conditions = classifyConditions(issues);
+      }
       await updateFleetGraphRunStatus(envelope.runId, 'completed');
     });
   }
