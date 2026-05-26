@@ -7,6 +7,7 @@ import { FleetGraphTriggerQueue } from './trigger-queue.js';
 import { classifyConditions } from './classify-conditions.js';
 import { buildDedupStateValue, evaluateDedup, type DedupStateValue } from './dedup-worsening.js';
 import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
+import { routeOutputs } from './notifications.js';
 import { getFleetGraphState, upsertFleetGraphState } from './state-store.js';
 import type { FleetGraphConfig, FleetGraphRunEnvelope, TriggerEvent, TriggerType } from './types.js';
 
@@ -28,6 +29,7 @@ export class FleetGraphTriggerRuntime {
         await fetchTeamState(envelope.workspaceId);
         const conditions = classifyConditions(issues);
         envelope.payload.conditions = conditions;
+        envelope.payload.outputs = routeOutputs(conditions);
         const stateEntityId = envelope.entityId ?? 'workspace';
         const previous = await getFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup');
         const dedup = evaluateDedup((previous?.value ?? null) as DedupStateValue | null, conditions);
