@@ -180,6 +180,26 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
     res.json({ status: 'ok' });
   });
 
+  // Temporary CORS diagnostics endpoint (no auth needed)
+  app.get('/api/cors-debug', (req, res) => {
+    res.json({
+      ok: true,
+      serverSeen: {
+        origin: req.headers.origin ?? null,
+        host: req.headers.host ?? null,
+        forwardedProto: req.headers['x-forwarded-proto'] ?? null,
+      },
+      env: {
+        nodeEnv: process.env.NODE_ENV ?? null,
+        corsOrigin: process.env.CORS_ORIGIN ?? null,
+        sessionCookieSecure,
+        sessionCookieSameSite,
+        sessionCookieProxy,
+        render: process.env.RENDER ?? null,
+      },
+    });
+  });
+
   // API documentation (no auth needed)
   setupSwagger(app);
 

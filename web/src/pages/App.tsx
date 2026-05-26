@@ -37,6 +37,7 @@ import { ActionItemsModal } from '@/components/ActionItemsModal';
 import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
 import { FleetGraphGlobalLauncher } from '@/components/fleetgraph/FleetGraphGlobalLauncher';
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'settings' | 'dashboard' | 'project-context';
 
@@ -143,6 +144,35 @@ export function AppLayout() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Temporary CORS diagnostics - logs once on app load
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/cors-debug`, {
+          credentials: 'include',
+        });
+        const body = await response.json().catch(() => null);
+        if (!cancelled) {
+          console.log('[CORS-DEBUG]', {
+            status: response.status,
+            ok: response.ok,
+            body,
+            browserOrigin: window.location.origin,
+            apiUrl: API_URL,
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('[CORS-DEBUG] request failed', error);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Get current document type and ID for /documents/:id routes
