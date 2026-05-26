@@ -16,6 +16,7 @@ import { DocumentTypeSelector, getMissingRequiredFields } from '@/components/sid
 import type { DocumentType as SelectableDocumentType } from '@/components/sidebars/DocumentTypeSelector';
 import { useAuth } from '@/hooks/useAuth';
 import { PlanQualityBanner, RetroQualityBanner } from '@/components/PlanQualityBanner';
+import { FleetGraphAssistantPanel } from '@/components/fleetgraph/FleetGraphAssistantPanel';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import type { Person } from '@/components/PersonCombobox';
 import type { BelongsTo } from '@ship/shared';
@@ -367,9 +368,16 @@ export function UnifiedEditor({
 
   // Compose full sidebar with type selector
   const sidebar = useMemo(() => {
+    const assistant = <FleetGraphAssistantPanel documentId={document.id} documentType={document.document_type} />;
+
     // If we're not showing the type selector, just return the type-specific sidebar
     if (!showTypeSelector || !canChangeType) {
-      return typeSpecificSidebar;
+      return (
+        <div className="flex h-full flex-col">
+          <div className="flex-1 overflow-auto">{typeSpecificSidebar}</div>
+          {assistant}
+        </div>
+      );
     }
 
     // Add type selector at the top
@@ -392,9 +400,10 @@ export function UnifiedEditor({
         <div className="flex-1 overflow-auto pb-20">
           {typeSpecificSidebar}
         </div>
+        {assistant}
       </div>
     );
-  }, [showTypeSelector, canChangeType, typeSpecificSidebar, document.document_type, handleTypeChange, isChangingType, missingFields]);
+  }, [showTypeSelector, canChangeType, typeSpecificSidebar, document.document_type, document.id, handleTypeChange, isChangingType, missingFields]);
 
   if (!user) {
     return null;
