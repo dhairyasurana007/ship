@@ -3,8 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ContextMenu, ContextMenuItem } from '@/components/ui/ContextMenu';
 import { useToast } from '@/components/ui/Toast';
 import { cn } from '@/lib/cn';
-
-const API_URL = import.meta.env.VITE_API_URL ?? '';
+import { apiGet } from '@/lib/api';
 
 interface Backlink {
   id: string;
@@ -38,9 +37,7 @@ export function BacklinksPanel({ documentId }: BacklinksPanelProps) {
         }
         setError(null);
 
-        const response = await fetch(`${API_URL}/api/documents/${documentId}/backlinks`, {
-          credentials: 'include',
-        });
+        const response = await apiGet(`/api/documents/${documentId}/backlinks`);
 
         if (!response.ok) {
           throw new Error('Failed to fetch backlinks');
