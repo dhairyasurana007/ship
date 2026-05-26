@@ -1,4 +1,5 @@
-export type TriggerType = 'schedule' | 'pg_event' | 'user_request';
+export type TriggerType = 'schedule' | 'pg_event' | 'poll_fallback' | 'user_request';
+export type FleetGraphRunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'skipped';
 
 export interface FleetGraphConfig {
   enabled: boolean;
@@ -11,6 +12,16 @@ export interface FleetGraphConfig {
 export interface FleetGraphRunEnvelope {
   runId: string;
   triggerType: TriggerType;
-  payload: unknown;
+  workspaceId?: string;
+  entityId?: string;
+  entityType?: string;
+  payload: Record<string, unknown>;
   createdAt: string;
+}
+
+export interface TriggerEvent {
+  workspaceId: string;
+  entityId: string;
+  entityType: string;
+  updatedAt?: string;
 }

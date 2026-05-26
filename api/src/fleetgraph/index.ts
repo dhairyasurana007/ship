@@ -1,6 +1,7 @@
 import type { Server } from 'http';
 import { loadFleetGraphConfig } from './config.js';
 import { logFleetGraphError, logFleetGraphInfo } from './logger.js';
+import { FleetGraphTriggerRuntime } from './trigger-runtime.js';
 
 export interface FleetGraphServiceHandle {
   stop: () => Promise<void>;
@@ -14,6 +15,9 @@ export async function startFleetGraphService(_server: Server): Promise<FleetGrap
   }
 
   try {
+    const runtime = new FleetGraphTriggerRuntime(config);
+    await runtime.start();
+
     logFleetGraphInfo('Service initialized.', {
       model: config.model,
       maxConcurrency: config.maxConcurrency,
@@ -23,6 +27,7 @@ export async function startFleetGraphService(_server: Server): Promise<FleetGrap
 
     return {
       stop: async () => {
+        await runtime.stop();
         logFleetGraphInfo('Service stopped.');
       },
     };
