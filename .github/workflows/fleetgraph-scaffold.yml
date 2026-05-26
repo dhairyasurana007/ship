@@ -68,6 +68,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build shared package
+        run: corepack pnpm build:shared
+
       - name: Run DB migrations
         run: corepack pnpm -C api db:migrate
 
