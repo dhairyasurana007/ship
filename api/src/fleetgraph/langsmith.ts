@@ -1,9 +1,11 @@
 import type { FleetGraphConfig, FleetGraphRunEnvelope } from './types.js';
+import { logFleetGraphError, logFleetGraphInfo } from './logger.js';
 
 function headers(config: FleetGraphConfig): Record<string, string> {
   const out: Record<string, string> = {
     'Content-Type': 'application/json',
     'x-api-key': config.langSmithApiKey || '',
+    Authorization: `Bearer ${config.langSmithApiKey || ''}`,
   };
   if (config.langSmithWorkspaceId) {
     out['x-tenant-id'] = config.langSmithWorkspaceId;
@@ -18,23 +20,39 @@ function endpoint(config: FleetGraphConfig, path: string): string {
 export async function createLangSmithRun(config: FleetGraphConfig, envelope: FleetGraphRunEnvelope): Promise<void> {
   if (!config.langSmithTracing || !config.langSmithApiKey) return;
 
-  await fetch(endpoint(config, '/runs'), {
-    method: 'POST',
-    headers: headers(config),
-    body: JSON.stringify({
-      id: envelope.runId,
-      name: 'fleetgraph_run',
-      run_type: 'chain',
-      inputs: {
-        triggerType: envelope.triggerType,
-        workspaceId: envelope.workspaceId ?? null,
-        entityId: envelope.entityId ?? null,
-        entityType: envelope.entityType ?? null,
-      },
-      start_time: envelope.createdAt,
-      session_name: config.langSmithProject,
-    }),
-  });
+  try {
+    const res = await fetch(endpoint(config, '/runs'), {
+      method: 'POST',
+      headers: headers(config),
+      body: JSON.stringify({
+        id: envelope.runId,
+        name: 'fleetgraph_run',
+        run_type: 'chain',
+        inputs: {
+          triggerType: envelope.triggerType,
+          workspaceId: envelope.workspaceId ?? null,
+          entityId: envelope.entityId ?? null,
+          entityType: envelope.entityType ?? null,
+        },
+        start_time: envelope.createdAt,
+        session_name: config.langSmithProject,
+        project_name: config.langSmithProject,
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      logFleetGraphError('LangSmith create run failed.', {
+        status: res.status,
+        runId: envelope.runId,
+        body,
+      });
+      return;
+    }
+    logFleetGraphInfo('LangSmith run created.', { runId: envelope.runId });
+  } catch (error) {
+    logFleetGraphError('LangSmith create run request error.', error);
+  }
 }
 
 export async function finishLangSmithRun(
@@ -45,17 +63,31 @@ export async function finishLangSmithRun(
 ): Promise<void> {
   if (!config.langSmithTracing || !config.langSmithApiKey) return;
 
-  await fetch(endpoint(config, `/runs/${encodeURIComponent(envelope.runId)}`), {
-    method: 'PATCH',
-    headers: headers(config),
-    body: JSON.stringify({
-      end_time: new Date().toISOString(),
-      outputs: {
-        status,
-        payload: envelope.payload,
-      },
-      error: status === 'failed' ? errorMessage ?? 'fleetgraph_run_failed' : null,
-    }),
-  });
-}
+  try {
+    const res = await fetch(endpoint(config, `/runs/${encodeURIComponent(envelope.runId)}`), {
+      method: 'PATCH',
+      headers: headers(config),
+      body: JSON.stringify({
+        end_time: new Date().toISOString(),
+        outputs: {
+          status,
+          payload: envelope.payload,
+        },
+        error: status === 'failed' ? errorMessage ?? 'fleetgraph_run_failed' : null,
+      }),
+    });
 
+    if (!res.ok) {
+      const body = await res.text();
+      logFleetGraphError('LangSmith finish run failed.', {
+        status: res.status,
+        runId: envelope.runId,
+        body,
+      });
+      return;
+    }
+    logFleetGraphInfo('LangSmith run finalized.', { runId: envelope.runId, status });
+  } catch (error) {
+    logFleetGraphError('LangSmith finish run request error.', error);
+  }
+}
