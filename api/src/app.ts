@@ -98,9 +98,10 @@ const apiLimiter = rateLimit({
 export function createApp(corsOrigin: string | string[] = 'http://localhost:5173'): express.Express {
   const app = express();
   initializeQueryAudit();
+  const isRender = process.env.RENDER === 'true' || Boolean(process.env.RENDER);
 
   // Trust proxy headers (CloudFront) for secure cookies and correct protocol detection
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' || isRender) {
     app.set('trust proxy', 1);
 
     // CloudFront with viewer_protocol_policy="redirect-to-https" always serves viewers over HTTPS.
