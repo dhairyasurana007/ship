@@ -36,6 +36,7 @@ import { SelectionPersistenceProvider } from '@/contexts/SelectionPersistenceCon
 import { ActionItemsModal } from '@/components/ActionItemsModal';
 import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
+import { FleetGraphGlobalLauncher } from '@/components/fleetgraph/FleetGraphGlobalLauncher';
 
 type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'settings' | 'dashboard' | 'project-context';
 
@@ -574,6 +575,11 @@ export function AppLayout() {
       <ActionItemsModal
         open={actionItemsModalOpen}
         onClose={() => setActionItemsModalOpen(false)}
+      />
+
+      <FleetGraphGlobalLauncher
+        documentId={currentDocumentId ?? undefined}
+        documentType={currentDocumentType ?? undefined}
       />
     </div>
     </SelectionPersistenceProvider>
