@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import crypto from 'crypto';
 import {
   createApprovalRequest,
   executeApprovedMutation,
@@ -7,6 +8,9 @@ import {
   type FleetGraphMutationType,
 } from '../fleetgraph/human-gate.js';
 import { generateResponse, loadViewContext, reasonOnContext } from '../fleetgraph/on-demand.js';
+import { loadFleetGraphConfig } from '../fleetgraph/config.js';
+import { createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
+import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
 
 const router = Router();
 
@@ -67,16 +71,43 @@ router.post('/chat', async (req, res) => {
     res.status(400).json({ error: 'documentType, documentId, prompt are required' });
     return;
   }
+  const config = loadFleetGraphConfig();
+  const runEnvelope: FleetGraphRunEnvelope = {
+    runId: crypto.randomUUID(),
+    triggerType: 'user_request',
+    workspaceId: req.workspaceId,
+    entityId: documentId,
+    entityType: documentType,
+    payload: { promptLength: prompt.length },
+    createdAt: new Date().toISOString(),
+  };
 
-  const context = await loadViewContext(documentType, documentId);
-  const reasoning = reasonOnContext(context, prompt);
-  const response = generateResponse(reasoning, { requiresMutationConfirm, explicitConfirm });
-  res.json({
-    contextWindowDays: 30,
-    context,
-    reasoning,
-    ...response,
-  });
+  await createLangSmithRun(config, runEnvelope);
+
+  try {
+    const context = await loadViewContext(documentType, documentId);
+    const reasoning = reasonOnContext(context, prompt);
+    const response = generateResponse(reasoning, { requiresMutationConfirm, explicitConfirm });
+
+    runEnvelope.payload = {
+      ...runEnvelope.payload,
+      contextLoaded: Boolean(context.document),
+      historyCount: Array.isArray(context.history) ? context.history.length : 0,
+      requiresConfirm: response.requiresConfirm,
+    };
+    await finishLangSmithRun(config, runEnvelope, 'completed');
+
+    res.json({
+      contextWindowDays: 30,
+      context,
+      reasoning,
+      ...response,
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    await finishLangSmithRun(config, runEnvelope, 'failed', errorMessage);
+    throw error;
+  }
 });
 
 export default router;
