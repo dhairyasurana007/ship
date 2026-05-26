@@ -9,6 +9,11 @@ describe('fleetgraph config', () => {
     expect(cfg.model).toBe('gpt-4o-mini');
     expect(cfg.openRouterApiKey).toBeNull();
     expect(cfg.openRouterBaseUrl).toBe('https://openrouter.ai/api/v1');
+    expect(cfg.langSmithTracing).toBe(false);
+    expect(cfg.langSmithApiKey).toBeNull();
+    expect(cfg.langSmithEndpoint).toBe('https://api.smith.langchain.com');
+    expect(cfg.langSmithProject).toBe('default');
+    expect(cfg.langSmithWorkspaceId).toBeNull();
     expect(cfg.maxConcurrency).toBe(2);
     expect(cfg.queueSize).toBe(100);
     expect(cfg.pollIntervalMs).toBe(120000);
@@ -40,5 +45,14 @@ describe('fleetgraph config', () => {
     expect(cfg.provider).toBe('openrouter');
     expect(cfg.openRouterApiKey).toBe('test-key');
     expect(cfg.openRouterBaseUrl).toBe('https://openrouter.ai/api/v1');
+  });
+
+  it('requires LANGSMITH_API_KEY when tracing is enabled', () => {
+    expect(() =>
+      loadFleetGraphConfig({
+        FLEETGRAPH_ENABLED: 'true',
+        LANGSMITH_TRACING: 'true',
+      })
+    ).toThrow(/LANGSMITH_API_KEY/);
   });
 });

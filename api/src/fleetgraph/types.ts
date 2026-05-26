@@ -7,6 +7,11 @@ export interface FleetGraphConfig {
   model: string;
   openRouterApiKey: string | null;
   openRouterBaseUrl: string;
+  langSmithTracing: boolean;
+  langSmithApiKey: string | null;
+  langSmithEndpoint: string;
+  langSmithProject: string;
+  langSmithWorkspaceId: string | null;
   maxConcurrency: number;
   queueSize: number;
   pollIntervalMs: number;

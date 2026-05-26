@@ -35,5 +35,4 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Run observability tests
-        run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-observability.test.ts
-
+        run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-observability.test.ts src/__tests__/fleetgraph-langsmith.test.ts

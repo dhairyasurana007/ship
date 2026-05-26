@@ -6,6 +6,7 @@ import { insertFleetGraphRun, updateFleetGraphRunStatus } from './run-store.js';
 import { FleetGraphTriggerQueue } from './trigger-queue.js';
 import { classifyConditions } from './classify-conditions.js';
 import { buildDedupStateValue, evaluateDedup, type DedupStateValue } from './dedup-worsening.js';
+import { createLangSmithRun, finishLangSmithRun } from './langsmith.js';
 import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
 import { getTraceContext } from './observability.js';
@@ -23,28 +24,38 @@ export class FleetGraphTriggerRuntime {
   constructor(private readonly config: FleetGraphConfig) {
     this.queue = new FleetGraphTriggerQueue(config.maxConcurrency, config.queueSize, async (envelope) => {
       await updateFleetGraphRunStatus(envelope.runId, 'running');
-      if (envelope.workspaceId) {
-        await loadProjectContext(envelope.workspaceId);
-        const issues = await fetchIssues(envelope.workspaceId);
-        await fetchSprintState(envelope.workspaceId);
-        await fetchTeamState(envelope.workspaceId);
-        const conditions = classifyConditions(issues);
-        envelope.payload.conditions = conditions;
-        envelope.payload.outputs = routeOutputs(conditions);
-        const stateEntityId = envelope.entityId ?? 'workspace';
-        const previous = await getFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup');
-        const dedup = evaluateDedup((previous?.value ?? null) as DedupStateValue | null, conditions);
-        envelope.payload.dedup = dedup;
+      await createLangSmithRun(this.config, envelope);
+      try {
+        if (envelope.workspaceId) {
+          await loadProjectContext(envelope.workspaceId);
+          const issues = await fetchIssues(envelope.workspaceId);
+          await fetchSprintState(envelope.workspaceId);
+          await fetchTeamState(envelope.workspaceId);
+          const conditions = classifyConditions(issues);
+          envelope.payload.conditions = conditions;
+          envelope.payload.outputs = routeOutputs(conditions);
+          const stateEntityId = envelope.entityId ?? 'workspace';
+          const previous = await getFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup');
+          const dedup = evaluateDedup((previous?.value ?? null) as DedupStateValue | null, conditions);
+          envelope.payload.dedup = dedup;
 
-        if (dedup.shouldNotify) {
-          const state = buildDedupStateValue(dedup.dedupKey, conditions);
-          await upsertFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup', state as unknown as Record<string, unknown>);
-        } else {
-          await updateFleetGraphRunStatus(envelope.runId, 'skipped');
-          return;
+          if (dedup.shouldNotify) {
+            const state = buildDedupStateValue(dedup.dedupKey, conditions);
+            await upsertFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup', state as unknown as Record<string, unknown>);
+          } else {
+            await updateFleetGraphRunStatus(envelope.runId, 'skipped');
+            await finishLangSmithRun(this.config, envelope, 'skipped');
+            return;
+          }
         }
+        await updateFleetGraphRunStatus(envelope.runId, 'completed');
+        await finishLangSmithRun(this.config, envelope, 'completed');
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        await updateFleetGraphRunStatus(envelope.runId, 'failed', errorMessage);
+        await finishLangSmithRun(this.config, envelope, 'failed', errorMessage);
+        throw error;
       }
-      await updateFleetGraphRunStatus(envelope.runId, 'completed');
     });
   }
 
