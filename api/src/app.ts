@@ -35,6 +35,7 @@ import aiRoutes from './routes/ai.js';
 import weeklyPlansRoutes, { weeklyRetrosRouter } from './routes/weekly-plans.js';
 import { documentCommentsRouter, commentsRouter } from './routes/comments.js';
 import queryAuditRoutes from './routes/query-audit.js';
+import fleetGraphRoutes from './routes/fleetgraph.js';
 import { setupSwagger } from './swagger.js';
 import { initializeCAIA } from './services/caia.js';
 import { initializeQueryAudit, queryAuditMiddleware } from './observability/query-audit.js';
@@ -252,6 +253,7 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
 
   // File upload routes (CSRF protected for POST endpoints)
   app.use('/api/files', conditionalCsrf, filesRouter);
+  app.use('/api/fleetgraph', conditionalCsrf, fleetGraphRoutes);
 
   // Comments routes
   app.use('/api/documents', conditionalCsrf, documentCommentsRouter);
