@@ -346,10 +346,9 @@ function handleMessage(ws: WebSocket, message: Uint8Array, docName: string, doc:
 // Validate session from cookie header - returns userId/workspaceId or null
 async function validateWebSocketSession(request: IncomingMessage): Promise<{ userId: string; workspaceId: string } | null> {
   const cookieHeader = request.headers.cookie;
-  if (!cookieHeader) return null;
-
-  const cookies = cookie.parse(cookieHeader);
-  const sessionId = cookies.session_id;
+  const cookies = cookieHeader ? cookie.parse(cookieHeader) : {};
+  const url = new URL(request.url || '', 'http://localhost');
+  const sessionId = cookies.session_id || url.searchParams.get('session_id');
   if (!sessionId) return null;
 
   try {

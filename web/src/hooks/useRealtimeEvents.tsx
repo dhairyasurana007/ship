@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from 'react';
 import { useAuth } from './useAuth';
+import { getCrossOriginSessionToken } from '@/lib/api';
 
 // Event types that can be received from the server
 export type RealtimeEventType = 'accountability:updated' | 'connected' | 'pong';
@@ -33,15 +34,19 @@ function getEventsWsUrl(): string {
   // Prefer explicit WebSocket URL (for CloudFront deployments)
   const wsUrl = import.meta.env.VITE_WS_URL;
   if (wsUrl) {
-    return wsUrl.replace(/^http/, 'ws') + '/events';
+    const base = wsUrl.replace(/^http/, 'ws') + '/events';
+    const sessionToken = getCrossOriginSessionToken();
+    return sessionToken ? `${base}?session_id=${encodeURIComponent(sessionToken)}` : base;
   }
 
   // Fall back to API URL or current host
   const apiUrl = import.meta.env.VITE_API_URL ?? '';
   const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  return apiUrl
+  const base = apiUrl
     ? apiUrl.replace(/^http/, 'ws') + '/events'
     : `${wsProtocol}//${window.location.host}/events`;
+  const sessionToken = getCrossOriginSessionToken();
+  return sessionToken ? `${base}?session_id=${encodeURIComponent(sessionToken)}` : base;
 }
 
 export function RealtimeEventsProvider({ children }: { children: ReactNode }) {
