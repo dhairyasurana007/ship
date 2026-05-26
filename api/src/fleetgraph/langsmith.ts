@@ -1,5 +1,6 @@
 import type { FleetGraphConfig, FleetGraphRunEnvelope } from './types.js';
 import { logFleetGraphError, logFleetGraphInfo } from './logger.js';
+const LANGSMITH_HTTP_TIMEOUT_MS = 2000;
 
 function headers(config: FleetGraphConfig): Record<string, string> {
   const out: Record<string, string> = {
@@ -21,9 +22,12 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
   if (!config.langSmithTracing || !config.langSmithApiKey) return;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LANGSMITH_HTTP_TIMEOUT_MS);
     const res = await fetch(endpoint(config, '/runs'), {
       method: 'POST',
       headers: headers(config),
+      signal: controller.signal,
       body: JSON.stringify({
         id: envelope.runId,
         name: 'fleetgraph_run',
@@ -39,6 +43,7 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
         project_name: config.langSmithProject,
       }),
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
       const body = await res.text();
@@ -51,7 +56,10 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
     }
     logFleetGraphInfo('LangSmith run created.', { runId: envelope.runId });
   } catch (error) {
-    logFleetGraphError('LangSmith create run request error.', error);
+    logFleetGraphError('LangSmith create run request error.', {
+      runId: envelope.runId,
+      error,
+    });
   }
 }
 
@@ -64,9 +72,12 @@ export async function finishLangSmithRun(
   if (!config.langSmithTracing || !config.langSmithApiKey) return;
 
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LANGSMITH_HTTP_TIMEOUT_MS);
     const res = await fetch(endpoint(config, `/runs/${encodeURIComponent(envelope.runId)}`), {
       method: 'PATCH',
       headers: headers(config),
+      signal: controller.signal,
       body: JSON.stringify({
         end_time: new Date().toISOString(),
         outputs: {
@@ -76,6 +87,7 @@ export async function finishLangSmithRun(
         error: status === 'failed' ? errorMessage ?? 'fleetgraph_run_failed' : null,
       }),
     });
+    clearTimeout(timeout);
 
     if (!res.ok) {
       const body = await res.text();
@@ -88,6 +100,10 @@ export async function finishLangSmithRun(
     }
     logFleetGraphInfo('LangSmith run finalized.', { runId: envelope.runId, status });
   } catch (error) {
-    logFleetGraphError('LangSmith finish run request error.', error);
+    logFleetGraphError('LangSmith finish run request error.', {
+      runId: envelope.runId,
+      status,
+      error,
+    });
   }
 }
