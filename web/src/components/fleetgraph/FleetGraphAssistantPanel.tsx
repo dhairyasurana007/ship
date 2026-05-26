@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { apiPost } from '@/lib/api';
 
 interface FleetGraphAssistantPanelProps {
   documentId: string;
@@ -15,19 +16,12 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
     if (!prompt.trim()) return;
     setLoading(true);
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/fleetgraph/chat`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
+      const res = await apiPost('/api/fleetgraph/chat', {
           documentType,
           documentId,
           prompt,
           requiresMutationConfirm: true,
           explicitConfirm,
-        }),
       });
       const data = await res.json();
       setResponse(String(data.response ?? 'No response'));
@@ -65,4 +59,3 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
     </div>
   );
 }
-
