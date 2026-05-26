@@ -57,7 +57,6 @@ jobs:
       - name: Run DB migrations
         run: corepack pnpm -C api db:migrate
       - name: Run FleetGraph API tests
-        run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-*.test.ts
+        run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-config.test.ts src/__tests__/fleetgraph-dedup-worsening.test.ts src/__tests__/fleetgraph-human-gate.test.ts src/__tests__/fleetgraph-migration.test.ts src/__tests__/fleetgraph-notifications.test.ts src/__tests__/fleetgraph-observability.test.ts src/__tests__/fleetgraph-on-demand-context.test.ts src/__tests__/fleetgraph-proactive-classification.test.ts src/__tests__/fleetgraph-trigger-queue.test.ts src/__tests__/fleetgraph-trigger-runtime.test.ts
       - name: Run FleetGraph web tests
         run: corepack pnpm -C web exec vitest run src/components/fleetgraph/FleetGraphAssistantPanel.test.tsx
-
