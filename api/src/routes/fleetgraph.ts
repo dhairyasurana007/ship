@@ -6,6 +6,7 @@ import {
   updateApprovalStatus,
   type FleetGraphMutationType,
 } from '../fleetgraph/human-gate.js';
+import { generateResponse, loadViewContext, reasonOnContext } from '../fleetgraph/on-demand.js';
 
 const router = Router();
 
@@ -55,5 +56,27 @@ router.post('/approvals/sweep-expired', async (_req, res) => {
   res.json({ success: true, expiredCount });
 });
 
-export default router;
+router.post('/chat', async (req, res) => {
+  const documentType = String(req.body?.documentType ?? '');
+  const documentId = String(req.body?.documentId ?? '');
+  const prompt = String(req.body?.prompt ?? '');
+  const requiresMutationConfirm = Boolean(req.body?.requiresMutationConfirm);
+  const explicitConfirm = req.body?.explicitConfirm === true;
 
+  if (!documentType || !documentId || !prompt) {
+    res.status(400).json({ error: 'documentType, documentId, prompt are required' });
+    return;
+  }
+
+  const context = await loadViewContext(documentType, documentId);
+  const reasoning = reasonOnContext(context, prompt);
+  const response = generateResponse(reasoning, { requiresMutationConfirm, explicitConfirm });
+  res.json({
+    contextWindowDays: 30,
+    context,
+    reasoning,
+    ...response,
+  });
+});
+
+export default router;
