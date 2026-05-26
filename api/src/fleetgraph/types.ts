@@ -3,7 +3,10 @@ export type FleetGraphRunStatus = 'queued' | 'running' | 'completed' | 'failed' 
 
 export interface FleetGraphConfig {
   enabled: boolean;
+  provider: 'openai' | 'openrouter';
   model: string;
+  openRouterApiKey: string | null;
+  openRouterBaseUrl: string;
   maxConcurrency: number;
   queueSize: number;
   pollIntervalMs: number;

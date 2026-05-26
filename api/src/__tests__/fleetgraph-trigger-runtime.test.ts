@@ -34,7 +34,10 @@ describe('fleetgraph trigger runtime', () => {
   it('enqueues run from LISTEN payload', async () => {
     const runtime = new FleetGraphTriggerRuntime({
       enabled: true,
+      provider: 'openai',
       model: 'gpt-4o-mini',
+      openRouterApiKey: null,
+      openRouterBaseUrl: 'https://openrouter.ai/api/v1',
       maxConcurrency: 1,
       queueSize: 10,
       pollIntervalMs: 120000,
@@ -66,7 +69,10 @@ describe('fleetgraph trigger runtime', () => {
 
     const runtime = new FleetGraphTriggerRuntime({
       enabled: true,
+      provider: 'openai',
       model: 'gpt-4o-mini',
+      openRouterApiKey: null,
+      openRouterBaseUrl: 'https://openrouter.ai/api/v1',
       maxConcurrency: 1,
       queueSize: 10,
       pollIntervalMs: 120000,

@@ -19,7 +19,9 @@ export async function startFleetGraphService(_server: Server): Promise<FleetGrap
     await runtime.start();
 
     logFleetGraphInfo('Service initialized.', {
+      provider: config.provider,
       model: config.model,
+      openRouterBaseUrl: config.provider === 'openrouter' ? config.openRouterBaseUrl : undefined,
       maxConcurrency: config.maxConcurrency,
       queueSize: config.queueSize,
       pollIntervalMs: config.pollIntervalMs,
