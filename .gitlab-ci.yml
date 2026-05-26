@@ -16,6 +16,8 @@ fleetgraph_scaffold:
     SESSION_SECRET: test-session-secret
     CORS_ORIGIN: http://localhost:5173
   rules:
+    - if: '$CI_COMMIT_BRANCH == "mvp"'
+      when: always
     - changes:
         - .gitlab-ci.yml
         - api/src/fleetgraph/**/*
@@ -27,7 +29,8 @@ fleetgraph_scaffold:
         - api/package.json
         - pnpm-lock.yaml
         - package.json
-    - when: manual
+      when: always
+    - when: never
   before_script:
     - corepack enable
     - corepack prepare pnpm@10 --activate
