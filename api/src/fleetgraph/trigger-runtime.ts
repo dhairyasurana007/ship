@@ -5,7 +5,9 @@ import { logFleetGraphError, logFleetGraphInfo } from './logger.js';
 import { insertFleetGraphRun, updateFleetGraphRunStatus } from './run-store.js';
 import { FleetGraphTriggerQueue } from './trigger-queue.js';
 import { classifyConditions } from './classify-conditions.js';
+import { buildDedupStateValue, evaluateDedup, type DedupStateValue } from './dedup-worsening.js';
 import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
+import { getFleetGraphState, upsertFleetGraphState } from './state-store.js';
 import type { FleetGraphConfig, FleetGraphRunEnvelope, TriggerEvent, TriggerType } from './types.js';
 
 const LISTEN_CHANNEL = 'document_changes';
@@ -24,7 +26,20 @@ export class FleetGraphTriggerRuntime {
         const issues = await fetchIssues(envelope.workspaceId);
         await fetchSprintState(envelope.workspaceId);
         await fetchTeamState(envelope.workspaceId);
-        envelope.payload.conditions = classifyConditions(issues);
+        const conditions = classifyConditions(issues);
+        envelope.payload.conditions = conditions;
+        const stateEntityId = envelope.entityId ?? 'workspace';
+        const previous = await getFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup');
+        const dedup = evaluateDedup((previous?.value ?? null) as DedupStateValue | null, conditions);
+        envelope.payload.dedup = dedup;
+
+        if (dedup.shouldNotify) {
+          const state = buildDedupStateValue(dedup.dedupKey, conditions);
+          await upsertFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup', state as unknown as Record<string, unknown>);
+        } else {
+          await updateFleetGraphRunStatus(envelope.runId, 'skipped');
+          return;
+        }
       }
       await updateFleetGraphRunStatus(envelope.runId, 'completed');
     });
