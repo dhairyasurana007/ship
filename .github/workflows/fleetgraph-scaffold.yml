@@ -75,4 +75,4 @@ jobs:
         run: corepack pnpm -C api db:migrate
 
       - name: Run FleetGraph scaffold tests
-        run: corepack pnpm -C api test -- src/__tests__/fleetgraph-config.test.ts src/__tests__/fleetgraph-migration.test.ts
+        run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-config.test.ts src/__tests__/fleetgraph-migration.test.ts
