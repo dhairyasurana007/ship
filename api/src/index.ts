@@ -43,10 +43,27 @@ async function main() {
   // Setup WebSocket collaboration server
   setupCollaboration(server);
 
+  // Optional FleetGraph background service
+  const { startFleetGraphService } = await import('./fleetgraph/index.js');
+  const fleetGraphHandle = await startFleetGraphService(server);
+
   // Start server
   server.listen(PORT, () => {
     console.log(`API server running on http://localhost:${PORT}`);
     console.log(`CORS origins: ${corsOrigins.join(', ')}`);
+  });
+
+  const shutdown = async () => {
+    if (fleetGraphHandle) {
+      await fleetGraphHandle.stop();
+    }
+  };
+
+  process.on('SIGINT', () => {
+    shutdown().finally(() => process.exit(0));
+  });
+  process.on('SIGTERM', () => {
+    shutdown().finally(() => process.exit(0));
   });
 }
 
