@@ -262,6 +262,8 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 *Due: Early Submission (Thursday, 11:59 PM). LangSmith trace links to be added after code is running against real Ship data.*
 
+Trace capture status update (May 27, 2026): local targeted FleetGraph Playwright runs are currently blocked in this host by missing container runtime for `testcontainers` (`Could not find a working container runtime strategy`). Trace links remain pending until the same scenarios are executed in an environment with Docker/container runtime available.
+
 | # | Ship State | Expected Output | Trace Link |
 |---|---|---|---|
 | 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | [TBD] |
