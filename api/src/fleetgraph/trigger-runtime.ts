@@ -19,7 +19,6 @@ const LISTEN_CHANNEL = 'document_changes';
 export class FleetGraphTriggerRuntime {
   private listenClient: PoolClient | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
-  private watermark: Date = new Date(0);
   private readonly queue: FleetGraphTriggerQueue;
 
   constructor(private readonly config: FleetGraphConfig) {
@@ -83,26 +82,23 @@ export class FleetGraphTriggerRuntime {
   }
 
   async runPollOnce(): Promise<void> {
-    const result = await pool.query(
-      `SELECT id, workspace_id, document_type, updated_at
-       FROM documents
-       WHERE updated_at > $1
-       ORDER BY updated_at ASC
-       LIMIT 100`,
-      [this.watermark.toISOString()]
+    // Heartbeat behavior: enqueue at least one proactive run per workspace
+    // on every poll interval, regardless of document updates.
+    const workspaces = await pool.query(
+      `SELECT id
+       FROM workspaces
+       WHERE archived_at IS NULL
+       ORDER BY created_at ASC`
     );
 
-    for (const row of result.rows) {
-      const updatedAt = new Date(row.updated_at as string);
-      if (updatedAt > this.watermark) {
-        this.watermark = updatedAt;
-      }
-
+    const pollTimestamp = new Date().toISOString();
+    for (const row of workspaces.rows) {
+      const workspaceId = String(row.id);
       await this.enqueueTrigger('poll_fallback', {
-        workspaceId: String(row.workspace_id),
-        entityId: String(row.id),
-        entityType: String(row.document_type ?? 'document'),
-        updatedAt: updatedAt.toISOString(),
+        workspaceId,
+        entityId: workspaceId,
+        entityType: 'workspace',
+        updatedAt: pollTimestamp,
       });
     }
   }

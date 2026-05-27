@@ -61,14 +61,11 @@ describe('fleetgraph trigger runtime', () => {
     expect(mockInsert.mock.calls[0]?.[0]?.triggerType).toBe('pg_event');
   });
 
-  it('poll fallback enqueues runs after watermark advances', async () => {
+  it('poll fallback enqueues heartbeat runs for active workspaces', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
-          id: 'doc-1',
-          workspace_id: 'w1',
-          document_type: 'issue',
-          updated_at: '2026-01-01T00:00:00.000Z',
+          id: 'w1',
         },
       ],
     });
@@ -93,5 +90,7 @@ describe('fleetgraph trigger runtime', () => {
     await runtime.runPollOnce();
     expect(mockInsert).toHaveBeenCalledTimes(1);
     expect(mockInsert.mock.calls[0]?.[0]?.triggerType).toBe('poll_fallback');
+    expect(mockInsert.mock.calls[0]?.[0]?.workspaceId).toBe('w1');
+    expect(mockInsert.mock.calls[0]?.[0]?.entityType).toBe('workspace');
   });
 });

@@ -7,7 +7,7 @@ const DEFAULT_LANGSMITH_ENDPOINT = 'https://api.smith.langchain.com';
 const DEFAULT_LANGSMITH_PROJECT = 'default';
 const DEFAULT_MAX_CONCURRENCY = 2;
 const DEFAULT_QUEUE_SIZE = 100;
-const DEFAULT_POLL_INTERVAL_MS = 120000;
+const DEFAULT_POLL_INTERVAL_MS = 300000;
 
 function parsePositiveInt(value: string | undefined, fallback: number, name: string): number {
   if (!value) return fallback;
