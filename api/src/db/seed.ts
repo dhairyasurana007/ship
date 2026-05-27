@@ -479,31 +479,31 @@ async function seed() {
         // Dates and status are computed at runtime from sprint_number + workspace.sprint_start_date
         // Confidence is 0-100 scale (different from project ICE scores which are 1-10)
         const sprintGoals = [
-          'Complete core feature implementation and initial testing',
-          'Deliver bug fixes and stability improvements',
-          'Optimize performance and reduce technical debt',
-          'Build out user-facing features with accessibility',
-          'Finalize integrations and prepare for release',
-          'Focus on documentation and developer experience',
-          'Ship incremental improvements based on feedback',
+          'Improve daily cash position visibility and reconciliation throughput',
+          'Reduce high-risk payment exceptions and manual review backlog',
+          'Strengthen sanctions screening controls and escalation workflows',
+          'Harden operational resilience for payment gateway dependencies',
+          'Improve auditability of approvals, status changes, and exception handling',
+          'Reduce time to onboard analysts into core Treasury workflows',
+          'Raise data quality for reporting inputs used in weekly leadership reviews',
         ];
         const sprintPlans = [
-          'If we complete these features, we will unblock the next milestone.',
-          'Fixing these issues will reduce user-reported problems by 50%.',
-          'Performance gains will improve user engagement metrics.',
-          'New features will increase user activation rate.',
-          'These changes will enable the team to move faster.',
-          'Better docs will reduce onboarding time for new developers.',
-          'Incremental shipping will maintain momentum and user trust.',
+          'Complete Treasury dashboard refinements and cash reconciliation quality checks.',
+          'Address top exception categories in payment pipelines and reduce repeat failures.',
+          'Implement control validation updates for sanctions and watchlist matching.',
+          'Run resiliency exercises and fix high-impact reliability bottlenecks.',
+          'Expand event logging coverage to satisfy internal control and oversight needs.',
+          'Publish clear runbooks and operational SOPs for analyst teams.',
+          'Validate upstream data contracts and resolve reporting data drift.',
         ];
         const sprintSuccessCriteria = [
-          'All planned stories marked done, tests passing',
-          'Bug count reduced by at least 10, no P0 issues remaining',
-          'Load time under 2 seconds, memory usage stable',
-          'Feature flags enabled for 100% of users',
-          'All integrations passing health checks',
-          'README and API docs up to date',
-          'User feedback incorporated in next sprint planning',
+          'Cash position variance is within agreed tolerance and documented daily.',
+          'Exception queue aging is reduced and no critical payment failures remain unresolved.',
+          'Sanctions workflow checks pass with zero unresolved high-severity findings.',
+          'Reliability SLO targets are met with no Sev-1 incidents in sprint scope.',
+          'Audit logs are complete for all in-scope approval and mutation events.',
+          'Onboarding guide is published and new-user setup time is measurably reduced.',
+          'Leadership reporting inputs reconcile with source systems and pass QA.',
         ];
 
         // Calculate confidence based on sprint timing (future sprints have lower confidence)
@@ -865,6 +865,12 @@ async function seed() {
       { title: 'Architecture Guide', content: 'Technical architecture and design decisions.' },
       { title: 'API Reference', content: 'API endpoints and usage documentation.' },
       { title: 'Development Setup', content: 'How to set up your local development environment.' },
+      { title: 'Treasury Daily Cash Position Runbook', content: 'Step-by-step workflow for collecting balances, reconciling variances, and publishing daily cash position snapshots.' },
+      { title: 'Payment Integrity Exception Triage', content: 'Playbook for classifying payment exceptions, assigning owners, and documenting resolution outcomes with controls evidence.' },
+      { title: 'Sanctions Screening Control Notes', content: 'Control expectations, escalation matrix, and quality checks for watchlist and sanctions screening operations.' },
+      { title: 'Disbursement Incident Response Guide', content: 'Incident command checklist for degraded payment operations, including communications, rollback, and post-incident review.' },
+      { title: 'Quarterly Audit Readiness Checklist', content: 'Checklist for evidence collection, control attestation artifacts, and closure criteria before internal/external audit reviews.' },
+      { title: 'Vendor Payment SLA Dashboard Definitions', content: 'Definition of SLAs, breach thresholds, and calculation logic used in vendor payment performance reporting.' },
     ];
 
     let standaloneDocsCreated = 0;
