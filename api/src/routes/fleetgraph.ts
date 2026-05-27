@@ -131,7 +131,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
     workspaceId: req.workspaceId,
     entityId: contextScope === 'document' ? documentId : req.workspaceId,
     entityType: contextScope,
-    payload: { promptLength: prompt.length, contextScope },
+    payload: {
+      prompt,
+      promptLength: prompt.length,
+      contextScope,
+    },
     createdAt: new Date().toISOString(),
   };
 

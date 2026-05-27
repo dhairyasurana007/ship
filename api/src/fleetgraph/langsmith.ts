@@ -22,6 +22,7 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
   if (!config.langSmithTracing || !config.langSmithApiKey) return;
 
   try {
+    const userPrompt = typeof envelope.payload?.prompt === 'string' ? envelope.payload.prompt : null;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), LANGSMITH_HTTP_TIMEOUT_MS);
     const res = await fetch(endpoint(config, '/runs'), {
@@ -37,6 +38,7 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
           workspaceId: envelope.workspaceId ?? null,
           entityId: envelope.entityId ?? null,
           entityType: envelope.entityType ?? null,
+          userPrompt,
         },
         start_time: envelope.createdAt,
         session_name: config.langSmithProject,
