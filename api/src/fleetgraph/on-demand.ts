@@ -34,11 +34,11 @@ export async function loadViewContext(documentType: string, documentId: string):
 
     const historyResult = await queryWithTimeout(
       pool.query(
-        `SELECT field, old_value, new_value, changed_at
+        `SELECT field, old_value, new_value, created_at AS changed_at
          FROM document_history
          WHERE document_id = $1
-           AND changed_at >= now() - interval '${HISTORY_WINDOW_DAYS} days'
-         ORDER BY changed_at DESC
+           AND created_at >= now() - interval '${HISTORY_WINDOW_DAYS} days'
+         ORDER BY created_at DESC
          LIMIT $2`,
         [documentId, HISTORY_LIMIT]
       ),
