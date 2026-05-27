@@ -5,6 +5,23 @@
 - Branch policy: all FleetGraph early-submission work must be committed and pushed to `early-submission` branch only.
 - Bug-first policy: if any Ship bug or behavior issue is discovered, stop current task, fix the bug first, retest impacted areas, then resume.
 
+## Playwright Production Test Environment
+
+- Production web URL: `https://ship-web-ak37.onrender.com`
+- Test username: `dev@ship.local`
+- Test password: `admin123`
+- Mandatory delay rule: after every push to `early-submission`, wait exactly 1 minute before starting or re-running Playwright tests.
+- Required execution order for this plan:
+  1. Validate commit 1 scope first (login/smoke).
+  2. Validate commit 2 scope next (FleetGraph launcher + outputs/approvals integration).
+  3. Validate commit 3 scope last (human-gate approval lifecycle).
+- If any validation fails at a given commit scope:
+  - Fix the issue.
+  - Push to `early-submission`.
+  - Wait 1 minute for deployment propagation.
+  - Retest the same commit scope.
+  - Do not move to the next scope until current scope passes.
+
 ## Baseline: PRD Early-Submission Readiness Mapping
 
 | Requirement | Current State | Status | Notes |
@@ -49,11 +66,20 @@
   - FleetGraph launcher UI now surfaces recent alerts and pending approvals.
   - Human-gate API list endpoint for pending approvals.
   - On-demand response now returns degraded-context flags.
+  - Global launcher now displays degraded-context notices when backend marks context as degraded.
   - New FleetGraph E2E specs added:
     - `e2e/fleetgraph-proactive-notifications.spec.ts`
     - `e2e/fleetgraph-human-gate.spec.ts`
     - `e2e/fleetgraph-ondemand-context.spec.ts`
   - Cross-platform Ship build bug fixed in `@ship/api` build script (Windows `cp` failure).
+  - Production FleetGraph bug fixed: global launcher now uses API client routing for outputs/approvals (prevents `401` on split web/api origins).
+- Production validation completed (May 27, 2026):
+  - Commit 1 scope: login/smoke passed on `https://ship-web-ak37.onrender.com`.
+  - Commit 2 scope: launcher + outputs/approvals + chat passed after API routing fix.
+  - Commit 3 scope: seeded approval request, visible in panel, approve action updates status.
+  - Commit 4 scope: context scope label and workspace-response flow validated in production.
 - Blocked in this local host:
   - Full API unit test suite (`pnpm test`) requires local PostgreSQL on `:5432`.
   - FleetGraph Playwright execution requires container runtime for `testcontainers`.
+- Remaining for final submission:
+  - Export and attach real LangSmith shared trace links for test cases.
