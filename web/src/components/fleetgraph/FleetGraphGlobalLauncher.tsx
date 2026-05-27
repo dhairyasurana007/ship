@@ -97,11 +97,11 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
       <button
         type="button"
-        className="rounded-full bg-foreground px-4 py-2 text-xs font-medium text-background shadow"
+        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition-colors hover:bg-muted"
         onClick={() => setOpen((v) => !v)}
-        aria-label="Open FleetGraph assistant"
+        aria-label="Open FleetGraph assistant window"
       >
-        FleetGraph
+        ↗
       </button>
     </div>
   );
