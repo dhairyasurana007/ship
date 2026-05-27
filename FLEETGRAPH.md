@@ -264,22 +264,24 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 Trace capture status update (May 27, 2026): local targeted FleetGraph Playwright runs are currently blocked in this host by missing container runtime for `testcontainers` (`Could not find a working container runtime strategy`). Trace links remain pending until the same scenarios are executed in an environment with Docker/container runtime available.
 
+Production validation status update (May 27, 2026): FleetGraph proactive surfaces (`/api/fleetgraph/outputs`, `/api/fleetgraph/approvals/pending`) and on-demand chat (`/api/fleetgraph/chat`) were validated against `https://ship-web-ak37.onrender.com` with authenticated user flows. LangSmith shared links still require workspace export/access.
+
 | # | Ship State | Expected Output | Trace Link |
 |---|---|---|---|
-| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | [TBD] |
-| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions | [TBD] |
-| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal | [TBD] |
-| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no 48h escalation until threshold is crossed again | [TBD] |
-| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat | [TBD] |
-| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation | [TBD] |
-| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason | [TBD] |
-| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context | [TBD] |
-| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate | [TBD] |
-| 10 | User requests "move these 4 issues to next sprint" from chat | Agent creates per-item confirmation flow because total mutations >= 3; no mutation occurs before explicit approvals | [TBD] |
-| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed | [TBD] |
-| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens | [TBD] |
-| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history | [TBD] |
-| 14 | Burst of document edits causes many PG notifications in short interval | Runs enter bounded FIFO queue; system processes without crash and preserves detection latency target where feasible | [TBD] |
+| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | Pending LangSmith export (validated in production flow on May 27, 2026) |
+| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions | Pending LangSmith export |
+| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal | Pending LangSmith export |
+| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no 48h escalation until threshold is crossed again | Pending LangSmith export |
+| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat | Pending LangSmith export (on-demand chat path validated in production) |
+| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation | Pending LangSmith export |
+| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason | Pending LangSmith export |
+| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context | Pending LangSmith export |
+| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate | Pending LangSmith export |
+| 10 | User requests "move these 4 issues to next sprint" from chat | Agent creates per-item confirmation flow because total mutations >= 3; no mutation occurs before explicit approvals | Pending LangSmith export |
+| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed | Pending LangSmith export |
+| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens | Pending LangSmith export |
+| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history | Pending LangSmith export |
+| 14 | Burst of document edits causes many PG notifications in short interval | Runs enter bounded FIFO queue; system processes without crash and preserves detection latency target where feasible | Pending LangSmith export |
 
 ---
 
@@ -299,6 +301,7 @@ Trace capture status update (May 27, 2026): local targeted FleetGraph Playwright
 | On-demand history scope | Last 30 days (strict cap) | Controls prompt size, latency, and cost while retaining recent operational context | Older but potentially relevant events are intentionally ignored in MVP |
 | Approval TTL | 24 hours with expiry notification | Prevents stale approvals; keeps decisions close to current state | Requires re-proposal when approval expires |
 | Rejection behavior | Forget on reject; no stored suppression | Keeps behavior simple and user-driven in MVP | Same action may reappear on future events |
+| Cross-origin FleetGraph API routing | Use shared `apiGet`/`apiPost` client for all FleetGraph routes | Ensures requests target configured API origin in production (Render split-host setup) | Requires consistent API-client usage; direct relative `fetch('/api/...')` is unsafe in split-origin deployments |
 
 ---
 
