@@ -17,18 +17,19 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const hasContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
+  const hasDocumentContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
 
   async function send(): Promise<void> {
-    if (!hasContext || !prompt.trim()) return;
+    if (!prompt.trim()) return;
     const promptValue = prompt.trim();
     setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
     setPrompt('');
     setLoading(true);
     try {
       const res = await apiPost('/api/fleetgraph/chat', {
-          documentType,
-          documentId,
+          contextScope: 'workspace',
+          documentType: hasDocumentContext ? documentType : undefined,
+          documentId: hasDocumentContext ? documentId : undefined,
           prompt: promptValue,
           requiresMutationConfirm: false,
           explicitConfirm: false,
@@ -47,9 +48,9 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       {open && (
         <div className="mb-2 w-80 rounded-lg border border-border bg-background p-3 shadow-lg">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph Assistant</p>
-          {!hasContext && (
-            <p className="mt-2 text-xs text-muted">Open a document to use context-aware FleetGraph chat.</p>
-          )}
+          <p className="mt-2 text-xs text-muted">
+            Context: entire workspace account for your current user.
+          </p>
           <div className="mt-2 h-56 overflow-y-auto rounded border border-border bg-muted/20 p-2 space-y-2">
             {messages.length === 0 && (
               <p className="text-xs text-muted">Ask about the current document context.</p>
@@ -77,16 +78,15 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                 if (!loading) void send();
               }
             }}
-            placeholder={hasContext ? 'Type your message...' : 'Open a document first...'}
+            placeholder='Type your message...'
             className="mt-2 w-full min-h-20 rounded border border-border bg-background p-2 text-xs"
-            disabled={!hasContext}
           />
           <div className="mt-2 flex justify-end">
             <button
               type="button"
               aria-label="Send message"
               className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-background disabled:opacity-50"
-              disabled={!hasContext || loading || !prompt.trim()}
+              disabled={loading || !prompt.trim()}
               onClick={() => void send()}
             >
               ↑

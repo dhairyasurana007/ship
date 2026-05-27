@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import crypto from 'crypto';
+import { authMiddleware } from '../middleware/auth.js';
 import {
   createApprovalRequest,
   executeApprovedMutation,
@@ -7,7 +8,7 @@ import {
   updateApprovalStatus,
   type FleetGraphMutationType,
 } from '../fleetgraph/human-gate.js';
-import { generateResponse, loadViewContext, reasonOnContext } from '../fleetgraph/on-demand.js';
+import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContext } from '../fleetgraph/on-demand.js';
 import { loadFleetGraphConfig } from '../fleetgraph/config.js';
 import { createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
 import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
@@ -60,15 +61,24 @@ router.post('/approvals/sweep-expired', async (_req, res) => {
   res.json({ success: true, expiredCount });
 });
 
-router.post('/chat', async (req, res) => {
+router.post('/chat', authMiddleware, async (req, res) => {
+  const contextScope = req.body?.contextScope === 'workspace' ? 'workspace' : 'document';
   const documentType = String(req.body?.documentType ?? '');
   const documentId = String(req.body?.documentId ?? '');
   const prompt = String(req.body?.prompt ?? '');
   const requiresMutationConfirm = Boolean(req.body?.requiresMutationConfirm);
   const explicitConfirm = req.body?.explicitConfirm === true;
 
-  if (!documentType || !documentId || !prompt) {
-    res.status(400).json({ error: 'documentType, documentId, prompt are required' });
+  if (!prompt) {
+    res.status(400).json({ error: 'prompt is required' });
+    return;
+  }
+  if (contextScope === 'document' && (!documentType || !documentId)) {
+    res.status(400).json({ error: 'documentType and documentId are required for document scope' });
+    return;
+  }
+  if (!req.workspaceId) {
+    res.status(401).json({ error: 'unauthorized' });
     return;
   }
   const config = loadFleetGraphConfig();
@@ -76,16 +86,19 @@ router.post('/chat', async (req, res) => {
     runId: crypto.randomUUID(),
     triggerType: 'user_request',
     workspaceId: req.workspaceId,
-    entityId: documentId,
-    entityType: documentType,
-    payload: { promptLength: prompt.length },
+    entityId: contextScope === 'document' ? documentId : req.workspaceId,
+    entityType: contextScope,
+    payload: { promptLength: prompt.length, contextScope },
     createdAt: new Date().toISOString(),
   };
 
   await createLangSmithRun(config, runEnvelope);
 
   try {
-    const context = await loadViewContext(documentType, documentId);
+    const context =
+      contextScope === 'workspace'
+        ? await loadWorkspaceContext(req.workspaceId)
+        : await loadViewContext(documentType, documentId);
     const reasoning = reasonOnContext(context, prompt);
     const response = generateResponse(reasoning, { requiresMutationConfirm, explicitConfirm });
 
@@ -99,6 +112,7 @@ router.post('/chat', async (req, res) => {
 
     res.json({
       contextWindowDays: 30,
+      contextScope,
       context,
       reasoning,
       ...response,

@@ -24,6 +24,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
     setLoading(true);
     try {
       const res = await apiPost('/api/fleetgraph/chat', {
+          contextScope: 'document',
           documentType,
           documentId,
           prompt: promptValue,

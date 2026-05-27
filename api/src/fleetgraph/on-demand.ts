@@ -86,7 +86,91 @@ export async function loadViewContext(documentType: string, documentId: string):
   }
 }
 
+export async function loadWorkspaceContext(workspaceId: string): Promise<Record<string, unknown>> {
+  try {
+    const [docsResult, openIssuesResult, activeSprintsResult] = await Promise.all([
+      queryWithTimeout(
+        pool.query(
+          `SELECT id, document_type, title, updated_at
+           FROM documents
+           WHERE workspace_id = $1
+             AND archived_at IS NULL
+             AND deleted_at IS NULL
+           ORDER BY updated_at DESC
+           LIMIT 12`,
+          [workspaceId]
+        ),
+        'fleetgraph_workspace_docs_query'
+      ),
+      queryWithTimeout(
+        pool.query(
+          `SELECT COUNT(*)::int AS open_issue_count
+           FROM documents
+           WHERE workspace_id = $1
+             AND document_type = 'issue'
+             AND archived_at IS NULL
+             AND deleted_at IS NULL
+             AND COALESCE(properties->>'state', 'todo') NOT IN ('done', 'cancelled')`,
+          [workspaceId]
+        ),
+        'fleetgraph_workspace_open_issues_query'
+      ),
+      queryWithTimeout(
+        pool.query(
+          `SELECT COUNT(*)::int AS active_sprint_count
+           FROM documents
+           WHERE workspace_id = $1
+             AND document_type = 'sprint'
+             AND archived_at IS NULL
+             AND deleted_at IS NULL
+             AND COALESCE(properties->>'status', 'planning') = 'active'`,
+          [workspaceId]
+        ),
+        'fleetgraph_workspace_active_sprints_query'
+      ),
+    ]);
+
+    return {
+      scope: 'workspace',
+      recentDocuments: docsResult.rows,
+      openIssueCount: openIssuesResult.rows[0]?.open_issue_count ?? 0,
+      activeSprintCount: activeSprintsResult.rows[0]?.active_sprint_count ?? 0,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[FleetGraph] Failed to load workspace context, using degraded mode:', message);
+    return {
+      scope: 'workspace',
+      recentDocuments: [],
+      openIssueCount: 0,
+      activeSprintCount: 0,
+      degraded: true,
+      degradedReason: message,
+    };
+  }
+}
+
 export function reasonOnContext(context: Record<string, unknown>, prompt: string): Record<string, unknown> {
+  if (context.scope === 'workspace') {
+    const openIssueCount = Number(context.openIssueCount ?? 0);
+    const activeSprintCount = Number(context.activeSprintCount ?? 0);
+    const recentDocuments = Array.isArray(context.recentDocuments) ? context.recentDocuments : [];
+    const sampleTitles = recentDocuments
+      .slice(0, 3)
+      .map((doc) => (doc as { title?: string }).title)
+      .filter(Boolean)
+      .join(', ');
+    return {
+      model: 'gpt-4o-mini',
+      summary:
+        `Workspace overview: ${openIssueCount} open issues and ${activeSprintCount} active sprints. ` +
+        `${sampleTitles ? `Recent docs include: ${sampleTitles}.` : 'No recent documents were found.'}`,
+      prompt,
+      contextLoaded: true,
+      historyCount: 0,
+    };
+  }
+
   const doc = (context.document ?? null) as
     | { title?: string; document_type?: string; updated_at?: string | Date | null }
     | null;
