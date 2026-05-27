@@ -48,6 +48,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import './index.css';
 
 const CHUNK_RELOAD_KEY = 'ship:chunk-reload-attempted';
+const STYLESHEET_RELOAD_KEY = 'ship:stylesheet-reload-attempted';
 
 function isChunkLoadError(reason: unknown): boolean {
   if (!reason) return false;
@@ -84,6 +85,44 @@ function installChunkReloadRecovery(): void {
 }
 
 installChunkReloadRecovery();
+
+function installStylesheetReloadRecovery(): void {
+  const reloadOnce = () => {
+    try {
+      if (sessionStorage.getItem(STYLESHEET_RELOAD_KEY) === '1') return;
+      sessionStorage.setItem(STYLESHEET_RELOAD_KEY, '1');
+    } catch {
+      // If sessionStorage is unavailable, still attempt one reload for this runtime.
+    }
+    window.location.reload();
+  };
+
+  document.addEventListener(
+    'error',
+    (event) => {
+      const target = event.target as Element | null;
+      if (!target) return;
+      if (
+        target.tagName === 'LINK' &&
+        target.getAttribute('rel') === 'stylesheet' &&
+        (target as HTMLLinkElement).href.includes('/assets/')
+      ) {
+        reloadOnce();
+      }
+    },
+    true
+  );
+
+  window.addEventListener('pageshow', () => {
+    try {
+      sessionStorage.removeItem(STYLESHEET_RELOAD_KEY);
+    } catch {
+      // ignore
+    }
+  });
+}
+
+installStylesheetReloadRecovery();
 
 function EB({ children }: { children: React.ReactNode }) {
   return <ErrorBoundary>{children}</ErrorBoundary>;
