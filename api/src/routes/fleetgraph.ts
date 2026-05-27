@@ -99,7 +99,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
       contextScope === 'workspace'
         ? await loadWorkspaceContext(req.workspaceId)
         : await loadViewContext(documentType, documentId);
-    const reasoning = reasonOnContext(context, prompt);
+    const reasoning = await reasonOnContext(context, prompt, config, contextScope);
     const response = generateResponse(reasoning, { requiresMutationConfirm, explicitConfirm });
 
     runEnvelope.payload = {

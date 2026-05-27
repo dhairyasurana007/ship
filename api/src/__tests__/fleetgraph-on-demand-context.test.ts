@@ -27,7 +27,7 @@ describe('fleetgraph on-demand context', () => {
     });
 
     const context = await loadViewContext('issue', 'd1');
-    const reasoning = reasonOnContext(context, 'What is next?');
+    const reasoning = await reasonOnContext(context, 'What is next?');
     expect(reasoning.contextLoaded).toBe(true);
   });
 
@@ -42,4 +42,3 @@ describe('fleetgraph on-demand context', () => {
     expect(result.requiresConfirm).toBe(true);
   });
 });
-

@@ -25,6 +25,7 @@ export function loadFleetGraphConfig(env: NodeJS.ProcessEnv = process.env): Flee
     throw new Error(`Invalid FLEETGRAPH_PROVIDER: expected "openai" or "openrouter", received "${providerRaw}"`);
   }
   const provider = providerRaw as FleetGraphConfig['provider'];
+  const openAiApiKey = env.OPENAI_API_KEY || null;
   const openRouterApiKey = env.OPENROUTER_API_KEY || null;
   const openRouterBaseUrl = env.OPENROUTER_BASE_URL || DEFAULT_OPENROUTER_BASE_URL;
   const langSmithTracing = (env.LANGSMITH_TRACING ?? env.FLEETGRAPH_LANGSMITH_ENABLED ?? 'false') === 'true';
@@ -44,6 +45,7 @@ export function loadFleetGraphConfig(env: NodeJS.ProcessEnv = process.env): Flee
     enabled,
     provider,
     model: env.FLEETGRAPH_MODEL || DEFAULT_MODEL,
+    openAiApiKey,
     openRouterApiKey,
     openRouterBaseUrl,
     langSmithTracing,

@@ -5,6 +5,7 @@ export interface FleetGraphConfig {
   enabled: boolean;
   provider: 'openai' | 'openrouter';
   model: string;
+  openAiApiKey?: string | null;
   openRouterApiKey: string | null;
   openRouterBaseUrl: string;
   langSmithTracing: boolean;

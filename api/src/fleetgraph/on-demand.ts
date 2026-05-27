@@ -1,8 +1,10 @@
 import { pool } from '../db/client.js';
+import type { FleetGraphConfig } from './types.js';
 
 const HISTORY_WINDOW_DAYS = 30;
 const CONTEXT_QUERY_TIMEOUT_MS = Number(process.env.FLEETGRAPH_CONTEXT_QUERY_TIMEOUT_MS ?? 4000);
 const HISTORY_LIMIT = Number(process.env.FLEETGRAPH_HISTORY_LIMIT ?? 300);
+const LLM_TIMEOUT_MS = Number(process.env.FLEETGRAPH_LLM_TIMEOUT_MS ?? 12000);
 
 async function queryWithTimeout<T>(work: Promise<T>, label: string): Promise<T> {
   let timeoutId: NodeJS.Timeout | undefined;
@@ -150,7 +152,81 @@ export async function loadWorkspaceContext(workspaceId: string): Promise<Record<
   }
 }
 
-export function reasonOnContext(context: Record<string, unknown>, prompt: string): Record<string, unknown> {
+function buildSystemPrompt(scope: 'workspace' | 'document'): string {
+  const sharedPolicy = [
+    'You are FleetGraph, Ship\'s project intelligence assistant.',
+    'Use only provided context. If missing data, say what is missing.',
+    'Be concise, concrete, and action-oriented.',
+    'Never claim actions were executed unless explicitly indicated.',
+    'If user requests mutations, propose steps but do not assume approval.',
+  ].join(' ');
+
+  if (scope === 'workspace') {
+    return `${sharedPolicy} Scope is workspace-level only: summarize cross-project status, issue load, sprint posture, and recent activity.`;
+  }
+  return `${sharedPolicy} Scope is current document only: reason about this document and directly related history/context.`;
+}
+
+function buildUserPrompt(
+  scope: 'workspace' | 'document',
+  prompt: string,
+  context: Record<string, unknown>
+): string {
+  return [
+    `User request: ${prompt}`,
+    `Context scope: ${scope}`,
+    `Context JSON:`,
+    JSON.stringify(context),
+    'Return a direct answer first, then optional bullets for recommended next actions.',
+  ].join('\n\n');
+}
+
+async function callLlm(config: FleetGraphConfig | undefined, systemPrompt: string, userPrompt: string): Promise<string | null> {
+  try {
+    if (!config) return null;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    const endpoint = config.provider === 'openrouter'
+      ? `${config.openRouterBaseUrl.replace(/\/$/, '')}/chat/completions`
+      : 'https://api.openai.com/v1/chat/completions';
+    const apiKey = config.provider === 'openrouter' ? config.openRouterApiKey : config.openAiApiKey;
+    if (!apiKey) return null;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.model,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const payload = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+    const content = payload.choices?.[0]?.message?.content;
+    return typeof content === 'string' && content.trim() ? content.trim() : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function reasonOnContext(
+  context: Record<string, unknown>,
+  prompt: string,
+  config?: FleetGraphConfig,
+  scope: 'workspace' | 'document' = context.scope === 'workspace' ? 'workspace' : 'document'
+): Promise<Record<string, unknown>> {
+  const systemPrompt = buildSystemPrompt(scope);
+  const userPrompt = buildUserPrompt(scope, prompt, context);
+
   if (context.scope === 'workspace') {
     const promptLower = prompt.toLowerCase();
     const openIssueCount = Number(context.openIssueCount ?? 0);
@@ -182,9 +258,13 @@ export function reasonOnContext(context: Record<string, unknown>, prompt: string
         `If you want a specific slice, ask for counts, recent documents, or sprint status.`;
     }
 
+    const fallbackSummary = summary;
+    const llmSummary = await callLlm(config, systemPrompt, userPrompt);
     return {
       model: 'gpt-4o-mini',
-      summary,
+      summary: llmSummary ?? fallbackSummary,
+      systemPrompt,
+      userPrompt,
       prompt,
       contextLoaded: true,
       historyCount: 0,
@@ -203,9 +283,12 @@ export function reasonOnContext(context: Record<string, unknown>, prompt: string
     ? `This ${docType} appears to be "${docTitle}"${updatedAtText ? ` (last updated ${updatedAtText})` : ''}. I found ${history.length} history changes in the last ${HISTORY_WINDOW_DAYS} days.`
     : 'I could not load the current document context. Please verify the document exists and try again.';
 
+  const llmSummary = await callLlm(config, systemPrompt, userPrompt);
   return {
     model: 'gpt-4o-mini',
-    summary,
+    summary: llmSummary ?? summary,
+    systemPrompt,
+    userPrompt,
     prompt,
     contextLoaded: Boolean(context.document),
     historyCount: history.length,
