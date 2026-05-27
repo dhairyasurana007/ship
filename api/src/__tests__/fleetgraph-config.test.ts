@@ -13,6 +13,7 @@ describe('fleetgraph config', () => {
     expect(cfg.langSmithApiKey).toBeNull();
     expect(cfg.langSmithEndpoint).toBe('https://api.smith.langchain.com');
     expect(cfg.langSmithProject).toBe('default');
+    expect(cfg.langSmithProjectId).toBeNull();
     expect(cfg.langSmithWorkspaceId).toBeNull();
     expect(cfg.maxConcurrency).toBe(2);
     expect(cfg.queueSize).toBe(100);

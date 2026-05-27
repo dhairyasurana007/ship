@@ -25,6 +25,7 @@ export async function startFleetGraphService(_server: Server): Promise<FleetGrap
       langSmithTracing: config.langSmithTracing,
       langSmithEndpoint: config.langSmithTracing ? config.langSmithEndpoint : undefined,
       langSmithProject: config.langSmithTracing ? config.langSmithProject : undefined,
+      langSmithProjectId: config.langSmithTracing ? config.langSmithProjectId : undefined,
       maxConcurrency: config.maxConcurrency,
       queueSize: config.queueSize,
       pollIntervalMs: config.pollIntervalMs,

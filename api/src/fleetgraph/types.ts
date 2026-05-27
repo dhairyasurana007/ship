@@ -12,6 +12,7 @@ export interface FleetGraphConfig {
   langSmithApiKey: string | null;
   langSmithEndpoint: string;
   langSmithProject: string;
+  langSmithProjectId: string | null;
   langSmithWorkspaceId: string | null;
   maxConcurrency: number;
   queueSize: number;

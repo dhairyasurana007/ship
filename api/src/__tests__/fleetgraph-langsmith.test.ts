@@ -15,6 +15,7 @@ describe('fleetgraph langsmith client', () => {
     langSmithApiKey: 'ls-key',
     langSmithEndpoint: 'https://api.smith.langchain.com',
     langSmithProject: 'ship-fleetgraph-mvp',
+    langSmithProjectId: null,
     langSmithWorkspaceId: null,
     maxConcurrency: 2,
     queueSize: 100,
@@ -43,6 +44,20 @@ describe('fleetgraph langsmith client', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/runs');
   });
 
+  it('includes session_id when configured', async () => {
+    fetchMock.mockResolvedValue({ ok: true });
+    await createLangSmithRun(
+      {
+        ...config,
+        langSmithProjectId: '464fa2a6-c9e0-42fa-9fa5-39f82d0c8021',
+      },
+      envelope
+    );
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const body = JSON.parse(String(init.body));
+    expect(body.session_id).toBe('464fa2a6-c9e0-42fa-9fa5-39f82d0c8021');
+  });
+
   it('patches run completion', async () => {
     fetchMock.mockResolvedValue({ ok: true });
     await finishLangSmithRun(config, envelope, 'completed');
@@ -50,4 +65,3 @@ describe('fleetgraph langsmith client', () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toContain(`/runs/${encodeURIComponent(envelope.runId)}`);
   });
 });
-

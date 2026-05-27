@@ -1,6 +1,6 @@
 import type { FleetGraphConfig, FleetGraphRunEnvelope } from './types.js';
 import { logFleetGraphError, logFleetGraphInfo } from './logger.js';
-const LANGSMITH_HTTP_TIMEOUT_MS = 2000;
+const LANGSMITH_HTTP_TIMEOUT_MS = 8000;
 
 function headers(config: FleetGraphConfig): Record<string, string> {
   const out: Record<string, string> = {
@@ -40,7 +40,7 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
         },
         start_time: envelope.createdAt,
         session_name: config.langSmithProject,
-        project_name: config.langSmithProject,
+        ...(config.langSmithProjectId ? { session_id: config.langSmithProjectId } : {}),
       }),
     });
     clearTimeout(timeout);

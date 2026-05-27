@@ -32,6 +32,7 @@ export function loadFleetGraphConfig(env: NodeJS.ProcessEnv = process.env): Flee
   const langSmithApiKey = env.LANGSMITH_API_KEY || null;
   const langSmithEndpoint = env.LANGSMITH_ENDPOINT ?? env.FLEETGRAPH_LANGSMITH_ENDPOINT ?? DEFAULT_LANGSMITH_ENDPOINT;
   const langSmithProject = env.LANGSMITH_PROJECT ?? env.FLEETGRAPH_LANGSMITH_PROJECT ?? DEFAULT_LANGSMITH_PROJECT;
+  const langSmithProjectId = env.LANGSMITH_PROJECT_ID ?? env.FLEETGRAPH_LANGSMITH_PROJECT_ID ?? null;
   const langSmithWorkspaceId = env.LANGSMITH_WORKSPACE_ID || null;
 
   if (enabled && provider === 'openrouter' && !openRouterApiKey) {
@@ -52,6 +53,7 @@ export function loadFleetGraphConfig(env: NodeJS.ProcessEnv = process.env): Flee
     langSmithApiKey,
     langSmithEndpoint,
     langSmithProject,
+    langSmithProjectId,
     langSmithWorkspaceId,
     maxConcurrency: parsePositiveInt(env.FLEETGRAPH_MAX_CONCURRENCY, DEFAULT_MAX_CONCURRENCY, 'FLEETGRAPH_MAX_CONCURRENCY'),
     queueSize: parsePositiveInt(env.FLEETGRAPH_QUEUE_SIZE, DEFAULT_QUEUE_SIZE, 'FLEETGRAPH_QUEUE_SIZE'),
