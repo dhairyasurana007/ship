@@ -52,6 +52,24 @@ function buildSeedDocContent(title: string, lines: string[]): Record<string, unk
   };
 }
 
+async function backfillContentIfMissing(
+  pool: pg.Pool,
+  documentId: string,
+  content: Record<string, unknown>
+): Promise<void> {
+  await pool.query(
+    `UPDATE documents
+     SET content = $2
+     WHERE id = $1
+       AND (
+         content IS NULL
+         OR content::text = 'null'
+         OR content::text = '{"type":"doc","content":[{"type":"paragraph"}]}'
+       )`,
+    [documentId, JSON.stringify(content)]
+  );
+}
+
 async function seed() {
   // Load secrets from SSM in production (must happen before Pool creation)
   await loadProductionSecrets();
@@ -275,6 +293,12 @@ async function seed() {
       );
 
       if (existingProgram.rows[0]) {
+        const existingProgramContent = buildSeedDocContent(prog.name, [
+          `Mission: Deliver reliable ${prog.name.toLowerCase()} capabilities for Treasury operations.`,
+          'Focus: Risk reduction, operational resilience, and measurable service performance.',
+          'Stakeholders: Treasury analysts, program leads, control owners, and engineering teams.',
+        ]);
+        await backfillContentIfMissing(pool, existingProgram.rows[0].id, existingProgramContent);
         programs.push({ id: existingProgram.rows[0].id, ...prog });
       } else {
         const properties = { prefix: prog.prefix, color: prog.color };
@@ -376,6 +400,12 @@ async function seed() {
         );
 
         if (existingProject.rows[0]) {
+          const existingProjectContent = buildSeedDocContent(projectTitle, [
+            `Objective: ${template.plan}`,
+            `Expected monetary impact: $${template.monetary_impact_expected.toLocaleString()}.`,
+            'Delivery approach: Break scope into weekly increments with explicit acceptance criteria.',
+          ]);
+          await backfillContentIfMissing(pool, existingProject.rows[0].id, existingProjectContent);
           projects.push({
             id: existingProject.rows[0].id,
             programId: program.id,
@@ -478,6 +508,34 @@ async function seed() {
       }
     }
 
+    const sprintGoals = [
+      'Improve daily cash position visibility and reconciliation throughput',
+      'Reduce high-risk payment exceptions and manual review backlog',
+      'Strengthen sanctions screening controls and escalation workflows',
+      'Harden operational resilience for payment gateway dependencies',
+      'Improve auditability of approvals, status changes, and exception handling',
+      'Reduce time to onboard analysts into core Treasury workflows',
+      'Raise data quality for reporting inputs used in weekly leadership reviews',
+    ];
+    const sprintPlans = [
+      'Complete Treasury dashboard refinements and cash reconciliation quality checks.',
+      'Address top exception categories in payment pipelines and reduce repeat failures.',
+      'Implement control validation updates for sanctions and watchlist matching.',
+      'Run resiliency exercises and fix high-impact reliability bottlenecks.',
+      'Expand event logging coverage to satisfy internal control and oversight needs.',
+      'Publish clear runbooks and operational SOPs for analyst teams.',
+      'Validate upstream data contracts and resolve reporting data drift.',
+    ];
+    const sprintSuccessCriteria = [
+      'Cash position variance is within agreed tolerance and documented daily.',
+      'Exception queue aging is reduced and no critical payment failures remain unresolved.',
+      'Sanctions workflow checks pass with zero unresolved high-severity findings.',
+      'Reliability SLO targets are met with no Sev-1 incidents in sprint scope.',
+      'Audit logs are complete for all in-scope approval and mutation events.',
+      'Onboarding guide is published and new-user setup time is measurably reduced.',
+      'Leadership reporting inputs reconcile with source systems and pass QA.',
+    ];
+
     const sprints: Array<{ id: string; programId: string; projectId: string; number: number }> = [];
     let sprintsCreated = 0;
 
@@ -495,6 +553,13 @@ async function seed() {
       );
 
       if (existingSprint.rows[0]) {
+        const existingSprintTitle = `Week ${sprint.number}`;
+        const existingSprintContent = buildSeedDocContent(existingSprintTitle, [
+          `Primary goal: ${sprintGoals[sprint.number % sprintGoals.length]}`,
+          `Execution plan: ${sprintPlans[sprint.number % sprintPlans.length]}`,
+          `Success criteria: ${sprintSuccessCriteria[sprint.number % sprintSuccessCriteria.length]}`,
+        ]);
+        await backfillContentIfMissing(pool, existingSprint.rows[0].id, existingSprintContent);
         sprints.push({
           id: existingSprint.rows[0].id,
           programId: sprint.programId,
@@ -505,34 +570,6 @@ async function seed() {
         // Sprint properties with full planning details
         // Dates and status are computed at runtime from sprint_number + workspace.sprint_start_date
         // Confidence is 0-100 scale (different from project ICE scores which are 1-10)
-        const sprintGoals = [
-          'Improve daily cash position visibility and reconciliation throughput',
-          'Reduce high-risk payment exceptions and manual review backlog',
-          'Strengthen sanctions screening controls and escalation workflows',
-          'Harden operational resilience for payment gateway dependencies',
-          'Improve auditability of approvals, status changes, and exception handling',
-          'Reduce time to onboard analysts into core Treasury workflows',
-          'Raise data quality for reporting inputs used in weekly leadership reviews',
-        ];
-        const sprintPlans = [
-          'Complete Treasury dashboard refinements and cash reconciliation quality checks.',
-          'Address top exception categories in payment pipelines and reduce repeat failures.',
-          'Implement control validation updates for sanctions and watchlist matching.',
-          'Run resiliency exercises and fix high-impact reliability bottlenecks.',
-          'Expand event logging coverage to satisfy internal control and oversight needs.',
-          'Publish clear runbooks and operational SOPs for analyst teams.',
-          'Validate upstream data contracts and resolve reporting data drift.',
-        ];
-        const sprintSuccessCriteria = [
-          'Cash position variance is within agreed tolerance and documented daily.',
-          'Exception queue aging is reduced and no critical payment failures remain unresolved.',
-          'Sanctions workflow checks pass with zero unresolved high-severity findings.',
-          'Reliability SLO targets are met with no Sev-1 incidents in sprint scope.',
-          'Audit logs are complete for all in-scope approval and mutation events.',
-          'Onboarding guide is published and new-user setup time is measurably reduced.',
-          'Leadership reporting inputs reconcile with source systems and pass QA.',
-        ];
-
         // Calculate confidence based on sprint timing (future sprints have lower confidence)
         const sprintOffset = sprint.number - currentSprintNumber;
         let baseConfidence = 80;
@@ -768,6 +805,13 @@ async function seed() {
         }
 
         issuesCreated++;
+      } else {
+        const issueContent = buildSeedDocContent(issue.title, [
+          `Problem statement: ${issue.title} is currently blocking predictable delivery outcomes.`,
+          `Expected outcome: Move work to ${issue.state} with clear ownership and validation steps.`,
+          'Notes: Track dependencies, control impacts, and rollout risk before completion.',
+        ]);
+        await backfillContentIfMissing(pool, existingIssue.rows[0].id, issueContent);
       }
     }
 
@@ -842,6 +886,13 @@ async function seed() {
           }
 
           issuesCreated++;
+        } else {
+          const issueContent = buildSeedDocContent(template.title, [
+            `Scope: ${template.title}`,
+            `Priority rationale: ${template.priority} priority based on operational impact and delivery sequencing.`,
+            'Definition of done: Validation complete, evidence logged, and downstream stakeholders notified.',
+          ]);
+          await backfillContentIfMissing(pool, existingIssue.rows[0].id, issueContent);
         }
       }
     }
