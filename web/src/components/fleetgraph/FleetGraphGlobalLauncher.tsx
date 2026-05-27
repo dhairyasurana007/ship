@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
+import { MarkdownMessage } from './MarkdownMessage';
 
 interface FleetGraphGlobalLauncherProps {
   documentId?: string;
@@ -189,7 +190,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                       : 'max-w-[85%] rounded-lg bg-foreground px-2 py-1 text-xs text-background whitespace-pre-wrap'
                   }
                 >
-                  {message.text}
+                  {message.role === 'assistant' ? <MarkdownMessage content={message.text} /> : message.text}
                 </div>
               </div>
             ))}

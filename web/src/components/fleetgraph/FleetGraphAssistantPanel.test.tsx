@@ -12,7 +12,7 @@ describe('FleetGraphAssistantPanel', () => {
             requiresConfirm: true,
           }
         : {
-            response: 'Analyzed context for prompt: Move issue',
+            response: '**Analyzed** context for prompt: Move issue',
             requiresConfirm: false,
           };
       return {
@@ -29,7 +29,8 @@ describe('FleetGraphAssistantPanel', () => {
     fireEvent.click(screen.getByLabelText('Send message'));
 
     await waitFor(() => {
-      expect(screen.getByText('Analyzed context for prompt: Move issue')).toBeInTheDocument();
+      expect(screen.getByText('Analyzed', { selector: 'strong' })).toBeInTheDocument();
+      expect(screen.getByText(/context for prompt: Move issue/)).toBeInTheDocument();
     });
 
     const lastRequest = fetchMock.mock.calls[fetchMock.mock.calls.length - 1];
