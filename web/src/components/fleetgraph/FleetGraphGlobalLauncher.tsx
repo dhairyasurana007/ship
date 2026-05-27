@@ -11,18 +11,64 @@ interface ChatMessage {
   text: string;
 }
 
+interface FleetGraphOutput {
+  id: string;
+  title: string;
+  message: string;
+  condition_type: string;
+}
+
+interface FleetGraphApproval {
+  id: string;
+  mutation_type: string;
+  status: string;
+}
+
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState<string | null>(null);
+  const [outputs, setOutputs] = useState<FleetGraphOutput[]>([]);
+  const [approvals, setApprovals] = useState<FleetGraphApproval[]>([]);
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   const hasDocumentContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
+
+  async function loadOutputs(): Promise<void> {
+    try {
+      const res = await fetch('/api/fleetgraph/outputs', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json() as { outputs?: FleetGraphOutput[] };
+      setOutputs(Array.isArray(data.outputs) ? data.outputs.slice(0, 5) : []);
+    } catch {
+      // silent fallback
+    }
+  }
+
+  async function loadApprovals(): Promise<void> {
+    try {
+      const res = await fetch('/api/fleetgraph/approvals/pending', { credentials: 'include' });
+      if (!res.ok) return;
+      const data = await res.json() as { approvals?: FleetGraphApproval[] };
+      setApprovals(Array.isArray(data.approvals) ? data.approvals.slice(0, 5) : []);
+    } catch {
+      // silent fallback
+    }
+  }
+
+  async function approvalAction(id: string, action: 'approve' | 'reject' | 'execute'): Promise<void> {
+    try {
+      await apiPost(`/api/fleetgraph/approvals/${id}/${action}`, {});
+      await loadApprovals();
+    } catch {
+      // silent fallback
+    }
+  }
 
   function startThinkingUpdates(): void {
     setThinkingStep('Gathering workspace context...');
@@ -164,7 +210,16 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       <button
         type="button"
         className="inline-flex h-12 items-center gap-2 rounded-full border border-sky-300 bg-sky-50 px-5 text-sm font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-100"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => {
+            const next = !v;
+            if (next) {
+              void loadOutputs();
+              void loadApprovals();
+            }
+            return next;
+          });
+        }}
         aria-label="Open FleetGraph assistant window"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -174,6 +229,37 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         </svg>
         Help
       </button>
+      {open && outputs.length > 0 && (
+        <div className="mt-2 w-80 rounded border border-border bg-background p-2 text-xs">
+          <p className="mb-1 font-semibold text-muted">Recent FleetGraph alerts</p>
+          <div className="space-y-1">
+            {outputs.map((o) => (
+              <div key={o.id} className="rounded border border-border bg-muted/20 p-1">
+                <p className="font-medium text-foreground">{o.title}</p>
+                <p className="text-muted">{o.message}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {open && approvals.length > 0 && (
+        <div className="mt-2 w-80 rounded border border-border bg-background p-2 text-xs">
+          <p className="mb-1 font-semibold text-muted">Pending approvals</p>
+          <div className="space-y-1">
+            {approvals.map((a) => (
+              <div key={a.id} className="rounded border border-border bg-muted/20 p-1">
+                <p className="font-medium text-foreground">{a.mutation_type}</p>
+                <p className="text-muted">Status: {a.status}</p>
+                <div className="mt-1 flex gap-1">
+                  <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'approve')}>Approve</button>
+                  <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'reject')}>Reject</button>
+                  <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'execute')}>Execute</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

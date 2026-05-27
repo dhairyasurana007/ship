@@ -65,3 +65,16 @@ export async function sweepExpiredApprovals(): Promise<number> {
 export function approvalTtlHours(): number {
   return TTL_HOURS;
 }
+
+export async function listPendingApprovals(workspaceId: string): Promise<Array<Record<string, unknown>>> {
+  const result = await pool.query(
+    `SELECT id, run_id, entity_id, mutation_type, mutation_payload, status, expires_at, created_at, updated_at
+     FROM fleetgraph_approval_requests
+     WHERE workspace_id = $1
+       AND status IN ('pending', 'approved')
+     ORDER BY created_at DESC
+     LIMIT 100`,
+    [workspaceId]
+  );
+  return result.rows;
+}

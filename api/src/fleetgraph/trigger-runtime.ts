@@ -9,6 +9,7 @@ import { buildDedupStateValue, evaluateDedup, type DedupStateValue } from './ded
 import { createLangSmithRun, finishLangSmithRun } from './langsmith.js';
 import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
+import { persistFleetGraphOutputs } from './output-store.js';
 import { getTraceContext } from './observability.js';
 import { getFleetGraphState, upsertFleetGraphState } from './state-store.js';
 import type { FleetGraphConfig, FleetGraphRunEnvelope, TriggerEvent, TriggerType } from './types.js';
@@ -34,6 +35,7 @@ export class FleetGraphTriggerRuntime {
           const conditions = classifyConditions(issues);
           envelope.payload.conditions = conditions;
           envelope.payload.outputs = routeOutputs(conditions);
+          await persistFleetGraphOutputs(envelope.runId, envelope.workspaceId, conditions, envelope.payload.outputs as ReturnType<typeof routeOutputs>);
           const stateEntityId = envelope.entityId ?? 'workspace';
           const previous = await getFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup');
           const dedup = evaluateDedup((previous?.value ?? null) as DedupStateValue | null, conditions);

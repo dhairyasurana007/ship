@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import {
   createApprovalRequest,
   executeApprovedMutation,
+  listPendingApprovals,
   sweepExpiredApprovals,
   updateApprovalStatus,
   type FleetGraphMutationType,
@@ -12,6 +13,7 @@ import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContex
 import { loadFleetGraphConfig } from '../fleetgraph/config.js';
 import { createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
 import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
+import { createFleetGraphOutput, listFleetGraphOutputsForWorkspace } from '../fleetgraph/output-store.js';
 
 const router = Router();
 
@@ -59,6 +61,47 @@ router.post('/approvals/:id/execute', async (req, res) => {
 router.post('/approvals/sweep-expired', async (_req, res) => {
   const expiredCount = await sweepExpiredApprovals();
   res.json({ success: true, expiredCount });
+});
+
+router.get('/approvals/pending', authMiddleware, async (req, res) => {
+  if (!req.workspaceId) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const approvals = await listPendingApprovals(req.workspaceId);
+  res.json({ approvals });
+});
+
+router.get('/outputs', authMiddleware, async (req, res) => {
+  if (!req.workspaceId || !req.userId) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const outputs = await listFleetGraphOutputsForWorkspace(req.workspaceId, req.userId);
+  res.json({ outputs });
+});
+
+router.post('/outputs/dev-seed', authMiddleware, async (req, res) => {
+  if (process.env.NODE_ENV !== 'test') {
+    res.status(404).json({ error: 'not_found' });
+    return;
+  }
+  if (!req.workspaceId || !req.userId) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  await createFleetGraphOutput({
+    workspaceId: req.workspaceId,
+    runId: `dev-seed-${crypto.randomUUID()}`,
+    conditionType: String(req.body?.conditionType ?? 'stale_issue'),
+    outputKind: (req.body?.outputKind as 'notification' | 'action_required' | 'digest') ?? 'notification',
+    entityId: req.body?.entityId ? String(req.body.entityId) : null,
+    recipientUserId: req.userId,
+    title: String(req.body?.title ?? 'FleetGraph: Test output'),
+    message: String(req.body?.message ?? 'Test proactive output'),
+    metadata: { seeded: true },
+  });
+  res.status(201).json({ success: true });
 });
 
 router.post('/chat', authMiddleware, async (req, res) => {
@@ -113,6 +156,8 @@ router.post('/chat', authMiddleware, async (req, res) => {
     res.json({
       contextWindowDays: 30,
       contextScope,
+      degraded: Boolean((context as { degraded?: boolean }).degraded),
+      degradedReason: (context as { degradedReason?: string }).degradedReason ?? null,
       context,
       reasoning,
       ...response,
