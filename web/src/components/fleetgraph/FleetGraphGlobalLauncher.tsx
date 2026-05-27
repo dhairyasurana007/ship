@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import { apiPost } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 
 interface FleetGraphGlobalLauncherProps {
   documentId?: string;
@@ -41,7 +41,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
   async function loadOutputs(): Promise<void> {
     try {
-      const res = await fetch('/api/fleetgraph/outputs', { credentials: 'include' });
+      const res = await apiGet('/api/fleetgraph/outputs');
       if (!res.ok) return;
       const data = await res.json() as { outputs?: FleetGraphOutput[] };
       setOutputs(Array.isArray(data.outputs) ? data.outputs.slice(0, 5) : []);
@@ -52,7 +52,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
   async function loadApprovals(): Promise<void> {
     try {
-      const res = await fetch('/api/fleetgraph/approvals/pending', { credentials: 'include' });
+      const res = await apiGet('/api/fleetgraph/approvals/pending');
       if (!res.ok) return;
       const data = await res.json() as { approvals?: FleetGraphApproval[] };
       setApprovals(Array.isArray(data.approvals) ? data.approvals.slice(0, 5) : []);
