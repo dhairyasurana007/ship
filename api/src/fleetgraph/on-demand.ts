@@ -16,8 +16,29 @@ async function queryWithTimeout<T>(work: Promise<T>, label: string): Promise<T> 
   }
 }
 
+async function resolveHistoryTimestampColumn(): Promise<'changed_at' | 'created_at'> {
+  try {
+    const result = await queryWithTimeout(
+      pool.query(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_schema = 'public'
+           AND table_name = 'document_history'
+           AND column_name IN ('changed_at', 'created_at')`
+      ),
+      'fleetgraph_context_history_column_query'
+    );
+    const names = new Set(result.rows.map((row: { column_name: string }) => row.column_name));
+    if (names.has('changed_at')) return 'changed_at';
+    return 'created_at';
+  } catch {
+    return 'created_at';
+  }
+}
+
 export async function loadViewContext(documentType: string, documentId: string): Promise<Record<string, unknown>> {
   try {
+    const historyTimestampColumn = await resolveHistoryTimestampColumn();
     const docResult = await queryWithTimeout(
       pool.query(
         `SELECT id, workspace_id, document_type, title, content, properties, updated_at
@@ -34,11 +55,11 @@ export async function loadViewContext(documentType: string, documentId: string):
 
     const historyResult = await queryWithTimeout(
       pool.query(
-        `SELECT field, old_value, new_value, created_at AS changed_at
+        `SELECT field, old_value, new_value, ${historyTimestampColumn} AS changed_at
          FROM document_history
          WHERE document_id = $1
-           AND created_at >= now() - interval '${HISTORY_WINDOW_DAYS} days'
-         ORDER BY created_at DESC
+           AND ${historyTimestampColumn} >= now() - interval '${HISTORY_WINDOW_DAYS} days'
+         ORDER BY ${historyTimestampColumn} DESC
          LIMIT $2`,
         [documentId, HISTORY_LIMIT]
       ),
