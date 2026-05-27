@@ -152,19 +152,39 @@ export async function loadWorkspaceContext(workspaceId: string): Promise<Record<
 
 export function reasonOnContext(context: Record<string, unknown>, prompt: string): Record<string, unknown> {
   if (context.scope === 'workspace') {
+    const promptLower = prompt.toLowerCase();
     const openIssueCount = Number(context.openIssueCount ?? 0);
     const activeSprintCount = Number(context.activeSprintCount ?? 0);
     const recentDocuments = Array.isArray(context.recentDocuments) ? context.recentDocuments : [];
-    const sampleTitles = recentDocuments
+    const recentTitles = recentDocuments
       .slice(0, 3)
       .map((doc) => (doc as { title?: string }).title)
-      .filter(Boolean)
-      .join(', ');
+      .filter(Boolean) as string[];
+    const sampleTitles = recentTitles.join(', ');
+
+    let summary = '';
+    if (/(how many|count|open issues|issue count)/.test(promptLower)) {
+      summary = `There are currently ${openIssueCount} open issues in this workspace.`;
+    } else if (/(active sprint|sprint count|how many sprints|current sprint)/.test(promptLower)) {
+      summary = `There are currently ${activeSprintCount} active sprints in this workspace.`;
+    } else if (/(recent|latest|updated|what docs|documents)/.test(promptLower)) {
+      summary = recentTitles.length > 0
+        ? `Recent documents: ${sampleTitles}.`
+        : 'No recent documents were found in this workspace.';
+    } else if (/(what is this about|summary|overview|status)/.test(promptLower)) {
+      summary =
+        `Workspace status: ${openIssueCount} open issues and ${activeSprintCount} active sprints. ` +
+        `${sampleTitles ? `Recent docs include: ${sampleTitles}.` : 'No recent documents were found.'}`;
+    } else {
+      summary =
+        `I used workspace-level context for your request. Current status: ${openIssueCount} open issues, ` +
+        `${activeSprintCount} active sprints${sampleTitles ? `, and recent docs: ${sampleTitles}` : ''}. ` +
+        `If you want a specific slice, ask for counts, recent documents, or sprint status.`;
+    }
+
     return {
       model: 'gpt-4o-mini',
-      summary:
-        `Workspace overview: ${openIssueCount} open issues and ${activeSprintCount} active sprints. ` +
-        `${sampleTitles ? `Recent docs include: ${sampleTitles}.` : 'No recent documents were found.'}`,
+      summary,
       prompt,
       contextLoaded: true,
       historyCount: 0,
