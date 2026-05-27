@@ -17,7 +17,10 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState<string | null>(null);
+  const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   const hasDocumentContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
 
@@ -43,12 +46,12 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     startThinkingUpdates();
     try {
       const res = await apiPost('/api/fleetgraph/chat', {
-          contextScope: 'workspace',
-          documentType: hasDocumentContext ? documentType : undefined,
-          documentId: hasDocumentContext ? documentId : undefined,
-          prompt: promptValue,
-          requiresMutationConfirm: false,
-          explicitConfirm: false,
+        contextScope: 'workspace',
+        documentType: hasDocumentContext ? documentType : undefined,
+        documentId: hasDocumentContext ? documentId : undefined,
+        prompt: promptValue,
+        requiresMutationConfirm: false,
+        explicitConfirm: false,
       });
       const data = await res.json();
       setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
@@ -60,11 +63,44 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     }
   }
 
+  function beginDrag(e: React.MouseEvent<HTMLDivElement>): void {
+    const panel = e.currentTarget.closest('[data-fleetgraph-panel]');
+    if (!panel) return;
+    const rect = panel.getBoundingClientRect();
+    dragOffsetRef.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+    setDragging(true);
+  }
+
+  function onDrag(e: React.MouseEvent<HTMLDivElement>): void {
+    if (!dragging) return;
+    setWindowPos({
+      x: e.clientX - dragOffsetRef.current.x,
+      y: e.clientY - dragOffsetRef.current.y,
+    });
+  }
+
+  function endDrag(): void {
+    if (dragging) setDragging(false);
+  }
+
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div className="fixed bottom-4 right-4 z-50" onMouseMove={onDrag} onMouseUp={endDrag} onMouseLeave={endDrag}>
       {open && (
-        <div className="mb-2 w-80 rounded-lg border border-border bg-background p-3 shadow-lg">
-          <div className="flex items-center justify-between">
+        <div
+          data-fleetgraph-panel
+          style={{
+            position: 'fixed',
+            left: windowPos.x ? `${windowPos.x}px` : undefined,
+            top: windowPos.y ? `${windowPos.y}px` : undefined,
+            right: windowPos.x ? undefined : '1rem',
+            bottom: windowPos.y ? undefined : '4.5rem',
+          }}
+          className="w-80 rounded-lg border border-border bg-background p-3 shadow-lg"
+        >
+          <div className="flex items-center justify-between cursor-move select-none" onMouseDown={beginDrag}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph Assistant</p>
             <button
               type="button"
@@ -72,16 +108,12 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted hover:bg-muted"
               onClick={() => setOpen(false)}
             >
-              −
+              -
             </button>
           </div>
-          <p className="mt-2 text-xs text-muted">
-            Context: entire workspace account for your current user.
-          </p>
-          <div className="mt-2 h-56 overflow-y-auto rounded border border-border bg-muted/20 p-2 space-y-2">
-            {messages.length === 0 && (
-              <p className="text-xs text-muted">Ask about the current document context.</p>
-            )}
+          <p className="mt-2 text-xs text-muted">Context: entire workspace account for your current user.</p>
+          <div className="mt-2 h-56 space-y-2 overflow-y-auto rounded border border-border bg-muted/20 p-2">
+            {messages.length === 0 && <p className="text-xs text-muted">Ask about the current document context.</p>}
             {messages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={message.role === 'assistant' ? 'flex justify-start' : 'flex justify-end'}>
                 <div
@@ -97,7 +129,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             ))}
             {loading && thinkingStep && (
               <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-lg border border-border bg-background px-2 py-1 text-xs text-muted whitespace-pre-wrap animate-pulse">
+                <div className="max-w-[85%] animate-pulse whitespace-pre-wrap rounded-lg border border-border bg-background px-2 py-1 text-xs text-muted">
                   FleetGraph is thinking: {thinkingStep}
                 </div>
               </div>
@@ -112,8 +144,8 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                 if (!loading) void send();
               }
             }}
-            placeholder='Type your message...'
-            className="mt-2 w-full min-h-20 rounded border border-border bg-background p-2 text-xs"
+            placeholder="Type your message..."
+            className="mt-2 min-h-20 w-full rounded border border-border bg-background p-2 text-xs"
           />
           <div className="mt-2 flex justify-end">
             <button
@@ -123,7 +155,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               disabled={loading || !prompt.trim()}
               onClick={() => void send()}
             >
-              ↑
+              ?
             </button>
           </div>
         </div>
@@ -131,11 +163,16 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
       <button
         type="button"
-        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition-colors hover:bg-muted"
+        className="inline-flex h-12 items-center gap-2 rounded-full border border-sky-300 bg-sky-50 px-5 text-sm font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-100"
         onClick={() => setOpen((v) => !v)}
         aria-label="Open FleetGraph assistant window"
       >
-        ↗
+        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H7l-4 3v-5.5A8.5 8.5 0 1 1 21 11.5Z" />
+          <path d="M8.5 10.5h7" />
+          <path d="M8.5 14h5" />
+        </svg>
+        Help
       </button>
     </div>
   );
