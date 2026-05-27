@@ -14,10 +14,9 @@ interface ChatMessage {
 export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGraphAssistantPanelProps) {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [requiresConfirm, setRequiresConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function send(options: { requiresMutationConfirm: boolean; explicitConfirm?: boolean }): Promise<void> {
+  async function send(): Promise<void> {
     if (!prompt.trim()) return;
     const promptValue = prompt.trim();
     setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
@@ -28,12 +27,11 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
           documentType,
           documentId,
           prompt: promptValue,
-          requiresMutationConfirm: options.requiresMutationConfirm,
-          explicitConfirm: options.explicitConfirm === true,
+          requiresMutationConfirm: false,
+          explicitConfirm: false,
       });
       const data = await res.json();
       setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
-      setRequiresConfirm(Boolean(data.requiresConfirm));
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: 'Request failed. Please retry.' }]);
     } finally {
@@ -68,23 +66,25 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!loading) void send();
+          }
+        }}
         placeholder="Type your message..."
         className="w-full min-h-20 rounded border border-border bg-background p-2 text-xs"
       />
-      <div className="flex gap-2">
-        <button type="button" onClick={() => send({ requiresMutationConfirm: false })} className="px-2 py-1 text-xs rounded bg-foreground text-background" disabled={loading}>
-          Ask
+      <div className="flex justify-end">
+        <button
+          type="button"
+          aria-label="Send message"
+          onClick={() => void send()}
+          className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-background disabled:opacity-50"
+          disabled={loading || !prompt.trim()}
+        >
+          ↑
         </button>
-        {requiresConfirm && (
-          <>
-            <button type="button" onClick={() => send({ requiresMutationConfirm: true, explicitConfirm: true })} className="px-2 py-1 text-xs rounded border border-border" disabled={loading}>
-              Approve
-            </button>
-            <button type="button" onClick={() => setRequiresConfirm(false)} className="px-2 py-1 text-xs rounded border border-border" disabled={loading}>
-              Reject
-            </button>
-          </>
-        )}
       </div>
     </div>
   );

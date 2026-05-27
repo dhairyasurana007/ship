@@ -87,11 +87,24 @@ export async function loadViewContext(documentType: string, documentId: string):
 }
 
 export function reasonOnContext(context: Record<string, unknown>, prompt: string): Record<string, unknown> {
+  const doc = (context.document ?? null) as
+    | { title?: string; document_type?: string; updated_at?: string | Date | null }
+    | null;
+  const history = Array.isArray(context.history) ? context.history : [];
+  const docType = doc?.document_type ? String(doc.document_type) : 'document';
+  const docTitle = doc?.title ? String(doc.title) : 'Untitled';
+  const updatedAtText = doc?.updated_at ? new Date(doc.updated_at).toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' }) : null;
+
+  const summary = doc
+    ? `This ${docType} appears to be "${docTitle}"${updatedAtText ? ` (last updated ${updatedAtText})` : ''}. I found ${history.length} history changes in the last ${HISTORY_WINDOW_DAYS} days.`
+    : 'I could not load the current document context. Please verify the document exists and try again.';
+
   return {
     model: 'gpt-4o-mini',
-    summary: `Analyzed context for prompt: ${prompt}`,
+    summary,
+    prompt,
     contextLoaded: Boolean(context.document),
-    historyCount: Array.isArray(context.history) ? context.history.length : 0,
+    historyCount: history.length,
   };
 }
 

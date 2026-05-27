@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { FleetGraphAssistantPanel } from './FleetGraphAssistantPanel';
 
 describe('FleetGraphAssistantPanel', () => {
-  it('renders response and confirm controls', async () => {
+  it('sends message and renders assistant response', async () => {
     const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body ?? '{}')) as { requiresMutationConfirm?: boolean };
       const payload = body.requiresMutationConfirm
@@ -26,7 +26,7 @@ describe('FleetGraphAssistantPanel', () => {
 
     render(<FleetGraphAssistantPanel documentId="d1" documentType="issue" />);
     fireEvent.change(screen.getByPlaceholderText('Type your message...'), { target: { value: 'Move issue' } });
-    fireEvent.click(screen.getByText('Ask'));
+    fireEvent.click(screen.getByLabelText('Send message'));
 
     await waitFor(() => {
       expect(screen.getByText('Analyzed context for prompt: Move issue')).toBeInTheDocument();

@@ -19,7 +19,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
   const hasContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
 
-  async function send(options: { requiresMutationConfirm: boolean; explicitConfirm?: boolean }): Promise<void> {
+  async function send(): Promise<void> {
     if (!hasContext || !prompt.trim()) return;
     const promptValue = prompt.trim();
     setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
@@ -30,8 +30,8 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           documentType,
           documentId,
           prompt: promptValue,
-          requiresMutationConfirm: options.requiresMutationConfirm,
-          explicitConfirm: options.explicitConfirm === true,
+          requiresMutationConfirm: false,
+          explicitConfirm: false,
       });
       const data = await res.json();
       setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
@@ -71,26 +71,25 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                if (!loading) void send();
+              }
+            }}
             placeholder={hasContext ? 'Type your message...' : 'Open a document first...'}
             className="mt-2 w-full min-h-20 rounded border border-border bg-background p-2 text-xs"
             disabled={!hasContext}
           />
-          <div className="mt-2 flex gap-2">
+          <div className="mt-2 flex justify-end">
             <button
               type="button"
-              className="rounded bg-foreground px-2 py-1 text-xs text-background disabled:opacity-50"
+              aria-label="Send message"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-foreground text-background disabled:opacity-50"
               disabled={!hasContext || loading || !prompt.trim()}
-              onClick={() => send({ requiresMutationConfirm: false })}
+              onClick={() => void send()}
             >
-              Ask
-            </button>
-            <button
-              type="button"
-              className="rounded border border-border px-2 py-1 text-xs disabled:opacity-50"
-              disabled={!hasContext || loading || !prompt.trim()}
-              onClick={() => send({ requiresMutationConfirm: true, explicitConfirm: true })}
-            >
-              Confirm
+              ↑
             </button>
           </div>
         </div>
