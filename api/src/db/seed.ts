@@ -35,6 +35,23 @@ async function createAssociation(
   );
 }
 
+function buildSeedDocContent(title: string, lines: string[]): Record<string, unknown> {
+  return {
+    type: 'doc',
+    content: [
+      {
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [{ type: 'text', text: title }],
+      },
+      ...lines.map((line) => ({
+        type: 'paragraph',
+        content: [{ type: 'text', text: line }],
+      })),
+    ],
+  };
+}
+
 async function seed() {
   // Load secrets from SSM in production (must happen before Pool creation)
   await loadProductionSecrets();
@@ -261,11 +278,16 @@ async function seed() {
         programs.push({ id: existingProgram.rows[0].id, ...prog });
       } else {
         const properties = { prefix: prog.prefix, color: prog.color };
+        const programContent = buildSeedDocContent(prog.name, [
+          `Mission: Deliver reliable ${prog.name.toLowerCase()} capabilities for Treasury operations.`,
+          'Focus: Risk reduction, operational resilience, and measurable service performance.',
+          'Stakeholders: Treasury analysts, program leads, control owners, and engineering teams.',
+        ]);
         const programResult = await pool.query(
-          `INSERT INTO documents (workspace_id, document_type, title, properties)
-           VALUES ($1, 'program', $2, $3)
+          `INSERT INTO documents (workspace_id, document_type, title, content, properties)
+           VALUES ($1, 'program', $2, $3, $4)
            RETURNING id`,
-          [workspaceId, prog.name, JSON.stringify(properties)]
+          [workspaceId, prog.name, JSON.stringify(programContent), JSON.stringify(properties)]
         );
         programs.push({ id: programResult.rows[0].id, ...prog });
         programsCreated++;
@@ -388,11 +410,16 @@ async function seed() {
             projectProperties.design_review_notes = template.design_review_notes;
           }
           // Create project document without legacy program_id column
+          const projectContent = buildSeedDocContent(projectTitle, [
+            `Objective: ${template.plan}`,
+            `Expected monetary impact: $${template.monetary_impact_expected.toLocaleString()}.`,
+            'Delivery approach: Break scope into weekly increments with explicit acceptance criteria.',
+          ]);
           const projectResult = await pool.query(
-            `INSERT INTO documents (workspace_id, document_type, title, properties)
-             VALUES ($1, 'project', $2, $3)
+            `INSERT INTO documents (workspace_id, document_type, title, content, properties)
+             VALUES ($1, 'project', $2, $3, $4)
              RETURNING id`,
-            [workspaceId, projectTitle, JSON.stringify(projectProperties)]
+            [workspaceId, projectTitle, JSON.stringify(projectContent), JSON.stringify(projectProperties)]
           );
           const projectId = projectResult.rows[0].id;
 
@@ -534,11 +561,17 @@ async function seed() {
           ...(sprintStatus && { status: sprintStatus }),
         };
         // Create sprint document without legacy project_id and program_id columns
+        const sprintTitle = `Week ${sprint.number}`;
+        const sprintContent = buildSeedDocContent(sprintTitle, [
+          `Primary goal: ${sprintGoals[sprint.number % sprintGoals.length]}`,
+          `Execution plan: ${sprintPlans[sprint.number % sprintPlans.length]}`,
+          `Success criteria: ${sprintSuccessCriteria[sprint.number % sprintSuccessCriteria.length]}`,
+        ]);
         const sprintResult = await pool.query(
-          `INSERT INTO documents (workspace_id, document_type, title, properties)
-           VALUES ($1, 'sprint', $2, $3)
+          `INSERT INTO documents (workspace_id, document_type, title, content, properties)
+           VALUES ($1, 'sprint', $2, $3, $4)
            RETURNING id`,
-          [workspaceId, `Week ${sprint.number}`, JSON.stringify(sprintProperties)]
+          [workspaceId, sprintTitle, JSON.stringify(sprintContent), JSON.stringify(sprintProperties)]
         );
         const sprintId = sprintResult.rows[0].id;
 
@@ -703,11 +736,16 @@ async function seed() {
           issueProperties.estimate = issue.estimate;
         }
         // Create issue document without legacy program_id and sprint_id columns
+        const issueContent = buildSeedDocContent(issue.title, [
+          `Problem statement: ${issue.title} is currently blocking predictable delivery outcomes.`,
+          `Expected outcome: Move work to ${issue.state} with clear ownership and validation steps.`,
+          'Notes: Track dependencies, control impacts, and rollout risk before completion.',
+        ]);
         const issueResult = await pool.query(
-          `INSERT INTO documents (workspace_id, document_type, title, properties, ticket_number)
-           VALUES ($1, 'issue', $2, $3, $4)
+          `INSERT INTO documents (workspace_id, document_type, title, content, properties, ticket_number)
+           VALUES ($1, 'issue', $2, $3, $4, $5)
            RETURNING id`,
-          [workspaceId, issue.title, JSON.stringify(issueProperties), maxTickets[shipCoreProgram.id]]
+          [workspaceId, issue.title, JSON.stringify(issueContent), JSON.stringify(issueProperties), maxTickets[shipCoreProgram.id]]
         );
         const issueId = issueResult.rows[0].id;
 
@@ -772,11 +810,16 @@ async function seed() {
             estimate: template.estimate,
           };
           // Create issue document without legacy program_id and sprint_id columns
+          const issueContent = buildSeedDocContent(template.title, [
+            `Scope: ${template.title}`,
+            `Priority rationale: ${template.priority} priority based on operational impact and delivery sequencing.`,
+            'Definition of done: Validation complete, evidence logged, and downstream stakeholders notified.',
+          ]);
           const issueResult = await pool.query(
-            `INSERT INTO documents (workspace_id, document_type, title, properties, ticket_number)
-             VALUES ($1, 'issue', $2, $3, $4)
+            `INSERT INTO documents (workspace_id, document_type, title, content, properties, ticket_number)
+             VALUES ($1, 'issue', $2, $3, $4, $5)
              RETURNING id`,
-            [workspaceId, template.title, JSON.stringify(issueProperties), maxTickets[program.id]]
+            [workspaceId, template.title, JSON.stringify(issueContent), JSON.stringify(issueProperties), maxTickets[program.id]]
           );
           const issueId = issueResult.rows[0].id;
 
@@ -845,10 +888,14 @@ async function seed() {
       );
 
       if (!existingDoc.rows[0]) {
+        const nestedContent = buildSeedDocContent(doc.title, [
+          `This section expands on ${doc.title.toLowerCase()} for operational users.`,
+          'Capture key decisions, open risks, and owner assignments in this page.',
+        ]);
         await pool.query(
-          `INSERT INTO documents (workspace_id, document_type, title, parent_id)
-           VALUES ($1, 'wiki', $2, $3)`,
-          [workspaceId, doc.title, doc.parentId]
+          `INSERT INTO documents (workspace_id, document_type, title, content, parent_id)
+           VALUES ($1, 'wiki', $2, $3, $4)`,
+          [workspaceId, doc.title, JSON.stringify(nestedContent), doc.parentId]
         );
         nestedDocsCreated++;
       }
