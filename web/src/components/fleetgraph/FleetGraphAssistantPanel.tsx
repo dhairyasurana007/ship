@@ -12,7 +12,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
   const [requiresConfirm, setRequiresConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  async function send(explicitConfirm = false): Promise<void> {
+  async function send(options: { requiresMutationConfirm: boolean; explicitConfirm?: boolean }): Promise<void> {
     if (!prompt.trim()) return;
     setLoading(true);
     try {
@@ -20,8 +20,8 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
           documentType,
           documentId,
           prompt,
-          requiresMutationConfirm: true,
-          explicitConfirm,
+          requiresMutationConfirm: options.requiresMutationConfirm,
+          explicitConfirm: options.explicitConfirm === true,
       });
       const data = await res.json();
       setResponse(String(data.response ?? 'No response'));
@@ -41,12 +41,12 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
         className="w-full min-h-20 rounded border border-border bg-background p-2 text-xs"
       />
       <div className="flex gap-2">
-        <button type="button" onClick={() => send(false)} className="px-2 py-1 text-xs rounded bg-foreground text-background" disabled={loading}>
+        <button type="button" onClick={() => send({ requiresMutationConfirm: false })} className="px-2 py-1 text-xs rounded bg-foreground text-background" disabled={loading}>
           Ask
         </button>
         {requiresConfirm && (
           <>
-            <button type="button" onClick={() => send(true)} className="px-2 py-1 text-xs rounded border border-border" disabled={loading}>
+            <button type="button" onClick={() => send({ requiresMutationConfirm: true, explicitConfirm: true })} className="px-2 py-1 text-xs rounded border border-border" disabled={loading}>
               Approve
             </button>
             <button type="button" onClick={() => setRequiresConfirm(false)} className="px-2 py-1 text-xs rounded border border-border" disabled={loading}>

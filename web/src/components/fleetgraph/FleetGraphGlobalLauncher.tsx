@@ -14,7 +14,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
   const hasContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
 
-  async function send(explicitConfirm = false): Promise<void> {
+  async function send(options: { requiresMutationConfirm: boolean; explicitConfirm?: boolean }): Promise<void> {
     if (!hasContext || !prompt.trim()) return;
     setLoading(true);
     try {
@@ -22,8 +22,8 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           documentType,
           documentId,
           prompt,
-          requiresMutationConfirm: true,
-          explicitConfirm,
+          requiresMutationConfirm: options.requiresMutationConfirm,
+          explicitConfirm: options.explicitConfirm === true,
       });
       const data = await res.json();
       setResponse(String(data.response ?? 'No response'));
@@ -52,7 +52,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               type="button"
               className="rounded bg-foreground px-2 py-1 text-xs text-background disabled:opacity-50"
               disabled={!hasContext || loading || !prompt.trim()}
-              onClick={() => send(false)}
+              onClick={() => send({ requiresMutationConfirm: false })}
             >
               Ask
             </button>
@@ -60,7 +60,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               type="button"
               className="rounded border border-border px-2 py-1 text-xs disabled:opacity-50"
               disabled={!hasContext || loading || !prompt.trim()}
-              onClick={() => send(true)}
+              onClick={() => send({ requiresMutationConfirm: true, explicitConfirm: true })}
             >
               Confirm
             </button>

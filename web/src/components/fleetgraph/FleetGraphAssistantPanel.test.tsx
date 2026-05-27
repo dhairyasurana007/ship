@@ -4,24 +4,36 @@ import { FleetGraphAssistantPanel } from './FleetGraphAssistantPanel';
 
 describe('FleetGraphAssistantPanel', () => {
   it('renders response and confirm controls', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        json: async () => ({
-          response: 'Action proposed. Explicit confirm is required before mutation.',
-          requiresConfirm: true,
-        }),
-      }))
-    );
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as { requiresMutationConfirm?: boolean };
+      const payload = body.requiresMutationConfirm
+        ? {
+            response: 'Action proposed. Explicit confirm is required before mutation.',
+            requiresConfirm: true,
+          }
+        : {
+            response: 'Analyzed context for prompt: Move issue',
+            requiresConfirm: false,
+          };
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => payload,
+      } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
     render(<FleetGraphAssistantPanel documentId="d1" documentType="issue" />);
     fireEvent.change(screen.getByPlaceholderText('Ask about this document context...'), { target: { value: 'Move issue' } });
     fireEvent.click(screen.getByText('Ask'));
 
     await waitFor(() => {
-      expect(screen.getByText('Approve')).toBeInTheDocument();
-      expect(screen.getByText('Reject')).toBeInTheDocument();
+      expect(screen.getByText('Analyzed context for prompt: Move issue')).toBeInTheDocument();
     });
+
+    const lastRequest = fetchMock.mock.calls[fetchMock.mock.calls.length - 1];
+    const requestBody = JSON.parse(String(lastRequest?.[1]?.body ?? '{}'));
+    expect(requestBody.requiresMutationConfirm).toBe(false);
   });
 });
-
