@@ -25,7 +25,7 @@ describe('FleetGraphAssistantPanel', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     render(<FleetGraphAssistantPanel documentId="d1" documentType="issue" />);
-    fireEvent.change(screen.getByPlaceholderText('Ask about this document context...'), { target: { value: 'Move issue' } });
+    fireEvent.change(screen.getByPlaceholderText('Type your message...'), { target: { value: 'Move issue' } });
     fireEvent.click(screen.getByText('Ask'));
 
     await waitFor(() => {

@@ -6,27 +6,37 @@ interface FleetGraphGlobalLauncherProps {
   documentType?: string;
 }
 
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
+}
+
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
-  const [response, setResponse] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
 
   const hasContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
 
   async function send(options: { requiresMutationConfirm: boolean; explicitConfirm?: boolean }): Promise<void> {
     if (!hasContext || !prompt.trim()) return;
+    const promptValue = prompt.trim();
+    setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
+    setPrompt('');
     setLoading(true);
     try {
       const res = await apiPost('/api/fleetgraph/chat', {
           documentType,
           documentId,
-          prompt,
+          prompt: promptValue,
           requiresMutationConfirm: options.requiresMutationConfirm,
           explicitConfirm: options.explicitConfirm === true,
       });
       const data = await res.json();
-      setResponse(String(data.response ?? 'No response'));
+      setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
+    } catch {
+      setMessages((prev) => [...prev, { role: 'assistant', text: 'Request failed. Please retry.' }]);
     } finally {
       setLoading(false);
     }
@@ -40,10 +50,28 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           {!hasContext && (
             <p className="mt-2 text-xs text-muted">Open a document to use context-aware FleetGraph chat.</p>
           )}
+          <div className="mt-2 h-56 overflow-y-auto rounded border border-border bg-muted/20 p-2 space-y-2">
+            {messages.length === 0 && (
+              <p className="text-xs text-muted">Ask about the current document context.</p>
+            )}
+            {messages.map((message, index) => (
+              <div key={`${message.role}-${index}`} className={message.role === 'assistant' ? 'flex justify-start' : 'flex justify-end'}>
+                <div
+                  className={
+                    message.role === 'assistant'
+                      ? 'max-w-[85%] rounded-lg border border-border bg-background px-2 py-1 text-xs text-foreground whitespace-pre-wrap'
+                      : 'max-w-[85%] rounded-lg bg-foreground px-2 py-1 text-xs text-background whitespace-pre-wrap'
+                  }
+                >
+                  {message.text}
+                </div>
+              </div>
+            ))}
+          </div>
           <textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder={hasContext ? 'Ask about the current document...' : 'Open a document first...'}
+            placeholder={hasContext ? 'Type your message...' : 'Open a document first...'}
             className="mt-2 w-full min-h-20 rounded border border-border bg-background p-2 text-xs"
             disabled={!hasContext}
           />
@@ -65,7 +93,6 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               Confirm
             </button>
           </div>
-          {response && <p className="mt-2 whitespace-pre-wrap text-xs text-foreground">{response}</p>}
         </div>
       )}
 
