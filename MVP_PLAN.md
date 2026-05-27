@@ -32,7 +32,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
 ### Tests/workflows to add
 - Unit test: config validation (missing/invalid env behavior).
 - Unit test: migration smoke check (tables can be created and read).
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-scaffold.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
 
 ### Post-push physical verification
@@ -57,7 +59,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
   - LISTEN event enqueues run.
   - Poll fallback enqueues runs when watermark advances.
   - Queue honors FIFO and max concurrency.
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-trigger-layer.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
 
 ### Post-push physical verification
@@ -88,7 +92,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
   - blocker timer reset on comment/state change
   - orphan terminal-state exclusion
   - scope creep post-start association detection
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-proactive-classification.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
 
 ### Post-push physical verification
@@ -114,7 +120,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
   - repeat alert suppressed within 48h
   - condition-set change bypasses suppression
   - worsening threshold causes re-alert
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-dedup-worsening.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
 
 ### Post-push physical verification
@@ -139,7 +147,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
   - approved mutation executes
   - rejection does not execute
   - expiry path emits expiry notification
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-human-gate.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
 
 ### Post-push physical verification
@@ -160,7 +170,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
 - Unit/integration tests:
   - merged notification for multiple notification-only conditions
   - split behavior when action-required condition exists
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-notifications-digest.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
 
 ### Post-push physical verification
@@ -181,7 +193,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
   - context loaded from current view without restating context
   - 30-day history cap honored
   - action proposal requires explicit confirm
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-on-demand-context.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
   - `corepack pnpm test:e2e -- --grep "fleetgraph|chat|weeks|issues"` (use your `/e2e-test-runner` flow)
 
@@ -204,7 +218,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
 - Web unit tests for UI state transitions.
 - E2E test covering full user flow:
   - trigger condition -> notification appears -> open card -> approve/reject -> observe result.
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-ui-integration.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C web test`
   - `corepack pnpm test:e2e -- --grep "fleetgraph|notification|approval"` (use `/e2e-test-runner`)
 
@@ -226,7 +242,9 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
 ### Tests/workflows to add
 - Smoke test asserting tracing env config is honored.
 - Add doc checklist for collecting required trace links per MVP test cases.
-- Workflow command:
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-observability.yml`
+- Workflow command(s) in that workflow:
   - `corepack pnpm -C api test`
 
 ### Post-push physical verification
@@ -251,6 +269,8 @@ This plan implements the FleetGraph MVP described in `FLEETGRAPH.md` and aligned
   - `corepack pnpm -C api test`
   - `corepack pnpm -C web test`
   - targeted e2e suite via `/e2e-test-runner`
+- Workflow file to add:
+  - `.github/workflows/fleetgraph-mvp-acceptance.yml`
 - Optional pre-push script/CI job that runs API+web tests.
 
 ### Post-push physical verification
