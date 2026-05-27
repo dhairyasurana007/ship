@@ -24,6 +24,12 @@ interface FleetGraphApproval {
   status: string;
 }
 
+interface FleetGraphChatResponse {
+  response?: string;
+  degraded?: boolean;
+  degradedReason?: string | null;
+}
+
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -32,6 +38,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [thinkingStep, setThinkingStep] = useState<string | null>(null);
   const [outputs, setOutputs] = useState<FleetGraphOutput[]>([]);
   const [approvals, setApprovals] = useState<FleetGraphApproval[]>([]);
+  const [degradedNotice, setDegradedNotice] = useState<string | null>(null);
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -89,6 +96,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
     setPrompt('');
     setLoading(true);
+    setDegradedNotice(null);
     startThinkingUpdates();
     try {
       const res = await apiPost('/api/fleetgraph/chat', {
@@ -99,8 +107,15 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         requiresMutationConfirm: false,
         explicitConfirm: false,
       });
-      const data = await res.json();
+      const data = await res.json() as FleetGraphChatResponse;
       setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
+      if (data.degraded) {
+        setDegradedNotice(
+          data.degradedReason
+            ? `FleetGraph used degraded context: ${data.degradedReason}`
+            : 'FleetGraph used degraded context for this response.'
+        );
+      }
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: 'Request failed. Please retry.' }]);
     } finally {
@@ -157,7 +172,12 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               -
             </button>
           </div>
-          <p className="mt-2 text-xs text-muted">Context: entire workspace account for your current user.</p>
+          <p className="mt-2 text-xs text-muted">Context scope: workspace-level (current workspace only).</p>
+          {degradedNotice && (
+            <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
+              {degradedNotice}
+            </p>
+          )}
           <div className="mt-2 h-56 space-y-2 overflow-y-auto rounded border border-border bg-muted/20 p-2">
             {messages.length === 0 && <p className="text-xs text-muted">Ask about the current document context.</p>}
             {messages.map((message, index) => (
