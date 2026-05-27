@@ -959,16 +959,86 @@ async function seed() {
     // Create additional standalone wiki documents for e2e testing
     // These ensure tests that require multiple documents don't skip
     const standaloneWikiDocs = [
-      { title: 'Project Overview', content: 'Overview of the Ship project and its goals.' },
-      { title: 'Architecture Guide', content: 'Technical architecture and design decisions.' },
-      { title: 'API Reference', content: 'API endpoints and usage documentation.' },
-      { title: 'Development Setup', content: 'How to set up your local development environment.' },
-      { title: 'Treasury Daily Cash Position Runbook', content: 'Step-by-step workflow for collecting balances, reconciling variances, and publishing daily cash position snapshots.' },
-      { title: 'Payment Integrity Exception Triage', content: 'Playbook for classifying payment exceptions, assigning owners, and documenting resolution outcomes with controls evidence.' },
-      { title: 'Sanctions Screening Control Notes', content: 'Control expectations, escalation matrix, and quality checks for watchlist and sanctions screening operations.' },
-      { title: 'Disbursement Incident Response Guide', content: 'Incident command checklist for degraded payment operations, including communications, rollback, and post-incident review.' },
-      { title: 'Quarterly Audit Readiness Checklist', content: 'Checklist for evidence collection, control attestation artifacts, and closure criteria before internal/external audit reviews.' },
-      { title: 'Vendor Payment SLA Dashboard Definitions', content: 'Definition of SLAs, breach thresholds, and calculation logic used in vendor payment performance reporting.' },
+      {
+        title: 'Project Overview',
+        paragraphs: [
+          'Ship is the shared execution and accountability workspace for Treasury delivery teams working across programs, projects, and sprints.',
+          'The near-term objective is to improve operational predictability by tying issue progress, sprint outputs, and leadership reporting into one connected graph.',
+          'Teams should keep this page updated with scope boundaries, ownership changes, and milestone status so cross-functional users can orient quickly.'
+        ]
+      },
+      {
+        title: 'Architecture Guide',
+        paragraphs: [
+          'The platform uses a unified document model in PostgreSQL, with typed documents and associations to represent operational relationships instead of siloed tables.',
+          'The web application is React + Vite, while the API is Express with WebSocket collaboration support for live document editing and activity streams.',
+          'Infrastructure and data model changes must favor incremental migrations, deterministic behavior, and observability for audit and incident response needs.'
+        ]
+      },
+      {
+        title: 'API Reference',
+        paragraphs: [
+          'Core endpoints cover documents, issues, projects, programs, sprints, search, and FleetGraph assistant operations within authenticated workspace scope.',
+          'Mutating endpoints require CSRF protection and session auth, while read APIs apply visibility rules based on membership and role.',
+          'When extending the API surface, add schema-first contracts and ensure responses include stable fields used by both UI workflows and automation jobs.'
+        ]
+      },
+      {
+        title: 'Development Setup',
+        paragraphs: [
+          'Install Node and pnpm, start PostgreSQL locally, then run workspace bootstrap commands to create schema and seed representative data.',
+          'Use parallel API and web dev servers so frontend and backend changes can be validated together, especially for FleetGraph and collaboration flows.',
+          'Before opening a pull request, run tests and type-checks, then verify key user journeys manually: login, edit document, and assistant chat.'
+        ]
+      },
+      {
+        title: 'Treasury Daily Cash Position Runbook',
+        paragraphs: [
+          'Each morning, ingest prior-day balances from major accounts, reconcile deltas against expected inflows/outflows, and flag material discrepancies.',
+          'Escalate unresolved variances above policy thresholds to the duty lead, documenting rationale, owner, and expected resolution time.',
+          'Publish the final daily cash position snapshot with assumptions and caveats so downstream teams can consume a consistent source of truth.'
+        ]
+      },
+      {
+        title: 'Payment Integrity Exception Triage',
+        paragraphs: [
+          'Classify exceptions by risk type, payment channel, and affected control to prioritize containment and assign accountable responders.',
+          'For high-risk items, require explicit confirmation before closure and retain evidence of remediation steps in linked issue documents.',
+          'Track aging, recurrence, and root-cause themes weekly to reduce backlog creep and improve preventive control design.'
+        ]
+      },
+      {
+        title: 'Sanctions Screening Control Notes',
+        paragraphs: [
+          'Maintain current screening rules, list refresh cadence, and reviewer responsibilities for alerts triggered by beneficiary or counterparty matching.',
+          'Define escalation paths for potential true positives, including legal review checkpoints and hold/release decision logging.',
+          'Capture quality checks for false-positive tuning so model updates remain auditable and operationally consistent across teams.'
+        ]
+      },
+      {
+        title: 'Disbursement Incident Response Guide',
+        paragraphs: [
+          'When disbursement degradation is detected, start incident command, classify severity, and open a shared timeline document for coordinated response.',
+          'Stabilize critical payment paths first, then execute rollback or mitigation playbooks while communicating customer and partner impact windows.',
+          'After recovery, run a blameless post-incident review with corrective actions, owners, and target dates tied to sprint planning.'
+        ]
+      },
+      {
+        title: 'Quarterly Audit Readiness Checklist',
+        paragraphs: [
+          'Confirm control narratives, evidence inventories, and owner attestations are complete for in-scope operational and technology controls.',
+          'Sample high-risk workflows to verify traceability from policy to execution artifact, including approvals and exception handling.',
+          'Document open gaps with remediation plans before formal review windows to reduce late-cycle rework and escalation pressure.'
+        ]
+      },
+      {
+        title: 'Vendor Payment SLA Dashboard Definitions',
+        paragraphs: [
+          'Define SLA measures for acknowledgement time, processing time, exception turnaround, and completion quality for vendor payment operations.',
+          'Specify breach thresholds and counting logic, including exclusion criteria and business-day calendar assumptions used in reporting.',
+          'Review metric definitions quarterly with finance and operations leads to ensure alignment with policy and contract obligations.'
+        ]
+      },
     ];
 
     let standaloneDocsCreated = 0;
@@ -980,10 +1050,7 @@ async function seed() {
       );
 
       if (!existingDoc.rows[0]) {
-        const contentJson = {
-          type: 'doc',
-          content: [{ type: 'paragraph', content: [{ type: 'text', text: doc.content }] }]
-        };
+        const contentJson = buildSeedDocContent(doc.title, doc.paragraphs);
         await pool.query(
           `INSERT INTO documents (workspace_id, document_type, title, content, position)
            VALUES ($1, 'wiki', $2, $3, $4)`,
