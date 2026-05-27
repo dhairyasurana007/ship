@@ -1049,14 +1049,29 @@ async function seed() {
         [workspaceId, 'wiki', doc.title]
       );
 
+      const contentJson = {
+        type: 'doc',
+        content: doc.paragraphs.map((paragraph) => ({
+          type: 'paragraph',
+          content: [{ type: 'text', text: paragraph }],
+        })),
+      };
+
       if (!existingDoc.rows[0]) {
-        const contentJson = buildSeedDocContent(doc.title, doc.paragraphs);
         await pool.query(
           `INSERT INTO documents (workspace_id, document_type, title, content, position)
            VALUES ($1, 'wiki', $2, $3, $4)`,
           [workspaceId, doc.title, JSON.stringify(contentJson), i + 1]
         );
         standaloneDocsCreated++;
+      } else {
+        await pool.query(
+          `UPDATE documents
+           SET content = $2,
+               updated_at = NOW()
+           WHERE id = $1`,
+          [existingDoc.rows[0].id, JSON.stringify(contentJson)]
+        );
       }
     }
 
