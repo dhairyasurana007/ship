@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { apiPost } from '@/lib/api';
 
 interface FleetGraphGlobalLauncherProps {
@@ -16,8 +16,23 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [thinkingStep, setThinkingStep] = useState<string | null>(null);
+  const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const hasDocumentContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
+
+  function startThinkingUpdates(): void {
+    setThinkingStep('Gathering workspace context...');
+    const t1 = setTimeout(() => setThinkingStep('Reasoning over workspace health...'), 450);
+    const t2 = setTimeout(() => setThinkingStep('Drafting response...'), 1000);
+    thinkingTimersRef.current = [t1, t2];
+  }
+
+  function stopThinkingUpdates(): void {
+    for (const timer of thinkingTimersRef.current) clearTimeout(timer);
+    thinkingTimersRef.current = [];
+    setThinkingStep(null);
+  }
 
   async function send(): Promise<void> {
     if (!prompt.trim()) return;
@@ -25,6 +40,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
     setPrompt('');
     setLoading(true);
+    startThinkingUpdates();
     try {
       const res = await apiPost('/api/fleetgraph/chat', {
           contextScope: 'workspace',
@@ -39,6 +55,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: 'Request failed. Please retry.' }]);
     } finally {
+      stopThinkingUpdates();
       setLoading(false);
     }
   }
@@ -47,7 +64,17 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     <div className="fixed bottom-4 right-4 z-50">
       {open && (
         <div className="mb-2 w-80 rounded-lg border border-border bg-background p-3 shadow-lg">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph Assistant</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph Assistant</p>
+            <button
+              type="button"
+              aria-label="Minimize FleetGraph assistant"
+              className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted hover:bg-muted"
+              onClick={() => setOpen(false)}
+            >
+              −
+            </button>
+          </div>
           <p className="mt-2 text-xs text-muted">
             Context: entire workspace account for your current user.
           </p>
@@ -68,6 +95,13 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                 </div>
               </div>
             ))}
+            {loading && thinkingStep && (
+              <div className="flex justify-start">
+                <div className="max-w-[85%] rounded-lg border border-border bg-background px-2 py-1 text-xs text-muted whitespace-pre-wrap animate-pulse">
+                  FleetGraph is thinking: {thinkingStep}
+                </div>
+              </div>
+            )}
           </div>
           <textarea
             value={prompt}

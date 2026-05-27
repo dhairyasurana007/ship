@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { apiPost } from '@/lib/api';
 
 interface FleetGraphAssistantPanelProps {
@@ -15,6 +15,21 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
+  const [thinkingStep, setThinkingStep] = useState<string | null>(null);
+  const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  function startThinkingUpdates(): void {
+    setThinkingStep('Gathering context...');
+    const t1 = setTimeout(() => setThinkingStep('Reasoning over project data...'), 450);
+    const t2 = setTimeout(() => setThinkingStep('Drafting response...'), 1000);
+    thinkingTimersRef.current = [t1, t2];
+  }
+
+  function stopThinkingUpdates(): void {
+    for (const timer of thinkingTimersRef.current) clearTimeout(timer);
+    thinkingTimersRef.current = [];
+    setThinkingStep(null);
+  }
 
   async function send(): Promise<void> {
     if (!prompt.trim()) return;
@@ -22,6 +37,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
     setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
     setPrompt('');
     setLoading(true);
+    startThinkingUpdates();
     try {
       const res = await apiPost('/api/fleetgraph/chat', {
           contextScope: 'document',
@@ -36,6 +52,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: 'Request failed. Please retry.' }]);
     } finally {
+      stopThinkingUpdates();
       setLoading(false);
     }
   }
@@ -63,6 +80,13 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
             </div>
           </div>
         ))}
+        {loading && thinkingStep && (
+          <div className="flex justify-start">
+            <div className="max-w-[85%] rounded-lg border border-border bg-background px-2 py-1 text-xs text-muted whitespace-pre-wrap animate-pulse">
+              FleetGraph is thinking: {thinkingStep}
+            </div>
+          </div>
+        )}
       </div>
       <textarea
         value={prompt}
