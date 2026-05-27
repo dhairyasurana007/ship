@@ -182,6 +182,7 @@ async function enforceMultiParagraphSeedContent(pool: pg.Pool, workspaceId: stri
     await pool.query(
       `UPDATE documents
        SET content = $2,
+           yjs_state = NULL,
            updated_at = NOW()
        WHERE id = $1`,
       [row.id, JSON.stringify(replacementContent)]
@@ -1233,6 +1234,7 @@ async function seed() {
         await pool.query(
           `UPDATE documents
            SET content = $2,
+               yjs_state = NULL,
                updated_at = NOW()
            WHERE id = $1`,
           [existingDoc.rows[0].id, JSON.stringify(contentJson)]
