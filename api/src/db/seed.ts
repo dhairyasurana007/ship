@@ -52,6 +52,171 @@ function buildSeedDocContent(title: string, lines: string[]): Record<string, unk
   };
 }
 
+function buildParagraphOnlyContent(paragraphs: string[]): Record<string, unknown> {
+  return {
+    type: 'doc',
+    content: paragraphs.map((text) => ({
+      type: 'paragraph',
+      content: [{ type: 'text', text }],
+    })),
+  };
+}
+
+function getRelevantParagraphsForDocument(
+  title: string,
+  documentType: string,
+): string[] {
+  const normalizedTitle = title.toLowerCase();
+
+  if (documentType === 'program') {
+    return [
+      `${title} defines cross-team outcomes, funding guardrails, and executive reporting expectations for the quarter.`,
+      'Program leads track dependencies across projects, escalate delivery risk early, and keep prioritization aligned to policy and stakeholder commitments.',
+      'Success is measured by milestone completion, risk burndown, and operational readiness evidence captured in linked project and sprint artifacts.',
+    ];
+  }
+
+  if (documentType === 'project') {
+    return [
+      `${title} converts program goals into scoped deliverables with clear ownership, dates, and acceptance criteria.`,
+      'The team uses this project page to capture implementation decisions, unresolved blockers, and change impacts that affect delivery confidence.',
+      'Weekly updates should reflect progress against scope, open risks, and next actions required from partner teams.',
+    ];
+  }
+
+  if (documentType === 'sprint') {
+    return [
+      `${title} is the active execution window for targeted issue delivery and review outcomes.`,
+      'Sprint owners use this document to track commitment health, in-flight blockers, and mitigation actions before closeout.',
+      'At sprint end, outcomes and carryover rationale should be recorded to improve forecasting quality in the next cycle.',
+    ];
+  }
+
+  if (documentType === 'issue') {
+    return [
+      `${title} captures a concrete unit of work with a clear business objective and completion definition.`,
+      'Implementation notes should include scope assumptions, dependency constraints, and verification steps for reviewers.',
+      'When status changes, update this issue with decision context so downstream reporting reflects real delivery state.',
+    ];
+  }
+
+  if (documentType === 'standup') {
+    return [
+      'Yesterday: Completed planned work items and closed the highest-priority blocker for this stream.',
+      'Today: Focus on next milestone tasks, validate dependencies, and share intermediate output with reviewers.',
+      'Blockers: Document any risk requiring cross-team support, owner reassignment, or timeline adjustment.',
+    ];
+  }
+
+  if (documentType === 'weekly_plan') {
+    return [
+      'This week I will complete planned deliverables tied to my assigned sprint and document measurable outcomes.',
+      'I will coordinate with dependent teams early to reduce handoff latency and avoid late-cycle blockers.',
+      'I will surface risks by mid-week with explicit mitigation proposals and ownership to preserve delivery confidence.',
+    ];
+  }
+
+  if (documentType === 'weekly_retro') {
+    return [
+      'This week I delivered committed outcomes and captured evidence of completed work across core tasks.',
+      'What worked well: planning accuracy, communication cadence, and fast escalation of unresolved issues.',
+      'What to improve: tighter estimation on uncertain tasks and earlier dependency confirmation before sprint commitments.',
+    ];
+  }
+
+  if (normalizedTitle.includes('architecture')) {
+    return [
+      'This guide explains how core services, data flows, and integration boundaries fit together in the Ship platform.',
+      'Design decisions prioritize deterministic behavior, observable operations, and low-complexity components suitable for long-term maintenance.',
+      'Use this page to record architecture changes, migration impacts, and rollout considerations before production adoption.',
+    ];
+  }
+
+  if (normalizedTitle.includes('api')) {
+    return [
+      'This document outlines endpoint behavior, authentication requirements, and response contracts used by Ship clients.',
+      'Route updates should preserve backward compatibility where possible and document any breaking changes with mitigation guidance.',
+      'Operationally significant APIs should include clear error semantics and observability hooks for rapid incident triage.',
+    ];
+  }
+
+  return [
+    `${title} is maintained as an operational reference for the team and should stay aligned with current execution reality.`,
+    'Content should capture actionable context, ownership clarity, and decision rationale so contributors can act without ambiguity.',
+    'Review this document regularly to keep priorities, risks, and expected outcomes synchronized with active work.',
+  ];
+}
+
+function countTopLevelParagraphs(content: unknown): number {
+  if (!content || typeof content !== 'object') {
+    return 0;
+  }
+
+  const doc = content as { content?: Array<{ type?: string }> };
+  if (!Array.isArray(doc.content)) {
+    return 0;
+  }
+
+  return doc.content.filter((node) => node?.type === 'paragraph').length;
+}
+
+async function enforceMultiParagraphSeedContent(pool: pg.Pool, workspaceId: string): Promise<void> {
+  const docs = await pool.query(
+    `SELECT id, title, document_type, content
+     FROM documents
+     WHERE workspace_id = $1
+       AND document_type <> 'person'`,
+    [workspaceId]
+  );
+
+  let rewritten = 0;
+
+  for (const row of docs.rows as Array<{ id: string; title: string; document_type: string; content: unknown }>) {
+    const paragraphCount = countTopLevelParagraphs(row.content);
+    if (paragraphCount >= 2) {
+      continue;
+    }
+
+    const paragraphs = getRelevantParagraphsForDocument(row.title, row.document_type);
+    const replacementContent = buildParagraphOnlyContent(paragraphs);
+    await pool.query(
+      `UPDATE documents
+       SET content = $2,
+           updated_at = NOW()
+       WHERE id = $1`,
+      [row.id, JSON.stringify(replacementContent)]
+    );
+    rewritten++;
+  }
+
+  const verify = await pool.query(
+    `SELECT COUNT(*)::int AS count
+     FROM documents
+     WHERE workspace_id = $1
+       AND document_type <> 'person'
+       AND (
+         content IS NULL
+         OR NOT (content ? 'content')
+         OR (
+           SELECT COUNT(*)
+           FROM jsonb_array_elements(content->'content') AS node
+           WHERE node->>'type' = 'paragraph'
+         ) < 2
+       )`,
+    [workspaceId]
+  );
+
+  const remaining = verify.rows[0]?.count ?? 0;
+  if (remaining > 0) {
+    throw new Error(`Seed paragraph verification failed: ${remaining} documents still have fewer than 2 paragraphs.`);
+  }
+
+  if (rewritten > 0) {
+    console.log(`✅ Rewrote ${rewritten} documents to enforce multi-paragraph content`);
+  }
+  console.log('✅ Verified all Ship documents have multiple paragraphs');
+}
+
 async function backfillContentIfMissing(
   pool: pg.Pool,
   documentId: string,
@@ -1427,6 +1592,7 @@ async function seed() {
       console.log(`✅ Created ${weeklyRetrosCreated} weekly retros`);
     }
 
+    await enforceMultiParagraphSeedContent(pool, workspaceId);
     console.log('');
     console.log('🎉 Seed complete!');
     console.log('');
