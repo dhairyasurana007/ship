@@ -80,6 +80,69 @@ function toTipTapDoc(text: string): Record<string, unknown> {
   };
 }
 
+type SearchEntityType = 'wiki' | 'issue' | 'project' | 'program' | 'sprint' | 'standup' | 'workspace';
+type SearchStrategy = 'list' | 'structured' | 'hybrid';
+type SearchTimeField = 'created_at' | 'updated_at';
+
+export interface SearchPlan {
+  entityTypes: SearchEntityType[];
+  textQuery: string;
+  limit: number;
+  strategy: SearchStrategy;
+  timeField: SearchTimeField;
+  sortDirection: 'asc' | 'desc';
+}
+
+function inferEntityTypesFromQuery(lower: string): SearchEntityType[] {
+  const entityTypes: SearchEntityType[] = [];
+  if (lower.includes('project')) entityTypes.push('project');
+  if (lower.includes('sprint') || lower.includes('week')) entityTypes.push('sprint');
+  if (lower.includes('issue') || lower.includes('work item')) entityTypes.push('issue');
+  if (lower.includes('program')) entityTypes.push('program');
+  if (lower.includes('workspace')) entityTypes.push('workspace');
+  if (lower.includes('document') || lower.includes('docs') || lower.includes('doc')) entityTypes.push('wiki');
+  return entityTypes;
+}
+
+export function buildSearchPlan(args: Record<string, unknown>): SearchPlan {
+  const rawQuery = String(args.query ?? '').trim();
+  const lower = rawQuery.toLowerCase();
+  const rawEntityTypes = Array.isArray(args.entityTypes)
+    ? args.entityTypes.map((v) => String(v))
+    : inferEntityTypesFromQuery(lower);
+  const entityTypes = rawEntityTypes.filter((v): v is SearchEntityType =>
+    ['wiki', 'issue', 'project', 'program', 'sprint', 'standup', 'workspace'].includes(v)
+  );
+
+  const numericLimit = Number(args.limit ?? 20);
+  const limit = Number.isFinite(numericLimit) ? Math.min(50, Math.max(1, Math.floor(numericLimit))) : 20;
+
+  const asksRecent = /(most recent|recent|latest|newest)/.test(lower);
+  const asksOldest = /(oldest|earliest)/.test(lower);
+  const timeField: SearchTimeField = /(created|creation|created at)/.test(lower) ? 'created_at' : 'updated_at';
+  const sortDirection: 'asc' | 'desc' = asksOldest ? 'asc' : 'desc';
+
+  let textQuery = rawQuery
+    .replace(/\b(find|search|show|list|get)\b/gi, '')
+    .replace(/\b(most recent|recent|latest|newest|oldest|earliest)\b/gi, '')
+    .replace(/\b(created|creation|created at|updated|updated at)\b/gi, '')
+    .replace(/\b(docs?|documents?|issues?|projects?|programs?|sprints?|weeks?|workspaces?)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (textQuery.length < 3) textQuery = '';
+  const strategy: SearchStrategy = textQuery ? 'hybrid' : 'list';
+
+  return {
+    entityTypes,
+    textQuery,
+    limit,
+    strategy: asksRecent || asksOldest ? 'list' : strategy,
+    timeField,
+    sortDirection,
+  };
+}
+
 export function inferToolCallFromPrompt(input: {
   prompt: string;
   contextScope: 'workspace' | 'document';
@@ -152,13 +215,7 @@ export function inferToolCallFromPrompt(input: {
     };
   }
   if (/(search|find)/.test(lower)) {
-    const entityTypes: string[] = [];
-    if (lower.includes('project')) entityTypes.push('project');
-    if (lower.includes('sprint') || lower.includes('week')) entityTypes.push('sprint');
-    if (lower.includes('issue') || lower.includes('work item')) entityTypes.push('issue');
-    if (lower.includes('program')) entityTypes.push('program');
-    if (lower.includes('workspace')) entityTypes.push('workspace');
-    if (lower.includes('document') || lower.includes('doc')) entityTypes.push('wiki');
+    const entityTypes = inferEntityTypesFromQuery(lower);
     return {
       name: 'search_entities',
       args: {
@@ -466,36 +523,32 @@ export async function executeToolCall(input: {
   }
 
   if (toolCall.name === 'search_entities') {
-    const query = String(toolCall.args.query ?? '').trim();
-    if (!query) return { ok: false, summary: 'Missing search query.' };
-    const rawEntityTypes = Array.isArray(toolCall.args.entityTypes)
-      ? toolCall.args.entityTypes.map((v) => String(v))
-      : [];
-    const entityTypes = rawEntityTypes.filter((v) =>
-      ['wiki', 'issue', 'project', 'program', 'sprint', 'standup', 'workspace'].includes(v)
-    );
+    const plan = buildSearchPlan(toolCall.args);
+    const query = plan.textQuery;
+    const entityTypes = plan.entityTypes;
+    const orderFieldSql = plan.timeField === 'created_at' ? 'created_at' : 'updated_at';
+    const orderDirectionSql = plan.sortDirection === 'asc' ? 'ASC' : 'DESC';
 
-    // Pass 1: structured search (title-first).
-    const docsStructured = await pool.query(
-      `SELECT id, document_type AS type, title, updated_at
-       FROM documents
-       WHERE workspace_id = $1
-         AND deleted_at IS NULL
-         AND (
-           cardinality($3::text[]) = 0
-           OR document_type::text = ANY($3::text[])
-         )
-         AND title ILIKE '%' || $2 || '%'
-       ORDER BY updated_at DESC
-       LIMIT 25`,
-      [workspaceId, query, entityTypes]
-    );
-
-    // Pass 2: semantic-style fallback (broader text search) only when structured is sparse.
+    let docsStructuredRows: Array<Record<string, unknown>> = [];
     let docsFallback: Array<Record<string, unknown>> = [];
-    if ((docsStructured.rowCount ?? 0) < 10) {
-      const fallbackRes = await pool.query(
-        `SELECT id, document_type AS type, title, updated_at
+    if (plan.strategy === 'list') {
+      const listRes = await pool.query(
+        `SELECT id, document_type AS type, title, created_at, updated_at
+         FROM documents
+         WHERE workspace_id = $1
+           AND deleted_at IS NULL
+           AND (
+             cardinality($2::text[]) = 0
+             OR document_type::text = ANY($2::text[])
+           )
+         ORDER BY ${orderFieldSql} ${orderDirectionSql}
+         LIMIT $3`,
+        [workspaceId, entityTypes, plan.limit]
+      );
+      docsStructuredRows = listRes.rows;
+    } else {
+      const docsStructured = await pool.query(
+        `SELECT id, document_type AS type, title, created_at, updated_at
          FROM documents
          WHERE workspace_id = $1
            AND deleted_at IS NULL
@@ -503,54 +556,56 @@ export async function executeToolCall(input: {
              cardinality($3::text[]) = 0
              OR document_type::text = ANY($3::text[])
            )
-           AND (content::text ILIKE '%' || $2 || '%' OR properties::text ILIKE '%' || $2 || '%')
-         ORDER BY updated_at DESC
-         LIMIT 25`,
-        [workspaceId, query, entityTypes]
+           AND title ILIKE '%' || $2 || '%'
+         ORDER BY ${orderFieldSql} ${orderDirectionSql}
+         LIMIT $4`,
+        [workspaceId, query, entityTypes, plan.limit]
       );
-      docsFallback = fallbackRes.rows;
+      docsStructuredRows = docsStructured.rows;
+      if ((docsStructured.rowCount ?? 0) < Math.ceil(plan.limit / 2)) {
+        const fallbackRes = await pool.query(
+          `SELECT id, document_type AS type, title, created_at, updated_at
+           FROM documents
+           WHERE workspace_id = $1
+             AND deleted_at IS NULL
+             AND (
+               cardinality($3::text[]) = 0
+               OR document_type::text = ANY($3::text[])
+             )
+             AND (content::text ILIKE '%' || $2 || '%' OR properties::text ILIKE '%' || $2 || '%')
+           ORDER BY ${orderFieldSql} ${orderDirectionSql}
+           LIMIT $4`,
+          [workspaceId, query, entityTypes, plan.limit]
+        );
+        docsFallback = fallbackRes.rows;
+      }
     }
-
-    const docsResult = await pool.query(
-      `SELECT id, document_type AS type, title, updated_at
-      FROM documents
-      WHERE workspace_id = $1
-        AND deleted_at IS NULL
-        AND (
-          cardinality($3::text[]) = 0
-          OR document_type::text = ANY($3::text[])
-        )
-        AND title = ''
-      ORDER BY updated_at DESC
-      LIMIT 0`,
-      [workspaceId, query, entityTypes]
-    );
 
     let workspaceResults: Array<Record<string, unknown>> = [];
     if (entityTypes.length === 0 || entityTypes.includes('workspace')) {
       const wsResult = await pool.query(
-        `SELECT w.id, 'workspace'::text AS type, w.name AS title, w.updated_at
+        `SELECT w.id, 'workspace'::text AS type, w.name AS title, w.created_at, w.updated_at
          FROM workspaces w
          JOIN workspace_memberships wm ON wm.workspace_id = w.id
          WHERE wm.user_id = $1 AND w.archived_at IS NULL
-           AND w.name ILIKE '%' || $2 || '%'
-         ORDER BY w.updated_at DESC
-         LIMIT 5`,
-        [userId, query]
+           AND ($2 = '' OR w.name ILIKE '%' || $2 || '%')
+         ORDER BY ${orderFieldSql} ${orderDirectionSql}
+         LIMIT $3`,
+        [userId, query, Math.min(5, plan.limit)]
       );
       workspaceResults = wsResult.rows;
     }
 
     const mergedById = new Map<string, Record<string, unknown>>();
-    for (const row of [...docsStructured.rows, ...docsFallback, ...workspaceResults]) {
+    for (const row of [...docsStructuredRows, ...docsFallback, ...workspaceResults]) {
       const id = String(row.id);
       if (!mergedById.has(id)) mergedById.set(id, row);
     }
-    const results = Array.from(mergedById.values());
+    const results = Array.from(mergedById.values()).slice(0, plan.limit);
     return {
       ok: true,
       summary: `Found ${results.length} matching entities.`,
-      data: { results, strategy: 'hybrid_structured_then_fallback', entityTypes },
+      data: { results, plan },
     };
   }
 
