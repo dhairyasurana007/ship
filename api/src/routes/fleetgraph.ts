@@ -12,9 +12,10 @@ import {
 } from '../fleetgraph/human-gate.js';
 import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContext } from '../fleetgraph/on-demand.js';
 import { loadFleetGraphConfig } from '../fleetgraph/config.js';
-import { createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
+import { createLangSmithChildRun, createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
 import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
 import { createFleetGraphOutput, listFleetGraphOutputsForWorkspace } from '../fleetgraph/output-store.js';
+import { executeToolCall, inferToolCallFromPrompt } from '../fleetgraph/tools.js';
 import { evaluateDedup, type DedupStateValue } from '../fleetgraph/dedup-worsening.js';
 import type { FleetGraphCondition } from '../fleetgraph/types.js';
 
@@ -164,6 +165,83 @@ router.post('/chat', authMiddleware, async (req, res) => {
   await createLangSmithRun(config, runEnvelope);
 
   try {
+    const toolCall = inferToolCallFromPrompt({
+      prompt,
+      contextScope,
+      documentId: contextScope === 'document' ? documentId : undefined,
+    });
+    if (toolCall) {
+      if (requiresMutationConfirm && !explicitConfirm) {
+        runEnvelope.payload = {
+          ...runEnvelope.payload,
+          toolCall,
+          requiresConfirm: true,
+        };
+        await finishLangSmithRun(config, runEnvelope, 'completed');
+        res.json({
+          contextWindowDays: 30,
+          contextScope,
+          degraded: false,
+          degradedReason: null,
+          context: null,
+          reasoning: { summary: `Action proposed: ${toolCall.name}` },
+          response: `Action proposed (${toolCall.name}). Explicit confirm is required before mutation.`,
+          requiresConfirm: true,
+          toolCall,
+        });
+        return;
+      }
+
+      const childRunId = crypto.randomUUID();
+      await createLangSmithChildRun(
+        config,
+        runEnvelope.runId,
+        childRunId,
+        `tool.${toolCall.name}`,
+        { ...toolCall.args, workspaceId: req.workspaceId }
+      );
+      const toolResult = await executeToolCall({
+        workspaceId: req.workspaceId,
+        userId: req.userId ?? '',
+        toolCall,
+      });
+      await finishLangSmithRun(
+        config,
+        {
+          runId: childRunId,
+          triggerType: 'user_request',
+          workspaceId: req.workspaceId,
+          entityId: documentId || req.workspaceId,
+          entityType: contextScope,
+          payload: { tool: toolCall.name, ...toolResult.data },
+          createdAt: new Date().toISOString(),
+        },
+        toolResult.ok ? 'completed' : 'failed',
+        toolResult.ok ? undefined : toolResult.summary
+      );
+
+      runEnvelope.payload = {
+        ...runEnvelope.payload,
+        toolCall,
+        toolResult,
+        requiresConfirm: false,
+      };
+      await finishLangSmithRun(config, runEnvelope, 'completed');
+      res.json({
+        contextWindowDays: 30,
+        contextScope,
+        degraded: false,
+        degradedReason: null,
+        context: null,
+        reasoning: { summary: `Executed ${toolCall.name}` },
+        response: toolResult.summary,
+        requiresConfirm: false,
+        toolCall,
+        toolResult,
+      });
+      return;
+    }
+
     const context =
       contextScope === 'workspace'
         ? await loadWorkspaceContext(req.workspaceId)

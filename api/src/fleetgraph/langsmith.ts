@@ -18,6 +18,42 @@ function endpoint(config: FleetGraphConfig, path: string): string {
   return `${config.langSmithEndpoint.replace(/\/+$/, '')}${path}`;
 }
 
+export async function createLangSmithChildRun(
+  config: FleetGraphConfig,
+  parentRunId: string,
+  childRunId: string,
+  name: string,
+  inputs: Record<string, unknown>
+): Promise<void> {
+  if (!config.langSmithTracing || !config.langSmithApiKey) return;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LANGSMITH_HTTP_TIMEOUT_MS);
+    const res = await fetch(endpoint(config, '/runs'), {
+      method: 'POST',
+      headers: headers(config),
+      signal: controller.signal,
+      body: JSON.stringify({
+        id: childRunId,
+        name,
+        run_type: 'tool',
+        parent_run_id: parentRunId,
+        inputs,
+        start_time: new Date().toISOString(),
+        session_name: config.langSmithProject,
+        ...(config.langSmithProjectId ? { session_id: config.langSmithProjectId } : {}),
+      }),
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      const body = await res.text();
+      logFleetGraphError('LangSmith create child run failed.', { status: res.status, childRunId, body });
+    }
+  } catch (error) {
+    logFleetGraphError('LangSmith create child run request error.', { childRunId, error });
+  }
+}
+
 export async function createLangSmithRun(config: FleetGraphConfig, envelope: FleetGraphRunEnvelope): Promise<void> {
   if (!config.langSmithTracing || !config.langSmithApiKey) return;
 
