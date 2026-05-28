@@ -128,6 +128,7 @@ router.post('/outputs/dev-seed', authMiddleware, async (req, res) => {
 });
 
 router.post('/chat', authMiddleware, async (req, res) => {
+  const accessMode = req.body?.accessMode === 'full_access' ? 'full_access' : 'ask_permission';
   const contextScope = req.body?.contextScope === 'workspace' ? 'workspace' : 'document';
   const documentType = String(req.body?.documentType ?? '');
   const documentId = String(req.body?.documentId ?? '');
@@ -171,9 +172,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
       documentId: contextScope === 'document' ? documentId : undefined,
     });
     if (toolCall) {
-      if (requiresMutationConfirm && !explicitConfirm) {
+      const shouldRequireConfirm = accessMode === 'ask_permission' || requiresMutationConfirm;
+      if (shouldRequireConfirm && !explicitConfirm) {
         runEnvelope.payload = {
           ...runEnvelope.payload,
+          accessMode,
           toolCall,
           requiresConfirm: true,
         };

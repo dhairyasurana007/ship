@@ -125,6 +125,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     try {
       const requiresMutationConfirm = accessMode === 'ask_permission' && mayRequireMutation(promptValue);
       const res = await apiPost('/api/fleetgraph/chat', {
+        accessMode,
         contextScope: 'workspace',
         documentType: hasDocumentContext ? documentType : undefined,
         documentId: hasDocumentContext ? documentId : undefined,

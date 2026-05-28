@@ -58,6 +58,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
     try {
       const requiresMutationConfirm = accessMode === 'ask_permission' && mayRequireMutation(promptValue);
       const res = await apiPost('/api/fleetgraph/chat', {
+          accessMode,
           contextScope: 'document',
           documentType,
           documentId,
