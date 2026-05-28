@@ -18,7 +18,7 @@ export async function fetchIssues(workspaceId: string): Promise<FleetGraphIssueR
       project.related_id AS project_id
      FROM documents d
      LEFT JOIN document_associations sprint
-       ON sprint.document_id = d.id AND sprint.relationship_type = 'week'
+       ON sprint.document_id = d.id AND sprint.relationship_type = 'sprint'
      LEFT JOIN document_associations project
        ON project.document_id = d.id AND project.relationship_type = 'project'
      WHERE d.workspace_id = $1
