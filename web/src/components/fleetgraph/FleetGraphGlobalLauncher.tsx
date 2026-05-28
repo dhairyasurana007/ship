@@ -137,10 +137,11 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     setDegradedNotice(null);
     startThinkingUpdates();
     try {
+      const contextScope = hasDocumentContext ? 'document' : 'workspace';
       const requiresMutationConfirm = accessMode === 'ask_permission' && mayRequireMutation(promptValue);
       const res = await apiPost('/api/fleetgraph/chat', {
         accessMode,
-        contextScope: 'workspace',
+        contextScope,
         documentType: hasDocumentContext ? documentType : undefined,
         documentId: hasDocumentContext ? documentId : undefined,
         prompt: promptValue,
@@ -220,7 +221,9 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               -
             </button>
           </div>
-          <p className="mt-2 text-xs text-muted">Context scope: workspace-level (current workspace only).</p>
+          <p className="mt-2 text-xs text-muted">
+            Context scope: {hasDocumentContext ? 'document-level (current document).' : 'workspace-level (current workspace only).'}
+          </p>
           {degradedNotice && (
             <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
               {degradedNotice}
