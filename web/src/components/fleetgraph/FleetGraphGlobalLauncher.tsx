@@ -65,7 +65,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
   function mayRequireMutation(promptText: string): boolean {
     const lower = promptText.toLowerCase();
-    return /(move|reassign|assign|change state|close|cancel|reopen|update|edit|modify|delete)/.test(lower);
+    return /(create|add|new|move|reassign|assign|change state|close|cancel|reopen|update|edit|modify|delete|remove)/.test(lower);
   }
 
   async function loadOutputs(): Promise<void> {
@@ -203,18 +203,6 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             </button>
           </div>
           <p className="mt-2 text-xs text-muted">Context scope: workspace-level (current workspace only).</p>
-          <div className="mt-2 flex items-center justify-between">
-            <p className="text-[11px] text-muted">Agent Access</p>
-            <select
-              aria-label="Agent access mode"
-              className="rounded border border-border bg-background px-2 py-1 text-[11px]"
-              value={accessMode}
-              onChange={(e) => setAccessMode(e.target.value as AccessMode)}
-            >
-              <option value="ask_permission">Ask Permission</option>
-              <option value="full_access">Full Access</option>
-            </select>
-          </div>
           {degradedNotice && (
             <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
               {degradedNotice}
@@ -281,7 +269,19 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             placeholder="Type your message..."
             className="mt-2 min-h-20 w-full rounded border border-border bg-background p-2 text-xs"
           />
-          <div className="mt-2 flex justify-end">
+          <div className="mt-2 flex items-end justify-between">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] text-muted">Agent Access</p>
+              <select
+                aria-label="Agent access mode"
+                className="rounded border border-border bg-background px-2 py-1 text-[11px]"
+                value={accessMode}
+                onChange={(e) => setAccessMode(e.target.value as AccessMode)}
+              >
+                <option value="ask_permission">Ask Permission</option>
+                <option value="full_access">Full Access</option>
+              </select>
+            </div>
             <button
               type="button"
               aria-label="Send message"

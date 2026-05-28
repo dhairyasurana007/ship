@@ -34,8 +34,9 @@ export function inferToolCallFromPrompt(input: {
 }): FleetGraphToolCall | null {
   const prompt = input.prompt.trim();
   const lower = prompt.toLowerCase();
+  const hasDocNoun = /(document|doc|issue|project|program|sprint|week|standup|wiki)/.test(lower);
 
-  if (/(create|add|new)\s+/.test(lower) && lower.includes('document')) {
+  if (/(create|add|new)\s+/.test(lower) && hasDocNoun) {
     const title = extractQuoted(prompt) ?? 'Untitled';
     return {
       name: 'create_document',
@@ -46,7 +47,7 @@ export function inferToolCallFromPrompt(input: {
     };
   }
 
-  if (/(delete|remove)\s+/.test(lower) && lower.includes('document')) {
+  if (/(delete|remove)\s+/.test(lower) && hasDocNoun) {
     const docId = input.contextScope === 'document' ? input.documentId : null;
     if (!docId) return null;
     return {
@@ -55,7 +56,7 @@ export function inferToolCallFromPrompt(input: {
     };
   }
 
-  if (/(update|edit|modify|rename|change)\s+/.test(lower) && lower.includes('document')) {
+  if (/(update|edit|modify|rename|change)\s+/.test(lower) && hasDocNoun) {
     const docId = input.contextScope === 'document' ? input.documentId : null;
     if (!docId) return null;
     const title = /title/.test(lower) ? extractQuoted(prompt) : null;

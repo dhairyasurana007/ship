@@ -21,7 +21,7 @@ interface FleetGraphChatResponse {
 
 function mayRequireMutation(prompt: string): boolean {
   const lower = prompt.toLowerCase();
-  return /(move|reassign|assign|change state|close|cancel|reopen|update|edit|modify|delete)/.test(lower);
+  return /(create|add|new|move|reassign|assign|change state|close|cancel|reopen|update|edit|modify|delete|remove)/.test(lower);
 }
 
 export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGraphAssistantPanelProps) {
@@ -83,18 +83,6 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
   return (
     <div className="border-t border-border p-3 space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph</p>
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] text-muted">Agent Access</p>
-        <select
-          aria-label="Agent access mode"
-          className="rounded border border-border bg-background px-2 py-1 text-[11px]"
-          value={accessMode}
-          onChange={(e) => setAccessMode(e.target.value as AccessMode)}
-        >
-          <option value="ask_permission">Ask Permission</option>
-          <option value="full_access">Full Access</option>
-        </select>
-      </div>
       <div className="h-52 overflow-y-auto rounded border border-border bg-muted/20 p-2 space-y-2">
         {messages.length === 0 && (
           <p className="text-xs text-muted">Start a conversation about this document.</p>
@@ -161,7 +149,19 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
         placeholder="Type your message..."
         className="w-full min-h-20 rounded border border-border bg-background p-2 text-xs"
       />
-      <div className="flex justify-end">
+      <div className="flex items-end justify-between">
+        <div className="flex items-center gap-2">
+          <p className="text-[11px] text-muted">Agent Access</p>
+          <select
+            aria-label="Agent access mode"
+            className="rounded border border-border bg-background px-2 py-1 text-[11px]"
+            value={accessMode}
+            onChange={(e) => setAccessMode(e.target.value as AccessMode)}
+          >
+            <option value="ask_permission">Ask Permission</option>
+            <option value="full_access">Full Access</option>
+          </select>
+        </div>
         <button
           type="button"
           aria-label="Send message"
