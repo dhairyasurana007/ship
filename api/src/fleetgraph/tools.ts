@@ -15,8 +15,7 @@ export type FleetGraphToolName =
   | 'update_work_item_fields'
   | 'link_documents'
   | 'unlink_documents'
-  | 'search_documents_structured'
-  | 'search_documents_semantic'
+  | 'search_entities'
   | 'bulk_edit_documents'
   | 'create_comment'
   | 'summarize_comment_thread'
@@ -145,10 +144,28 @@ export function inferToolCallFromPrompt(input: {
     return { name: 'link_documents', args: { documentId: ids[0], relatedId: ids[1], relationshipType: 'parent' } };
   }
   if (/(search).*(semantic|similar)/.test(lower)) {
-    return { name: 'search_documents_semantic', args: { query: extractQuoted(prompt) ?? prompt } };
+    return {
+      name: 'search_entities',
+      args: {
+        query: extractQuoted(prompt) ?? prompt,
+        },
+    };
   }
   if (/(search|find)/.test(lower)) {
-    return { name: 'search_documents_structured', args: { query: extractQuoted(prompt) ?? prompt } };
+    const entityTypes: string[] = [];
+    if (lower.includes('project')) entityTypes.push('project');
+    if (lower.includes('sprint') || lower.includes('week')) entityTypes.push('sprint');
+    if (lower.includes('issue') || lower.includes('work item')) entityTypes.push('issue');
+    if (lower.includes('program')) entityTypes.push('program');
+    if (lower.includes('workspace')) entityTypes.push('workspace');
+    if (lower.includes('document') || lower.includes('doc')) entityTypes.push('wiki');
+    return {
+      name: 'search_entities',
+      args: {
+        query: extractQuoted(prompt) ?? prompt,
+        entityTypes,
+      },
+    };
   }
   if (/(bulk).*(update|edit)/.test(lower)) {
     const title = extractQuoted(prompt);
@@ -448,19 +465,93 @@ export async function executeToolCall(input: {
     return { ok: true, summary: 'Unlinked documents successfully.' };
   }
 
-  if (toolCall.name === 'search_documents_structured' || toolCall.name === 'search_documents_semantic') {
+  if (toolCall.name === 'search_entities') {
     const query = String(toolCall.args.query ?? '').trim();
     if (!query) return { ok: false, summary: 'Missing search query.' };
-    const result = await pool.query(
-      `SELECT id, document_type, title
-       FROM documents
-       WHERE workspace_id = $1 AND deleted_at IS NULL
-         AND (title ILIKE '%' || $2 || '%' OR content::text ILIKE '%' || $2 || '%')
-       ORDER BY updated_at DESC
-       LIMIT 20`,
-      [workspaceId, query]
+    const rawEntityTypes = Array.isArray(toolCall.args.entityTypes)
+      ? toolCall.args.entityTypes.map((v) => String(v))
+      : [];
+    const entityTypes = rawEntityTypes.filter((v) =>
+      ['wiki', 'issue', 'project', 'program', 'sprint', 'standup', 'workspace'].includes(v)
     );
-    return { ok: true, summary: `Found ${result.rowCount ?? 0} matching documents.`, data: { results: result.rows, mode: toolCall.name } };
+
+    // Pass 1: structured search (title-first).
+    const docsStructured = await pool.query(
+      `SELECT id, document_type AS type, title, updated_at
+       FROM documents
+       WHERE workspace_id = $1
+         AND deleted_at IS NULL
+         AND (
+           cardinality($3::text[]) = 0
+           OR document_type::text = ANY($3::text[])
+         )
+         AND title ILIKE '%' || $2 || '%'
+       ORDER BY updated_at DESC
+       LIMIT 25`,
+      [workspaceId, query, entityTypes]
+    );
+
+    // Pass 2: semantic-style fallback (broader text search) only when structured is sparse.
+    let docsFallback: Array<Record<string, unknown>> = [];
+    if ((docsStructured.rowCount ?? 0) < 10) {
+      const fallbackRes = await pool.query(
+        `SELECT id, document_type AS type, title, updated_at
+         FROM documents
+         WHERE workspace_id = $1
+           AND deleted_at IS NULL
+           AND (
+             cardinality($3::text[]) = 0
+             OR document_type::text = ANY($3::text[])
+           )
+           AND (content::text ILIKE '%' || $2 || '%' OR properties::text ILIKE '%' || $2 || '%')
+         ORDER BY updated_at DESC
+         LIMIT 25`,
+        [workspaceId, query, entityTypes]
+      );
+      docsFallback = fallbackRes.rows;
+    }
+
+    const docsResult = await pool.query(
+      `SELECT id, document_type AS type, title, updated_at
+      FROM documents
+      WHERE workspace_id = $1
+        AND deleted_at IS NULL
+        AND (
+          cardinality($3::text[]) = 0
+          OR document_type::text = ANY($3::text[])
+        )
+        AND title = ''
+      ORDER BY updated_at DESC
+      LIMIT 0`,
+      [workspaceId, query, entityTypes]
+    );
+
+    let workspaceResults: Array<Record<string, unknown>> = [];
+    if (entityTypes.length === 0 || entityTypes.includes('workspace')) {
+      const wsResult = await pool.query(
+        `SELECT w.id, 'workspace'::text AS type, w.name AS title, w.updated_at
+         FROM workspaces w
+         JOIN workspace_memberships wm ON wm.workspace_id = w.id
+         WHERE wm.user_id = $1 AND w.archived_at IS NULL
+           AND w.name ILIKE '%' || $2 || '%'
+         ORDER BY w.updated_at DESC
+         LIMIT 5`,
+        [userId, query]
+      );
+      workspaceResults = wsResult.rows;
+    }
+
+    const mergedById = new Map<string, Record<string, unknown>>();
+    for (const row of [...docsStructured.rows, ...docsFallback, ...workspaceResults]) {
+      const id = String(row.id);
+      if (!mergedById.has(id)) mergedById.set(id, row);
+    }
+    const results = Array.from(mergedById.values());
+    return {
+      ok: true,
+      summary: `Found ${results.length} matching entities.`,
+      data: { results, strategy: 'hybrid_structured_then_fallback', entityTypes },
+    };
   }
 
   if (toolCall.name === 'bulk_edit_documents') {
