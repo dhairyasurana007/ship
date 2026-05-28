@@ -100,10 +100,16 @@ export function inferToolCallFromPrompt(input: {
   }
   if (/(update|edit|modify)\s+project/.test(lower)) {
     const documentId = inDocumentScope ? input.documentId : null;
-    if (!documentId) return null;
+    const targetTitle = extractQuoted(prompt) ?? extractAfterPattern(prompt, /project\s+(.+?)\s+title\s+to/i);
+    const newTitle = extractAfterPattern(prompt, /(?:title\s+to)\s+\"?([^\"].*?)\"?$/i) ?? extractQuoted(prompt);
+    if (!documentId && !targetTitle) return null;
     return {
       name: 'update_project',
-      args: { documentId, title: extractQuoted(prompt) ?? extractAfterPattern(prompt, /(?:title\s+to)\s+(.+)$/i) },
+      args: {
+        ...(documentId ? { documentId } : {}),
+        ...(targetTitle ? { targetTitle } : {}),
+        title: newTitle,
+      },
     };
   }
   if (/(create|add|new)\s+(sprint|week)/.test(lower)) {
@@ -128,15 +134,15 @@ export function inferToolCallFromPrompt(input: {
     if (!title) return null;
     return { name: 'update_work_item_fields', args: { issueTitle: title, status } };
   }
-  if (/(link).*(document|doc)/.test(lower)) {
-    const ids = prompt.match(/[0-9a-f]{8}-[0-9a-f-]{27}/gi) ?? [];
-    if (ids.length < 2) return null;
-    return { name: 'link_documents', args: { documentId: ids[0], relatedId: ids[1], relationshipType: 'parent' } };
-  }
   if (/(unlink).*(document|doc)/.test(lower)) {
     const ids = prompt.match(/[0-9a-f]{8}-[0-9a-f-]{27}/gi) ?? [];
     if (ids.length < 2) return null;
     return { name: 'unlink_documents', args: { documentId: ids[0], relatedId: ids[1], relationshipType: 'parent' } };
+  }
+  if (/\blink\b.*(document|doc)/.test(lower)) {
+    const ids = prompt.match(/[0-9a-f]{8}-[0-9a-f-]{27}/gi) ?? [];
+    if (ids.length < 2) return null;
+    return { name: 'link_documents', args: { documentId: ids[0], relatedId: ids[1], relationshipType: 'parent' } };
   }
   if (/(search).*(semantic|similar)/.test(lower)) {
     return { name: 'search_documents_semantic', args: { query: extractQuoted(prompt) ?? prompt } };
@@ -236,7 +242,20 @@ export async function executeToolCall(input: {
   }
 
   if (toolCall.name === 'update_document' || toolCall.name === 'update_project') {
-    const documentId = String(toolCall.args.documentId ?? '');
+    let documentId = String(toolCall.args.documentId ?? '');
+    if (!documentId && toolCall.name === 'update_project') {
+      const targetTitle = String(toolCall.args.targetTitle ?? '').trim();
+      if (targetTitle) {
+        const lookup = await pool.query(
+          `SELECT id FROM documents
+           WHERE workspace_id = $1 AND document_type = 'project' AND title = $2 AND deleted_at IS NULL
+           ORDER BY updated_at DESC
+           LIMIT 1`,
+          [workspaceId, targetTitle]
+        );
+        documentId = String(lookup.rows[0]?.id ?? '');
+      }
+    }
     if (!documentId) return { ok: false, summary: 'Missing documentId for update.' };
     const title = typeof toolCall.args.title === 'string' && toolCall.args.title.trim() ? toolCall.args.title : null;
     const content = toolCall.args.content ?? null;
@@ -365,13 +384,14 @@ export async function executeToolCall(input: {
     if (denied) return denied;
     const sprintId = String(toolCall.args.sprintId ?? '');
     if (!sprintId) return { ok: false, summary: 'Missing sprintId.' };
-    await pool.query(
+    const result = await pool.query(
       `UPDATE documents
        SET properties = jsonb_set(COALESCE(properties, '{}'::jsonb), '{status}', '\"closed\"'::jsonb, true),
            updated_at = now()
        WHERE id = $1 AND workspace_id = $2 AND document_type = 'sprint'`,
       [sprintId, workspaceId]
     );
+    if (result.rowCount === 0) return { ok: false, summary: 'Sprint not found.' };
     return { ok: true, summary: 'Sprint closed.' };
   }
 
