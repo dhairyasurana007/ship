@@ -50,6 +50,7 @@ function readRecommendedApprovalAction(approval: FleetGraphApproval): Recommende
 }
 
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
+  const WELCOME_MESSAGE = 'Hello! How can I assist you today!';
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -319,6 +320,11 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           setOpen((v) => {
             const next = !v;
             if (next) {
+              setMessages((prev) => (
+                prev.length === 0
+                  ? [{ role: 'assistant', text: WELCOME_MESSAGE }]
+                  : prev
+              ));
               void loadOutputs();
               void loadApprovals();
             }
