@@ -127,6 +127,7 @@ export function buildSearchPlan(args: Record<string, unknown>): SearchPlan {
     .replace(/\b(most recent|recent|latest|newest|oldest|earliest)\b/gi, '')
     .replace(/\b(created|creation|created at|updated|updated at)\b/gi, '')
     .replace(/\b(docs?|documents?|issues?|projects?|programs?|sprints?|weeks?|workspaces?)\b/gi, '')
+    .replace(/\b(the|that|were|with|about|and|or|to|for|of|in|on|named)\b/gi, '')
     .replace(/\s+/g, ' ')
     .trim();
 
@@ -150,6 +151,7 @@ export function inferToolCallFromPrompt(input: {
 }): FleetGraphToolCall | null {
   const prompt = input.prompt.trim();
   const lower = prompt.toLowerCase();
+  const isSearchLike = /(search|find)/.test(lower) || (/\b(show|list|get)\b/.test(lower) && /(recent|latest|newest|oldest|earliest)/.test(lower));
   const inDocumentScope = input.contextScope === 'document' && Boolean(input.documentId);
   const hasDocNoun = /(document|doc|issue|project|program|sprint|week|standup|wiki)/.test(lower);
 
@@ -187,7 +189,7 @@ export function inferToolCallFromPrompt(input: {
     if (!issueTitle || !targetSprint) return null;
     return { name: 'move_item_to_sprint', args: { issueTitle, targetSprintTitle: targetSprint } };
   }
-  if (/(list|show).*(issues|work items)/.test(lower)) {
+  if (/(list|show).*(issues|work items)/.test(lower) && !/(recent|latest|newest|oldest|earliest)/.test(lower)) {
     return { name: 'list_work_items', args: { query: extractQuoted(prompt) ?? '' } };
   }
   if (/(set|update|change).*(status|assignee|priority)/.test(lower)) {
@@ -214,7 +216,7 @@ export function inferToolCallFromPrompt(input: {
         },
     };
   }
-  if (/(search|find)/.test(lower)) {
+  if (isSearchLike) {
     const entityTypes = inferEntityTypesFromQuery(lower);
     return {
       name: 'search_entities',
