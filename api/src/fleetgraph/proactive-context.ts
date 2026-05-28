@@ -39,11 +39,4 @@ export async function fetchIssues(workspaceId: string): Promise<FleetGraphIssueR
   }));
 }
 
-export async function fetchSprintState(_workspaceId: string): Promise<Record<string, unknown>> {
-  return {};
-}
-
-export async function fetchTeamState(_workspaceId: string): Promise<Record<string, unknown>> {
-  return {};
-}
 

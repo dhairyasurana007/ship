@@ -29,6 +29,8 @@ export class FleetGraphTriggerRuntime {
           const graphResult = await graph.invoke({
             mode: 'proactive',
             workspaceId: envelope.workspaceId,
+            parentRunId: envelope.runId,
+            config: this.config,
           });
           const conditions = graphResult.conditions;
           envelope.payload.conditions = conditions;

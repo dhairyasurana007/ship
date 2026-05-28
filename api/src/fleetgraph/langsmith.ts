@@ -102,6 +102,37 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
   }
 }
 
+export async function finishLangSmithChildRun(
+  config: FleetGraphConfig,
+  childRunId: string,
+  outputs: Record<string, unknown>,
+  status: 'completed' | 'failed',
+  errorMessage?: string
+): Promise<void> {
+  if (!config.langSmithTracing || !config.langSmithApiKey) return;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LANGSMITH_HTTP_TIMEOUT_MS);
+    const res = await fetch(endpoint(config, `/runs/${encodeURIComponent(childRunId)}`), {
+      method: 'PATCH',
+      headers: headers(config),
+      signal: controller.signal,
+      body: JSON.stringify({
+        end_time: new Date().toISOString(),
+        outputs,
+        error: status === 'failed' ? errorMessage ?? 'child_run_failed' : null,
+      }),
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      const body = await res.text();
+      logFleetGraphError('LangSmith finish child run failed.', { status: res.status, childRunId, body });
+    }
+  } catch (error) {
+    logFleetGraphError('LangSmith finish child run request error.', { childRunId, error });
+  }
+}
+
 export async function finishLangSmithRun(
   config: FleetGraphConfig,
   envelope: FleetGraphRunEnvelope,

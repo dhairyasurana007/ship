@@ -1,8 +1,10 @@
+import crypto from 'crypto';
 import { classifyConditions } from './classify-conditions.js';
 import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContext } from './on-demand.js';
-import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
+import { fetchIssues, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
 import { executeToolCall, inferToolCallFromPrompt, type FleetGraphToolCall, type FleetGraphToolResult } from './tools.js';
+import { createLangSmithChildRun, finishLangSmithChildRun } from './langsmith.js';
 import type { FleetGraphConfig, FleetGraphCondition } from './types.js';
 
 type ContextScope = 'workspace' | 'document';
@@ -33,6 +35,8 @@ function isMutationToolName(name: string): boolean {
 export interface ProactiveGraphInput {
   mode: 'proactive';
   workspaceId: string;
+  parentRunId?: string;
+  config?: FleetGraphConfig;
 }
 
 export interface OnDemandGraphInput {
@@ -47,6 +51,7 @@ export interface OnDemandGraphInput {
   config: FleetGraphConfig;
   documentType?: string;
   documentId?: string;
+  parentRunId?: string;
 }
 
 export type FleetGraphInvokeInput = ProactiveGraphInput | OnDemandGraphInput;
@@ -57,8 +62,6 @@ export interface ProactiveGraphOutput {
   outputs: ReturnType<typeof routeOutputs>;
   context: {
     project: Record<string, unknown>;
-    sprint: Record<string, unknown>;
-    team: Record<string, unknown>;
   };
 }
 
@@ -85,9 +88,16 @@ class FleetGraphCompiledGraph {
   async invoke(input: FleetGraphInvokeInput): Promise<FleetGraphInvokeOutput> {
     if (input.mode === 'proactive') {
       const projectContext = await loadProjectContext(input.workspaceId);
-      const issues = await fetchIssues(input.workspaceId);
-      const sprintState = await fetchSprintState(input.workspaceId);
-      const teamState = await fetchTeamState(input.workspaceId);
+      const fetchIssuesRunId = crypto.randomUUID();
+      await createLangSmithChildRun(input.config, input.parentRunId ?? '', fetchIssuesRunId, 'fetch_issues', { workspaceId: input.workspaceId }, 'chain');
+      let issues: Awaited<ReturnType<typeof fetchIssues>>;
+      try {
+        issues = await fetchIssues(input.workspaceId);
+        await finishLangSmithChildRun(input.config ?? {} as FleetGraphConfig, fetchIssuesRunId, { issueCount: issues.length }, 'completed');
+      } catch (err) {
+        await finishLangSmithChildRun(input.config ?? {} as FleetGraphConfig, fetchIssuesRunId, {}, 'failed', err instanceof Error ? err.message : String(err));
+        throw err;
+      }
       const conditions = classifyConditions(issues);
       return {
         mode: 'proactive',
@@ -95,8 +105,6 @@ class FleetGraphCompiledGraph {
         outputs: routeOutputs(conditions),
         context: {
           project: projectContext,
-          sprint: sprintState,
-          team: teamState,
         },
       };
     }
@@ -126,11 +134,16 @@ class FleetGraphCompiledGraph {
         };
       }
 
-      const toolResult = await executeToolCall({
-        workspaceId: input.workspaceId,
-        userId: input.userId,
-        toolCall,
-      });
+      const toolRunId = crypto.randomUUID();
+      await createLangSmithChildRun(input.config, input.parentRunId ?? '', toolRunId, `tool.${toolCall.name}`, { toolCall }, 'tool');
+      let toolResult: Awaited<ReturnType<typeof executeToolCall>>;
+      try {
+        toolResult = await executeToolCall({ workspaceId: input.workspaceId, userId: input.userId, toolCall });
+        await finishLangSmithChildRun(input.config, toolRunId, { ok: toolResult.ok, summary: toolResult.summary }, toolResult.ok ? 'completed' : 'failed');
+      } catch (err) {
+        await finishLangSmithChildRun(input.config, toolRunId, {}, 'failed', err instanceof Error ? err.message : String(err));
+        throw err;
+      }
 
       return {
         mode: 'on_demand',
@@ -145,10 +158,18 @@ class FleetGraphCompiledGraph {
       };
     }
 
-    const context =
-      input.contextScope === 'workspace'
+    const loadContextRunId = crypto.randomUUID();
+    await createLangSmithChildRun(input.config, input.parentRunId ?? '', loadContextRunId, 'load_view_context', { contextScope: input.contextScope, documentType: input.documentType, documentId: input.documentId }, 'chain');
+    let context: Awaited<ReturnType<typeof loadWorkspaceContext>> | Awaited<ReturnType<typeof loadViewContext>>;
+    try {
+      context = input.contextScope === 'workspace'
         ? await loadWorkspaceContext(input.workspaceId)
         : await loadViewContext(String(input.documentType ?? ''), String(input.documentId ?? ''));
+      await finishLangSmithChildRun(input.config, loadContextRunId, { degraded: !!(context as { degraded?: unknown }).degraded }, 'completed');
+    } catch (err) {
+      await finishLangSmithChildRun(input.config, loadContextRunId, {}, 'failed', err instanceof Error ? err.message : String(err));
+      throw err;
+    }
 
     const reasoning = await reasonOnContext(context, input.prompt, input.config, input.contextScope);
     const response = generateResponse(reasoning, {
