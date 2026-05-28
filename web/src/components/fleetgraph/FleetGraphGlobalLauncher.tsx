@@ -28,9 +28,11 @@ interface FleetGraphApproval {
 
 interface FleetGraphChatResponse {
   response?: string;
+  requiresConfirm?: boolean;
   degraded?: boolean;
   degradedReason?: string | null;
 }
+type AccessMode = 'ask_permission' | 'full_access';
 
 type RecommendedApprovalAction = 'reject' | 'execute' | null;
 
@@ -52,12 +54,19 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [outputs, setOutputs] = useState<FleetGraphOutput[]>([]);
   const [approvals, setApprovals] = useState<FleetGraphApproval[]>([]);
   const [degradedNotice, setDegradedNotice] = useState<string | null>(null);
+  const [accessMode, setAccessMode] = useState<AccessMode>('ask_permission');
+  const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   const hasDocumentContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
+
+  function mayRequireMutation(promptText: string): boolean {
+    const lower = promptText.toLowerCase();
+    return /(move|reassign|assign|change state|close|cancel|reopen|update|edit|modify|delete)/.test(lower);
+  }
 
   async function loadOutputs(): Promise<void> {
     try {
@@ -103,24 +112,32 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     setThinkingStep(null);
   }
 
-  async function send(): Promise<void> {
-    if (!prompt.trim()) return;
-    const promptValue = prompt.trim();
-    setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
-    setPrompt('');
+  async function send(explicitPrompt?: string, explicitConfirm = false): Promise<void> {
+    const promptValue = (explicitPrompt ?? prompt).trim();
+    if (!promptValue) return;
+    if (!explicitPrompt) {
+      setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
+      setPrompt('');
+    }
     setLoading(true);
     setDegradedNotice(null);
     startThinkingUpdates();
     try {
+      const requiresMutationConfirm = accessMode === 'ask_permission' && mayRequireMutation(promptValue);
       const res = await apiPost('/api/fleetgraph/chat', {
         contextScope: 'workspace',
         documentType: hasDocumentContext ? documentType : undefined,
         documentId: hasDocumentContext ? documentId : undefined,
         prompt: promptValue,
-        requiresMutationConfirm: false,
-        explicitConfirm: false,
+        requiresMutationConfirm,
+        explicitConfirm,
       });
       const data = await res.json() as FleetGraphChatResponse;
+      if (data.requiresConfirm && !explicitConfirm) {
+        setPendingPrompt(promptValue);
+      } else {
+        setPendingPrompt(null);
+      }
       setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
       if (data.degraded) {
         setDegradedNotice(
@@ -186,6 +203,18 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             </button>
           </div>
           <p className="mt-2 text-xs text-muted">Context scope: workspace-level (current workspace only).</p>
+          <div className="mt-2 flex items-center justify-between">
+            <p className="text-[11px] text-muted">Agent Access</p>
+            <select
+              aria-label="Agent access mode"
+              className="rounded border border-border bg-background px-2 py-1 text-[11px]"
+              value={accessMode}
+              onChange={(e) => setAccessMode(e.target.value as AccessMode)}
+            >
+              <option value="ask_permission">Ask Permission</option>
+              <option value="full_access">Full Access</option>
+            </select>
+          </div>
           {degradedNotice && (
             <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
               {degradedNotice}
@@ -210,6 +239,32 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               <div className="flex justify-start">
                 <div className="max-w-[85%] animate-pulse whitespace-pre-wrap rounded-lg border border-border bg-background px-2 py-1 text-xs text-muted">
                   FleetGraph is thinking: {thinkingStep}
+                </div>
+              </div>
+            )}
+            {pendingPrompt && !loading && (
+              <div className="flex justify-start">
+                <div className="max-w-[85%] rounded border border-border bg-background p-2 text-xs">
+                  <p className="text-foreground">Approve this requested action?</p>
+                  <div className="mt-2 flex gap-2">
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-1"
+                      onClick={() => void send(pendingPrompt, true)}
+                    >
+                      Approve
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded border px-2 py-1"
+                      onClick={() => {
+                        setPendingPrompt(null);
+                        setMessages((prev) => [...prev, { role: 'assistant', text: 'Action rejected. No mutation will be executed.' }]);
+                      }}
+                    >
+                      Reject
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
