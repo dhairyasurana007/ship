@@ -18,6 +18,12 @@ function extractQuoted(prompt: string): string | null {
   return match?.[1] ?? null;
 }
 
+function extractAfterPattern(prompt: string, pattern: RegExp): string | null {
+  const match = prompt.match(pattern);
+  const value = match?.[1]?.trim();
+  return value ? value.replace(/[.?!]+$/, '').trim() : null;
+}
+
 function extractDocType(promptLower: string): string {
   if (promptLower.includes('issue')) return 'issue';
   if (promptLower.includes('project')) return 'project';
@@ -70,8 +76,17 @@ export function inferToolCallFromPrompt(input: {
   if (/(update|edit|modify|rename|change)\s+/.test(lower) && (hasDocNoun || inDocumentScope)) {
     const docId = input.contextScope === 'document' ? input.documentId : null;
     if (!docId) return null;
-    const title = (/title/.test(lower) || /rename/.test(lower)) ? extractQuoted(prompt) : null;
-    const contentText = /(content|text|body)/.test(lower) ? extractQuoted(prompt) : null;
+    const titleFromQuoted = (/title/.test(lower) || /rename/.test(lower)) ? extractQuoted(prompt) : null;
+    const titleFromUnquoted = /rename|title/.test(lower)
+      ? extractAfterPattern(prompt, /(?:rename(?:\s+this|\s+document)?\s+to|change(?:\s+the)?\s+title\s+to)\s+(.+)$/i)
+      : null;
+    const title = titleFromQuoted ?? titleFromUnquoted;
+
+    const contentFromQuoted = /(content|text|body)/.test(lower) ? extractQuoted(prompt) : null;
+    const contentFromUnquoted = /(content|text|body)/.test(lower)
+      ? extractAfterPattern(prompt, /(?:update|change|set|edit|modify)(?:\s+the)?\s+(?:content|text|body)(?:\s+to)?\s+(.+)$/i)
+      : null;
+    const contentText = contentFromQuoted ?? contentFromUnquoted;
     if (!title && !contentText && lower.includes('clear')) {
       return {
         name: 'update_document',
@@ -145,9 +160,14 @@ export async function executeToolCall(input: {
       updates.push(`title = $${idx++}`);
       values.push(title);
     }
+    if (title === null && content === null) {
+      return { ok: false, summary: 'No document changes were provided. Include a new title or content.' };
+    }
+
     if (content !== null) {
       updates.push(`content = $${idx++}::jsonb`);
       values.push(JSON.stringify(content));
+      updates.push('yjs_state = NULL');
     }
 
     const result = await pool.query(
