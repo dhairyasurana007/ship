@@ -250,6 +250,43 @@ router.post('/chat', authMiddleware, async (req, res) => {
         ? await loadWorkspaceContext(req.workspaceId)
         : await loadViewContext(documentType, documentId);
     const reasoning = await reasonOnContext(context, prompt, config, contextScope);
+
+    const reasoningChildRunId = crypto.randomUUID();
+    const llmUsed = Boolean((reasoning as { llmUsed?: unknown }).llmUsed);
+    const llmName = llmUsed ? 'reasoning.llm' : 'reasoning.fallback';
+    const llmRunType = llmUsed ? 'llm' : 'chain';
+    await createLangSmithChildRun(
+      config,
+      runEnvelope.runId,
+      reasoningChildRunId,
+      llmName,
+      {
+        scope: contextScope,
+        provider: (reasoning as { provider?: unknown }).provider ?? null,
+        model: (reasoning as { model?: unknown }).model ?? null,
+        systemPrompt: (reasoning as { systemPrompt?: unknown }).systemPrompt ?? null,
+        userPrompt: (reasoning as { userPrompt?: unknown }).userPrompt ?? null,
+      },
+      llmRunType
+    );
+    await finishLangSmithRun(
+      config,
+      {
+        runId: reasoningChildRunId,
+        triggerType: 'user_request',
+        workspaceId: req.workspaceId,
+        entityId: contextScope === 'document' ? documentId : req.workspaceId,
+        entityType: contextScope,
+        payload: {
+          llmUsed,
+          llmSummary: (reasoning as { llmSummary?: unknown }).llmSummary ?? null,
+          fallbackSummary: (reasoning as { summary?: unknown }).summary ?? null,
+        },
+        createdAt: new Date().toISOString(),
+      },
+      'completed'
+    );
+
     const response = generateResponse(reasoning, { requiresMutationConfirm, explicitConfirm });
 
     runEnvelope.payload = {

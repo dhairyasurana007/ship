@@ -260,9 +260,13 @@ export async function reasonOnContext(
 
     const fallbackSummary = summary;
     const llmSummary = await callLlm(config, systemPrompt, userPrompt);
+    const llmUsed = Boolean(llmSummary);
     return {
       model: 'gpt-4o-mini',
       summary: llmSummary ?? fallbackSummary,
+      llmUsed,
+      llmSummary: llmSummary ?? null,
+      provider: config?.provider ?? null,
       systemPrompt,
       userPrompt,
       prompt,
@@ -284,9 +288,13 @@ export async function reasonOnContext(
     : 'I could not load the current document context. Please verify the document exists and try again.';
 
   const llmSummary = await callLlm(config, systemPrompt, userPrompt);
+  const llmUsed = Boolean(llmSummary);
   return {
     model: 'gpt-4o-mini',
     summary: llmSummary ?? summary,
+    llmUsed,
+    llmSummary: llmSummary ?? null,
+    provider: config?.provider ?? null,
     systemPrompt,
     userPrompt,
     prompt,

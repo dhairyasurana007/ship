@@ -23,7 +23,8 @@ export async function createLangSmithChildRun(
   parentRunId: string,
   childRunId: string,
   name: string,
-  inputs: Record<string, unknown>
+  inputs: Record<string, unknown>,
+  runType: 'tool' | 'llm' | 'chain' = 'tool'
 ): Promise<void> {
   if (!config.langSmithTracing || !config.langSmithApiKey) return;
   try {
@@ -36,7 +37,7 @@ export async function createLangSmithChildRun(
       body: JSON.stringify({
         id: childRunId,
         name,
-        run_type: 'tool',
+        run_type: runType,
         parent_run_id: parentRunId,
         inputs,
         start_time: new Date().toISOString(),
