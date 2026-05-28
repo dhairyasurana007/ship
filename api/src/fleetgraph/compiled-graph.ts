@@ -89,13 +89,20 @@ class FleetGraphCompiledGraph {
     if (input.mode === 'proactive') {
       const projectContext = await loadProjectContext(input.workspaceId);
       const fetchIssuesRunId = crypto.randomUUID();
-      await createLangSmithChildRun(input.config, input.parentRunId ?? '', fetchIssuesRunId, 'fetch_issues', { workspaceId: input.workspaceId }, 'chain');
+      const proactiveTracing = input.config && input.parentRunId ? { config: input.config, parentRunId: input.parentRunId } : null;
+      if (proactiveTracing) {
+        await createLangSmithChildRun(proactiveTracing.config, proactiveTracing.parentRunId, fetchIssuesRunId, 'fetch_issues', { workspaceId: input.workspaceId }, 'chain');
+      }
       let issues: Awaited<ReturnType<typeof fetchIssues>>;
       try {
         issues = await fetchIssues(input.workspaceId);
-        await finishLangSmithChildRun(input.config ?? {} as FleetGraphConfig, fetchIssuesRunId, { issueCount: issues.length }, 'completed');
+        if (proactiveTracing) {
+          await finishLangSmithChildRun(proactiveTracing.config, fetchIssuesRunId, { issueCount: issues.length }, 'completed');
+        }
       } catch (err) {
-        await finishLangSmithChildRun(input.config ?? {} as FleetGraphConfig, fetchIssuesRunId, {}, 'failed', err instanceof Error ? err.message : String(err));
+        if (proactiveTracing) {
+          await finishLangSmithChildRun(proactiveTracing.config, fetchIssuesRunId, {}, 'failed', err instanceof Error ? err.message : String(err));
+        }
         throw err;
       }
       const conditions = classifyConditions(issues);
