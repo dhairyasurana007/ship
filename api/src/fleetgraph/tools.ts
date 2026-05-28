@@ -11,7 +11,6 @@ export type FleetGraphToolName =
   | 'create_sprint'
   | 'move_item_to_sprint'
   | 'close_sprint'
-  | 'list_work_items'
   | 'update_work_item_fields'
   | 'link_documents'
   | 'unlink_documents'
@@ -188,9 +187,6 @@ export function inferToolCallFromPrompt(input: {
     const targetSprint = extractAfterPattern(prompt, /(?:to|into)\s+(?:sprint|week)\s+(.+)$/i);
     if (!issueTitle || !targetSprint) return null;
     return { name: 'move_item_to_sprint', args: { issueTitle, targetSprintTitle: targetSprint } };
-  }
-  if (/(list|show).*(issues|work items)/.test(lower) && !/(recent|latest|newest|oldest|earliest)/.test(lower)) {
-    return { name: 'list_work_items', args: { query: extractQuoted(prompt) ?? '' } };
   }
   if (/(set|update|change).*(status|assignee|priority)/.test(lower)) {
     const status = extractAfterPattern(prompt, /status\s+to\s+([a-z_ -]+?)(?:\s+for\s+|$)/i);
@@ -469,20 +465,6 @@ export async function executeToolCall(input: {
     );
     if (result.rowCount === 0) return { ok: false, summary: 'Sprint not found.' };
     return { ok: true, summary: 'Sprint closed.' };
-  }
-
-  if (toolCall.name === 'list_work_items') {
-    const query = String(toolCall.args.query ?? '').trim();
-    const result = await pool.query(
-      `SELECT id, title, properties->>'status' AS status
-       FROM documents
-       WHERE workspace_id = $1 AND document_type = 'issue' AND deleted_at IS NULL
-         AND ($2 = '' OR title ILIKE '%' || $2 || '%')
-       ORDER BY updated_at DESC
-       LIMIT 25`,
-      [workspaceId, query]
-    );
-    return { ok: true, summary: `Found ${result.rowCount ?? 0} work items.`, data: { items: result.rows } };
   }
 
   if (toolCall.name === 'update_work_item_fields') {
