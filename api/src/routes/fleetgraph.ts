@@ -104,6 +104,47 @@ router.get('/outputs', authMiddleware, async (req, res) => {
   res.json({ outputs });
 });
 
+router.get('/runtime-status', authMiddleware, async (req, res) => {
+  if (!req.workspaceId) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+
+  const result = await pool.query(
+    `SELECT run_id, trigger_type, status, created_at, updated_at
+     FROM fleetgraph_runs
+     WHERE workspace_id = $1
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [req.workspaceId]
+  );
+
+  const latest = result.rows[0] as
+    | {
+        run_id: string;
+        trigger_type: string;
+        status: string;
+        created_at: string;
+        updated_at: string;
+      }
+    | undefined;
+
+  if (!latest) {
+    res.json({ status: null });
+    return;
+  }
+
+  res.json({
+    status: {
+      runId: latest.run_id,
+      triggerType: latest.trigger_type,
+      runStatus: latest.status,
+      createdAt: latest.created_at,
+      updatedAt: latest.updated_at,
+    },
+  });
+});
+
 router.post('/outputs/dev-seed', authMiddleware, async (req, res) => {
   if (process.env.NODE_ENV !== 'test') {
     res.status(404).json({ error: 'not_found' });

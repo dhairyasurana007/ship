@@ -37,9 +37,18 @@ import { ActionItemsModal } from '@/components/ActionItemsModal';
 import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
 import { FleetGraphGlobalLauncher } from '@/components/fleetgraph/FleetGraphGlobalLauncher';
+import { apiGet } from '@/lib/api';
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'settings' | 'dashboard' | 'project-context';
+
+interface FleetGraphRuntimeStatus {
+  runId: string;
+  triggerType: 'pg_event' | 'poll_fallback' | 'schedule' | 'user_request' | string;
+  runStatus: 'queued' | 'running' | 'completed' | 'failed' | 'skipped' | string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export function AppLayout() {
   const { user, logout, isSuperAdmin, impersonating, endImpersonation } = useAuth();
@@ -58,6 +67,7 @@ export function AppLayout() {
   const [projectSetupWizardOpen, setProjectSetupWizardOpen] = useState(false);
   const [actionItemsModalOpen, setActionItemsModalOpen] = useState(false);
   const [actionItemsModalShownOnLoad, setActionItemsModalShownOnLoad] = useState(false);
+  const [fleetGraphRuntimeStatus, setFleetGraphRuntimeStatus] = useState<FleetGraphRuntimeStatus | null>(null);
 
   // Session timeout handling
   const handleSessionTimeout = useCallback(() => {
@@ -174,6 +184,48 @@ export function AppLayout() {
       cancelled = true;
     };
   }, []);
+
+  // Poll FleetGraph runtime status for lightweight top-of-app activity signals.
+  useEffect(() => {
+    let canceled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const pollStatus = async () => {
+      try {
+        const res = await apiGet('/api/fleetgraph/runtime-status');
+        if (!res.ok) return;
+        const data = await res.json() as { status?: FleetGraphRuntimeStatus | null };
+        if (!canceled) {
+          setFleetGraphRuntimeStatus(data.status ?? null);
+        }
+      } catch {
+        // ignore status polling errors
+      }
+    };
+
+    void pollStatus();
+    timer = setInterval(() => {
+      void pollStatus();
+    }, 15000);
+
+    return () => {
+      canceled = true;
+      if (timer) clearInterval(timer);
+    };
+  }, []);
+
+  const fleetGraphBannerText = useMemo(() => {
+    if (!fleetGraphRuntimeStatus) return null;
+    const isActive = fleetGraphRuntimeStatus.runStatus === 'queued' || fleetGraphRuntimeStatus.runStatus === 'running';
+    if (!isActive) return null;
+    if (fleetGraphRuntimeStatus.triggerType === 'pg_event') {
+      return 'FleetGraph Agent detected database changes and is analyzing them.';
+    }
+    if (fleetGraphRuntimeStatus.triggerType === 'poll_fallback' || fleetGraphRuntimeStatus.triggerType === 'schedule') {
+      return 'FleetGraph Agent is running scheduled analysis.';
+    }
+    return null;
+  }, [fleetGraphRuntimeStatus]);
 
   // Get current document type and ID for /documents/:id routes
   const { currentDocumentType, currentDocumentId, currentDocumentProjectId } = useCurrentDocument();
@@ -324,6 +376,11 @@ export function AppLayout() {
         isCelebrating={isCelebrating}
         urgency={actionItemsData?.has_overdue ? 'overdue' : 'due_today'}
       />
+      {fleetGraphBannerText && (
+        <div className="flex h-8 items-center bg-sky-900/80 px-4 text-xs text-sky-100">
+          {fleetGraphBannerText}
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Icon Rail - Navigation landmark */}
