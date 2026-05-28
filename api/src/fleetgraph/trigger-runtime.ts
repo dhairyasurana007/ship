@@ -11,6 +11,7 @@ import { getTraceContext } from './observability.js';
 import { getFleetGraphState, upsertFleetGraphState } from './state-store.js';
 import { getFleetGraphCompiledGraph } from './compiled-graph.js';
 import type { FleetGraphConfig, FleetGraphRunEnvelope, TriggerEvent, TriggerType } from './types.js';
+import { registerSessionCallbacks } from './session-tracker.js';
 
 const LISTEN_CHANNEL = 'document_changes';
 
@@ -64,7 +65,19 @@ export class FleetGraphTriggerRuntime {
 
   async start(): Promise<void> {
     await this.startPgListen();
-    this.startPollFallback();
+    registerSessionCallbacks(
+      () => this.startPollFallback(),
+      () => this.stopPollFallback()
+    );
+    logFleetGraphInfo('Poll fallback is session-gated (starts on first login, stops on last logout).');
+  }
+
+  private stopPollFallback(): void {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+      logFleetGraphInfo('Poll fallback deactivated (no active sessions).');
+    }
   }
 
   async stop(): Promise<void> {
