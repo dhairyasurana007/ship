@@ -34,6 +34,7 @@ export function inferToolCallFromPrompt(input: {
 }): FleetGraphToolCall | null {
   const prompt = input.prompt.trim();
   const lower = prompt.toLowerCase();
+  const inDocumentScope = input.contextScope === 'document' && Boolean(input.documentId);
   const hasDocNoun = /(document|doc|issue|project|program|sprint|week|standup|wiki)/.test(lower);
 
   if (/(create|add|new)\s+/.test(lower) && hasDocNoun) {
@@ -47,7 +48,7 @@ export function inferToolCallFromPrompt(input: {
     };
   }
 
-  if (/(delete|remove)\s+/.test(lower) && hasDocNoun) {
+  if (/(delete|remove)\s+/.test(lower) && (hasDocNoun || inDocumentScope)) {
     const docId = input.contextScope === 'document' ? input.documentId : null;
     if (!docId) return null;
     return {
@@ -56,10 +57,10 @@ export function inferToolCallFromPrompt(input: {
     };
   }
 
-  if (/(update|edit|modify|rename|change)\s+/.test(lower) && hasDocNoun) {
+  if (/(update|edit|modify|rename|change)\s+/.test(lower) && (hasDocNoun || inDocumentScope)) {
     const docId = input.contextScope === 'document' ? input.documentId : null;
     if (!docId) return null;
-    const title = /title/.test(lower) ? extractQuoted(prompt) : null;
+    const title = (/title/.test(lower) || /rename/.test(lower)) ? extractQuoted(prompt) : null;
     const contentText = /(content|text|body)/.test(lower) ? extractQuoted(prompt) : null;
     if (!title && !contentText && lower.includes('clear')) {
       return {
