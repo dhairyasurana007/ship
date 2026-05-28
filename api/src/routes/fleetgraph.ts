@@ -21,6 +21,28 @@ import type { FleetGraphCondition } from '../fleetgraph/types.js';
 
 const router = Router();
 
+const MUTATION_TOOL_NAMES = new Set([
+  'create_document',
+  'update_document',
+  'delete_document',
+  'delete_documents_by_title',
+  'create_project',
+  'update_project',
+  'archive_project',
+  'create_sprint',
+  'move_item_to_sprint',
+  'close_sprint',
+  'update_work_item_fields',
+  'link_documents',
+  'unlink_documents',
+  'bulk_edit_documents',
+  'create_comment',
+]);
+
+function isMutationToolName(name: string): boolean {
+  return MUTATION_TOOL_NAMES.has(name);
+}
+
 async function requireWorkspaceAdmin(userId: string, workspaceId: string): Promise<boolean> {
   const result = await pool.query(
     `SELECT role
@@ -213,7 +235,10 @@ router.post('/chat', authMiddleware, async (req, res) => {
       documentId: contextScope === 'document' ? documentId : undefined,
     });
     if (toolCall) {
-      const shouldRequireConfirm = accessMode === 'ask_permission' || requiresMutationConfirm;
+      const shouldRequireConfirm =
+        accessMode === 'ask_permission'
+          ? isMutationToolName(toolCall.name)
+          : requiresMutationConfirm;
       if (shouldRequireConfirm && !explicitConfirm) {
         runEnvelope.payload = {
           ...runEnvelope.payload,
