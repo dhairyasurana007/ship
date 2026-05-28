@@ -76,6 +76,36 @@ Fallback: derive team membership from `assignee_id` fields on all issues associa
 
 The Ship frontend passes `{ documentType, documentId }` as part of the chat invocation payload. The agent's `load_view_context` node uses this to fetch and structure the full relevant context before any reasoning begins. The user never needs to explain what they are looking at - the agent already knows.
 
+### Current Tool Catalog (Implemented)
+
+FleetGraph currently supports the following on-demand tools (`api/src/fleetgraph/tools.ts`):
+
+| Tool | Purpose | Type | Ask Permission Behavior | Authorization |
+|---|---|---|---|---|
+| `create_document` | Create a document by type/title | Mutation | Requires approval | Workspace member |
+| `update_document` | Update document title/content | Mutation | Requires approval | Workspace member |
+| `delete_document` | Soft-delete current document | Mutation | Requires approval | Workspace member |
+| `delete_documents_by_title` | Bulk soft-delete docs by exact title | Mutation | Requires approval | Workspace member |
+| `create_project` | Create project document | Mutation | Requires approval | Admin or super-admin |
+| `update_project` | Update project title | Mutation | Requires approval | Workspace member |
+| `archive_project` | Archive project document | Mutation | Requires approval | Admin or super-admin |
+| `create_sprint` | Create sprint document with generated sprint number | Mutation | Requires approval | Admin or super-admin |
+| `move_item_to_sprint` | Move issue into target sprint association | Mutation | Requires approval | Admin or super-admin |
+| `close_sprint` | Mark sprint status as closed | Mutation | Requires approval | Admin or super-admin |
+| `update_work_item_fields` | Update issue fields (currently status) | Mutation | Requires approval | Workspace member |
+| `link_documents` | Create document association link | Mutation | Requires approval | Admin or super-admin |
+| `unlink_documents` | Remove document association link | Mutation | Requires approval | Admin or super-admin |
+| `bulk_edit_documents` | Batch update by title (e.g., archive) | Mutation | Requires approval | Admin or super-admin |
+| `create_comment` | Add comment to current document thread | Mutation | Requires approval | Workspace member |
+| `search_entities` | Unified search/list across docs/issues/projects/programs/sprints/workspaces; structured-first with fallback | Read | Executes without approval | Workspace member |
+| `summarize_comment_thread` | Summarize recent comments on document | Read | Executes without approval | Workspace member |
+| `get_timeline_changes` | Read recent workspace audit events | Read | Executes without approval | Workspace member |
+| `validate_workspace_rules` | Compute workspace hygiene checks (untitled docs, orphan issues, stale docs) | Read | Executes without approval | Workspace member |
+| `generate_sprint_review` | Generate sprint summary metrics from current data | Read | Executes without approval | Workspace member |
+| `generate_project_health_report` | Generate project health metrics from current data | Read | Executes without approval | Workspace member |
+
+Approval gate implementation detail: in `ask_permission` mode, only mutation tools require explicit approve/reject; read tools execute immediately.
+
 ---
 
 ## Graph Diagram
