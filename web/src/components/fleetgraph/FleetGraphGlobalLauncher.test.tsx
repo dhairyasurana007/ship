@@ -1,8 +1,15 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { FleetGraphGlobalLauncher } from './FleetGraphGlobalLauncher';
 
 describe('FleetGraphGlobalLauncher', () => {
+  function renderWithQueryClient(ui: ReactElement) {
+    const client = new QueryClient();
+    return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
+  }
+
   it('shows degraded context notice when chat response is degraded', async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
@@ -51,7 +58,7 @@ describe('FleetGraphGlobalLauncher', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<FleetGraphGlobalLauncher />);
+    renderWithQueryClient(<FleetGraphGlobalLauncher />);
     fireEvent.click(screen.getByRole('button', { name: /open fleetgraph assistant window/i }));
     fireEvent.change(screen.getByPlaceholderText('Type your message...'), { target: { value: 'status?' } });
     fireEvent.click(screen.getByRole('button', { name: /send message/i }));
@@ -103,7 +110,7 @@ describe('FleetGraphGlobalLauncher', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    render(<FleetGraphGlobalLauncher />);
+    renderWithQueryClient(<FleetGraphGlobalLauncher />);
     fireEvent.click(screen.getByRole('button', { name: /open fleetgraph assistant window/i }));
 
     await waitFor(() => {

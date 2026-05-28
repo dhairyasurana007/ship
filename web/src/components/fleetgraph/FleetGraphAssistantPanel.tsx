@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { apiPost } from '@/lib/api';
 import { MarkdownMessage } from './MarkdownMessage';
 
@@ -17,6 +18,9 @@ type AccessMode = 'ask_permission' | 'full_access';
 interface FleetGraphChatResponse {
   response?: string;
   requiresConfirm?: boolean;
+  toolResult?: {
+    ok?: boolean;
+  };
 }
 
 function mayRequireMutation(prompt: string): boolean {
@@ -25,6 +29,7 @@ function mayRequireMutation(prompt: string): boolean {
 }
 
 export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGraphAssistantPanelProps) {
+  const queryClient = useQueryClient();
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,6 +37,14 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
   const [accessMode, setAccessMode] = useState<AccessMode>('ask_permission');
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  function invalidateDocumentCaches(): void {
+    void queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['document'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['issues'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['projects'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['programs'], refetchType: 'active' });
+  }
 
   function startThinkingUpdates(): void {
     setThinkingStep('Gathering context...');
@@ -71,6 +84,9 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
         setPendingPrompt(promptValue);
       } else {
         setPendingPrompt(null);
+      }
+      if (data.toolResult?.ok) {
+        invalidateDocumentCaches();
       }
       setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
     } catch {

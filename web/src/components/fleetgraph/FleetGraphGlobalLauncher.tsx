@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost } from '@/lib/api';
 import { MarkdownMessage } from './MarkdownMessage';
 
@@ -31,6 +32,9 @@ interface FleetGraphChatResponse {
   requiresConfirm?: boolean;
   degraded?: boolean;
   degradedReason?: string | null;
+  toolResult?: {
+    ok?: boolean;
+  };
 }
 type AccessMode = 'ask_permission' | 'full_access';
 
@@ -46,6 +50,7 @@ function readRecommendedApprovalAction(approval: FleetGraphApproval): Recommende
 }
 
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -62,6 +67,14 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   const hasDocumentContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
+
+  function invalidateDocumentCaches(): void {
+    void queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['document'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['issues'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['projects'], refetchType: 'active' });
+    void queryClient.invalidateQueries({ queryKey: ['programs'], refetchType: 'active' });
+  }
 
   function mayRequireMutation(promptText: string): boolean {
     const lower = promptText.toLowerCase();
@@ -138,6 +151,9 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         setPendingPrompt(promptValue);
       } else {
         setPendingPrompt(null);
+      }
+      if (data.toolResult?.ok) {
+        invalidateDocumentCaches();
       }
       setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
       if (data.degraded) {
