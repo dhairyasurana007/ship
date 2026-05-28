@@ -129,7 +129,7 @@ export function inferToolCallFromPrompt(input: {
     return { name: 'list_work_items', args: { query: extractQuoted(prompt) ?? '' } };
   }
   if (/(set|update|change).*(status|assignee|priority)/.test(lower)) {
-    const status = extractAfterPattern(prompt, /status\s+to\s+([a-z_ -]+)/i);
+    const status = extractAfterPattern(prompt, /status\s+to\s+([a-z_ -]+?)(?:\s+for\s+|$)/i);
     const title = extractQuoted(prompt);
     if (!title) return null;
     return { name: 'update_work_item_fields', args: { issueTitle: title, status } };
