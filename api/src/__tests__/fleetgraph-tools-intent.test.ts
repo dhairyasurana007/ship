@@ -24,6 +24,18 @@ describe('fleetgraph tool intent inference', () => {
     expect(tool).toBeNull();
   });
 
+  it('infers workspace delete by quoted title', () => {
+    const tool = inferToolCallFromPrompt({
+      prompt: 'Delete all documents called "Untitled"',
+      contextScope: 'workspace',
+    });
+
+    expect(tool).toEqual({
+      name: 'delete_documents_by_title',
+      args: { title: 'Untitled' },
+    });
+  });
+
   it('infers rename as title update in document scope', () => {
     const tool = inferToolCallFromPrompt({
       prompt: 'rename this to "Q2 launch plan"',

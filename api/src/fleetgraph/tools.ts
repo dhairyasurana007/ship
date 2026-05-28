@@ -1,6 +1,6 @@
 import { pool } from '../db/client.js';
 
-export type FleetGraphToolName = 'create_document' | 'update_document' | 'delete_document';
+export type FleetGraphToolName = 'create_document' | 'update_document' | 'delete_document' | 'delete_documents_by_title';
 
 export interface FleetGraphToolCall {
   name: FleetGraphToolName;
@@ -49,6 +49,16 @@ export function inferToolCallFromPrompt(input: {
   }
 
   if (/(delete|remove)\s+/.test(lower) && (hasDocNoun || inDocumentScope)) {
+    if (input.contextScope === 'workspace') {
+      const title = extractQuoted(prompt);
+      if (title) {
+        return {
+          name: 'delete_documents_by_title',
+          args: { title },
+        };
+      }
+      return null;
+    }
     const docId = input.contextScope === 'document' ? input.documentId : null;
     if (!docId) return null;
     return {
@@ -151,6 +161,31 @@ export async function executeToolCall(input: {
       ok: true,
       summary: `Updated document "${row.title}".`,
       data: { documentId: row.id, title: row.title },
+    };
+  }
+
+  if (toolCall.name === 'delete_documents_by_title') {
+    const title = String(toolCall.args.title ?? '').trim();
+    if (!title) return { ok: false, summary: 'Missing title for workspace delete.' };
+
+    const result = await pool.query(
+      `UPDATE documents
+       SET deleted_at = now(), updated_at = now()
+       WHERE workspace_id = $1
+         AND deleted_at IS NULL
+         AND archived_at IS NULL
+         AND title = $2
+       RETURNING id`,
+      [workspaceId, title]
+    );
+    const deletedCount = result.rowCount ?? 0;
+    if (deletedCount === 0) {
+      return { ok: false, summary: `No active documents found with title "${title}".` };
+    }
+    return {
+      ok: true,
+      summary: `Deleted ${deletedCount} document${deletedCount === 1 ? '' : 's'} titled "${title}".`,
+      data: { deletedCount, title },
     };
   }
 
