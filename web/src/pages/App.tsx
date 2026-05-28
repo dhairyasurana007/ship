@@ -377,7 +377,7 @@ export function AppLayout() {
         urgency={actionItemsData?.has_overdue ? 'overdue' : 'due_today'}
       />
       {fleetGraphBannerText && (
-        <div className="flex h-8 items-center bg-sky-900/80 px-4 text-xs text-sky-100">
+        <div className="pointer-events-none fixed right-4 top-4 z-[120] max-w-sm rounded-md border border-sky-300/70 bg-sky-950/95 px-3 py-2 text-xs text-sky-100 shadow-lg">
           {fleetGraphBannerText}
         </div>
       )}
