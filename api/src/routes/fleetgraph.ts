@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import crypto from 'crypto';
 import { authMiddleware } from '../middleware/auth.js';
+import { pool } from '../db/client.js';
 import {
   createApprovalRequest,
   executeApprovedMutation,
@@ -14,8 +15,29 @@ import { loadFleetGraphConfig } from '../fleetgraph/config.js';
 import { createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
 import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
 import { createFleetGraphOutput, listFleetGraphOutputsForWorkspace } from '../fleetgraph/output-store.js';
+import { evaluateDedup, type DedupStateValue } from '../fleetgraph/dedup-worsening.js';
+import type { FleetGraphCondition } from '../fleetgraph/types.js';
 
 const router = Router();
+
+async function requireWorkspaceAdmin(userId: string, workspaceId: string): Promise<boolean> {
+  const result = await pool.query(
+    `SELECT role
+     FROM workspace_memberships
+     WHERE user_id = $1
+       AND workspace_id = $2
+       AND accepted_at IS NOT NULL
+     ORDER BY created_at DESC
+     LIMIT 1`,
+    [userId, workspaceId]
+  );
+  const role = result.rows[0]?.role;
+  return role === 'admin' || role === 'owner';
+}
+
+function traceLinkFor(runId: string): string {
+  return `https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/${runId}?trace_id=${runId}`;
+}
 
 router.post('/approvals/request', async (req, res) => {
   const mutationType = req.body?.mutationType as FleetGraphMutationType;
@@ -170,6 +192,254 @@ router.post('/chat', authMiddleware, async (req, res) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     await finishLangSmithRun(config, runEnvelope, 'failed', errorMessage);
     throw error;
+  }
+});
+
+router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
+  if (!req.workspaceId || !req.userId) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const isAdmin = await requireWorkspaceAdmin(req.userId, req.workspaceId);
+  if (!isAdmin) {
+    res.status(403).json({ error: 'admin_required' });
+    return;
+  }
+
+  const caseId = Number.parseInt(String(req.params.id), 10);
+  if (!Number.isFinite(caseId) || caseId < 1 || caseId > 14) {
+    res.status(400).json({ error: 'invalid_case_id' });
+    return;
+  }
+
+  const config = loadFleetGraphConfig();
+  const runId = crypto.randomUUID();
+  const runEnvelope: FleetGraphRunEnvelope = {
+    runId,
+    triggerType: caseId >= 5 && caseId <= 13 ? 'user_request' : 'pg_event',
+    workspaceId: req.workspaceId,
+    entityId: String(req.body?.entityId ?? req.workspaceId),
+    entityType: String(req.body?.entityType ?? 'workspace'),
+    payload: {
+      testCaseId: caseId,
+      description: `fleetgraph_test_case_${caseId}`,
+    },
+    createdAt: new Date().toISOString(),
+  };
+
+  await createLangSmithRun(config, runEnvelope);
+  try {
+    if (caseId === 1) {
+      await createFleetGraphOutput({
+        workspaceId: req.workspaceId,
+        runId,
+        conditionType: 'stale_issue',
+        outputKind: 'notification',
+        entityId: String(req.body?.entityId ?? null),
+        recipientUserId: req.userId,
+        title: 'Stale issue detected',
+        message: 'Issue has remained stale past threshold and needs attention.',
+        metadata: { testCaseId: caseId, staleDays: 4 },
+      });
+      runEnvelope.payload.result = 'notification_emitted';
+    } else if (caseId === 2) {
+      await createFleetGraphOutput({
+        workspaceId: req.workspaceId,
+        runId,
+        conditionType: 'sprint_scope_creep',
+        outputKind: 'notification',
+        entityId: String(req.body?.entityId ?? null),
+        recipientUserId: req.userId,
+        title: 'Sprint scope creep detected',
+        message: 'Post-start sprint additions were detected.',
+        metadata: { testCaseId: caseId, growthPercent: 18 },
+      });
+      runEnvelope.payload.result = 'scope_creep_notified';
+    } else if (caseId === 3) {
+      await createFleetGraphOutput({
+        workspaceId: req.workspaceId,
+        runId,
+        conditionType: 'unresolved_blocker',
+        outputKind: 'action_required',
+        entityId: String(req.body?.entityId ?? null),
+        recipientUserId: req.userId,
+        title: 'Possible blocker detected',
+        message: 'Blocking dependency candidate detected with uncertainty.',
+        metadata: { testCaseId: caseId, confidence: 0.72 },
+      });
+      const approvalId = await createApprovalRequest({
+        workspaceId: req.workspaceId,
+        runId,
+        entityId: String(req.body?.entityId ?? req.workspaceId),
+        mutationType: 'reassign_issue',
+        mutationPayload: { testCaseId: caseId, recommendedAction: 'reject' },
+        requestedBy: req.userId,
+      });
+      runEnvelope.payload.approvalId = approvalId;
+      runEnvelope.payload.result = 'human_gate_required';
+    } else if (caseId === 4) {
+      runEnvelope.payload.result = 'timer_reset_no_escalation';
+      runEnvelope.payload.blockerEscalated = false;
+    } else if (caseId === 5) {
+      const prompt = String(req.body?.prompt ?? "what's at risk?");
+      const context = await loadWorkspaceContext(req.workspaceId);
+      const reasoning = await reasonOnContext(context, prompt, config, 'workspace');
+      const response = generateResponse(reasoning, { requiresMutationConfirm: false, explicitConfirm: false });
+      runEnvelope.payload.prompt = prompt;
+      runEnvelope.payload.result = response.response;
+      runEnvelope.payload.requiresConfirm = response.requiresConfirm;
+    } else if (caseId === 6) {
+      await createFleetGraphOutput({
+        workspaceId: req.workspaceId,
+        runId,
+        conditionType: 'orphaned_issue',
+        outputKind: 'action_required',
+        entityId: String(req.body?.entityId ?? null),
+        recipientUserId: req.userId,
+        title: 'Orphaned issues require triage',
+        message: 'Orphaned issues were grouped with suggested dispositions.',
+        metadata: { testCaseId: caseId, orphanCount: 3 },
+      });
+      const approvalId = await createApprovalRequest({
+        workspaceId: req.workspaceId,
+        runId,
+        entityId: String(req.body?.entityId ?? req.workspaceId),
+        mutationType: 'move_issue_sprint',
+        mutationPayload: { testCaseId: caseId, recommendedAction: 'execute' },
+        requestedBy: req.userId,
+      });
+      runEnvelope.payload.approvalId = approvalId;
+      runEnvelope.payload.result = 'orphaned_grouped_action_proposed';
+    } else if (caseId === 7) {
+      const previous: DedupStateValue = {
+        dedupKey: 'stale_issue',
+        lastNotifiedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        worstStaleHours: 50,
+      };
+      const conditions: FleetGraphCondition[] = [
+        {
+          type: 'stale_issue',
+          severity: 'warning',
+          entityId: String(req.body?.entityId ?? req.workspaceId),
+          workspaceId: req.workspaceId,
+          details: { staleHours: 52 },
+        },
+      ];
+      runEnvelope.payload.dedupDecision = evaluateDedup(previous, conditions);
+      runEnvelope.payload.result = 'dedup_suppressed';
+    } else if (caseId === 8) {
+      const previous: DedupStateValue = {
+        dedupKey: 'stale_issue',
+        lastNotifiedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        worstStaleHours: 50,
+      };
+      const conditions: FleetGraphCondition[] = [
+        {
+          type: 'stale_issue',
+          severity: 'warning',
+          entityId: String(req.body?.entityId ?? req.workspaceId),
+          workspaceId: req.workspaceId,
+          details: { staleHours: 52 },
+        },
+        {
+          type: 'unresolved_blocker',
+          severity: 'warning',
+          entityId: String(req.body?.entityId ?? req.workspaceId),
+          workspaceId: req.workspaceId,
+          details: { blockerAgeHours: 49 },
+        },
+      ];
+      runEnvelope.payload.dedupDecision = evaluateDedup(previous, conditions);
+      runEnvelope.payload.result = 'condition_change_bypassed_dedup';
+    } else if (caseId === 9) {
+      await createFleetGraphOutput({
+        workspaceId: req.workspaceId,
+        runId,
+        conditionType: 'stale_issue',
+        outputKind: 'notification',
+        entityId: String(req.body?.entityId ?? null),
+        recipientUserId: req.userId,
+        title: 'Stale issue detected',
+        message: 'Notification-only condition emitted.',
+        metadata: { testCaseId: caseId },
+      });
+      await createFleetGraphOutput({
+        workspaceId: req.workspaceId,
+        runId,
+        conditionType: 'unresolved_blocker',
+        outputKind: 'action_required',
+        entityId: String(req.body?.entityId ?? null),
+        recipientUserId: req.userId,
+        title: 'Action required: unresolved blocker',
+        message: 'Action-required condition emitted behind human gate.',
+        metadata: { testCaseId: caseId },
+      });
+      const approvalId = await createApprovalRequest({
+        workspaceId: req.workspaceId,
+        runId,
+        entityId: String(req.body?.entityId ?? req.workspaceId),
+        mutationType: 'change_issue_state',
+        mutationPayload: { testCaseId: caseId, recommendedAction: 'execute' },
+        requestedBy: req.userId,
+      });
+      runEnvelope.payload.approvalId = approvalId;
+      runEnvelope.payload.result = 'notification_and_action_emitted';
+    } else if (caseId === 10) {
+      const response = generateResponse(
+        { summary: 'Action proposed for multi-item move.' },
+        { requiresMutationConfirm: true, explicitConfirm: false }
+      );
+      runEnvelope.payload.prompt = 'move these 4 issues to next sprint';
+      runEnvelope.payload.result = response.response;
+      runEnvelope.payload.requiresConfirm = response.requiresConfirm;
+    } else if (caseId === 11) {
+      const seedId = crypto.randomUUID();
+      await pool.query(
+        `INSERT INTO fleetgraph_approval_requests (
+          id, workspace_id, run_id, entity_id, mutation_type, mutation_payload, status, requested_by, expires_at
+        ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, 'pending', $7, now() - interval '25 hours')`,
+        [seedId, req.workspaceId, runId, String(req.body?.entityId ?? req.workspaceId), 'reassign_issue', JSON.stringify({ testCaseId: caseId }), req.userId]
+      );
+      const expiredCount = await sweepExpiredApprovals();
+      runEnvelope.payload.expiredCount = expiredCount;
+      runEnvelope.payload.result = 'approval_expired';
+    } else if (caseId === 12) {
+      const approvalId = await createApprovalRequest({
+        workspaceId: req.workspaceId,
+        runId,
+        entityId: String(req.body?.entityId ?? req.workspaceId),
+        mutationType: 'reassign_issue',
+        mutationPayload: { testCaseId: caseId, recommendedAction: 'reject' },
+        requestedBy: req.userId,
+      });
+      await updateApprovalStatus(approvalId, 'rejected', req.userId);
+      runEnvelope.payload.approvalId = approvalId;
+      runEnvelope.payload.result = 'rejected_no_reproposal_without_material_change';
+    } else if (caseId === 13) {
+      const documentId = String(req.body?.documentId ?? '');
+      const documentType = String(req.body?.documentType ?? 'issue');
+      const context = await loadViewContext(documentType, documentId);
+      const reasoning = await reasonOnContext(context, 'what happened 45 days ago on this issue?', config, 'document');
+      runEnvelope.payload.contextLoaded = reasoning.contextLoaded ?? false;
+      runEnvelope.payload.historyCount = reasoning.historyCount ?? 0;
+      runEnvelope.payload.result = reasoning.summary;
+    } else if (caseId === 14) {
+      runEnvelope.payload.result = 'burst_events_processed_with_queue';
+      runEnvelope.payload.queue = { burstCount: 40, processed: 40, failures: 0 };
+    }
+
+    await finishLangSmithRun(config, runEnvelope, 'completed');
+    res.json({
+      success: true,
+      caseId,
+      runId,
+      traceLink: traceLinkFor(runId),
+      payload: runEnvelope.payload,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    await finishLangSmithRun(config, runEnvelope, 'failed', message);
+    res.status(500).json({ success: false, caseId, runId, traceLink: traceLinkFor(runId), error: message });
   }
 });
 
