@@ -23,12 +23,24 @@ interface FleetGraphApproval {
   id: string;
   mutation_type: string;
   status: string;
+  mutation_payload?: Record<string, unknown>;
 }
 
 interface FleetGraphChatResponse {
   response?: string;
   degraded?: boolean;
   degradedReason?: string | null;
+}
+
+type RecommendedApprovalAction = 'reject' | 'execute' | null;
+
+function readRecommendedApprovalAction(approval: FleetGraphApproval): RecommendedApprovalAction {
+  const payload = approval.mutation_payload ?? {};
+  const fromCamel = payload.recommendedAction;
+  const fromSnake = payload.recommended_action;
+  const raw = typeof fromCamel === 'string' ? fromCamel : typeof fromSnake === 'string' ? fromSnake : null;
+  if (raw === 'reject' || raw === 'execute') return raw;
+  return null;
 }
 
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
@@ -273,8 +285,12 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                 <p className="text-muted">Status: {a.status}</p>
                 <div className="mt-1 flex gap-1">
                   <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'approve')}>Approve</button>
-                  <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'reject')}>Reject</button>
-                  <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'execute')}>Execute</button>
+                  {readRecommendedApprovalAction(a) === 'reject' && (
+                    <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'reject')}>Reject</button>
+                  )}
+                  {readRecommendedApprovalAction(a) === 'execute' && (
+                    <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'execute')}>Execute</button>
+                  )}
                 </div>
               </div>
             ))}

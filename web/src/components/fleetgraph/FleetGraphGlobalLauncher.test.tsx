@@ -60,4 +60,58 @@ describe('FleetGraphGlobalLauncher', () => {
       expect(screen.getByText(/FleetGraph used degraded context/i)).toBeInTheDocument();
     });
   });
+
+  it('shows reject/execute only when explicitly recommended', async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('/api/csrf-token')) {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ token: 't' }),
+        } as Response;
+      }
+      if (url.includes('/api/fleetgraph/outputs')) {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({ outputs: [] }),
+        } as Response;
+      }
+      if (url.includes('/api/fleetgraph/approvals/pending')) {
+        return {
+          ok: true,
+          status: 200,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({
+            approvals: [
+              { id: 'a1', mutation_type: 'change_issue_state', status: 'pending', mutation_payload: { recommendedAction: 'reject' } },
+              { id: 'a2', mutation_type: 'move_issue_sprint', status: 'approved', mutation_payload: { recommended_action: 'execute' } },
+              { id: 'a3', mutation_type: 'reassign_issue', status: 'pending', mutation_payload: {} },
+            ],
+          }),
+        } as Response;
+      }
+      return {
+        ok: true,
+        status: 200,
+        headers: new Headers({ 'content-type': 'application/json' }),
+        json: async () => ({}),
+      } as Response;
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(<FleetGraphGlobalLauncher />);
+    fireEvent.click(screen.getByRole('button', { name: /open fleetgraph assistant window/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Pending approvals/i)).toBeInTheDocument();
+    });
+
+    expect(screen.getAllByRole('button', { name: 'Approve' })).toHaveLength(3);
+    expect(screen.getAllByRole('button', { name: 'Reject' })).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: 'Execute' })).toHaveLength(1);
+  });
 });
