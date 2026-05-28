@@ -17,7 +17,7 @@ describe('fleetgraph config', () => {
     expect(cfg.langSmithWorkspaceId).toBeNull();
     expect(cfg.maxConcurrency).toBe(2);
     expect(cfg.queueSize).toBe(100);
-    expect(cfg.pollIntervalMs).toBe(120000);
+    expect(cfg.pollIntervalMs).toBe(300000);
   });
 
   it('throws for invalid numeric env values', () => {

@@ -19,6 +19,9 @@ describe('fleetgraph on-demand context', () => {
 
   it('loads current view context without restating context', async () => {
     mockQuery.mockResolvedValueOnce({
+      rows: [{ column_name: 'changed_at' }],
+    });
+    mockQuery.mockResolvedValueOnce({
       rowCount: 1,
       rows: [{ id: 'd1', document_type: 'issue', title: 'Issue A' }],
     });
@@ -32,6 +35,9 @@ describe('fleetgraph on-demand context', () => {
   });
 
   it('honors the 30-day history cap in query', async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ column_name: 'changed_at' }],
+    });
     mockQuery.mockResolvedValueOnce({ rowCount: 0, rows: [] });
     const context = await loadViewContext('issue', 'missing');
     expect(context.history).toEqual([]);

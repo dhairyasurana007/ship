@@ -94,9 +94,8 @@ describe('fleetgraph tool intent inference', () => {
     });
 
     expect(tool).toEqual({
-      name: 'create_document',
+      name: 'create_project',
       args: {
-        documentType: 'project',
         title: 'Mobile infra',
       },
     });
