@@ -4,14 +4,12 @@ import { pool } from '../db/client.js';
 import { logFleetGraphError, logFleetGraphInfo } from './logger.js';
 import { insertFleetGraphRun, updateFleetGraphRunStatus } from './run-store.js';
 import { FleetGraphTriggerQueue } from './trigger-queue.js';
-import { classifyConditions } from './classify-conditions.js';
 import { buildDedupStateValue, evaluateDedup, type DedupStateValue } from './dedup-worsening.js';
 import { createLangSmithRun, finishLangSmithRun } from './langsmith.js';
-import { fetchIssues, fetchSprintState, fetchTeamState, loadProjectContext } from './proactive-context.js';
-import { routeOutputs } from './notifications.js';
 import { persistFleetGraphOutputs } from './output-store.js';
 import { getTraceContext } from './observability.js';
 import { getFleetGraphState, upsertFleetGraphState } from './state-store.js';
+import { getFleetGraphCompiledGraph } from './compiled-graph.js';
 import type { FleetGraphConfig, FleetGraphRunEnvelope, TriggerEvent, TriggerType } from './types.js';
 
 const LISTEN_CHANNEL = 'document_changes';
@@ -22,19 +20,21 @@ export class FleetGraphTriggerRuntime {
   private readonly queue: FleetGraphTriggerQueue;
 
   constructor(private readonly config: FleetGraphConfig) {
+    const graph = getFleetGraphCompiledGraph();
     this.queue = new FleetGraphTriggerQueue(config.maxConcurrency, config.queueSize, async (envelope) => {
       await updateFleetGraphRunStatus(envelope.runId, 'running');
       await createLangSmithRun(this.config, envelope);
       try {
         if (envelope.workspaceId) {
-          await loadProjectContext(envelope.workspaceId);
-          const issues = await fetchIssues(envelope.workspaceId);
-          await fetchSprintState(envelope.workspaceId);
-          await fetchTeamState(envelope.workspaceId);
-          const conditions = classifyConditions(issues);
+          const graphResult = await graph.invoke({
+            mode: 'proactive',
+            workspaceId: envelope.workspaceId,
+          });
+          const conditions = graphResult.conditions;
           envelope.payload.conditions = conditions;
-          envelope.payload.outputs = routeOutputs(conditions);
-          await persistFleetGraphOutputs(envelope.runId, envelope.workspaceId, conditions, envelope.payload.outputs as ReturnType<typeof routeOutputs>);
+          envelope.payload.outputs = graphResult.outputs;
+          envelope.payload.proactiveContext = graphResult.context;
+          await persistFleetGraphOutputs(envelope.runId, envelope.workspaceId, conditions, graphResult.outputs);
           const stateEntityId = envelope.entityId ?? 'workspace';
           const previous = await getFleetGraphState(envelope.workspaceId, stateEntityId, 'dedup');
           const dedup = evaluateDedup((previous?.value ?? null) as DedupStateValue | null, conditions);

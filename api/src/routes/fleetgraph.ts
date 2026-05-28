@@ -15,33 +15,11 @@ import { loadFleetGraphConfig } from '../fleetgraph/config.js';
 import { createLangSmithChildRun, createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
 import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
 import { createFleetGraphOutput, listFleetGraphOutputsForWorkspace } from '../fleetgraph/output-store.js';
-import { executeToolCall, inferToolCallFromPrompt } from '../fleetgraph/tools.js';
 import { evaluateDedup, type DedupStateValue } from '../fleetgraph/dedup-worsening.js';
 import type { FleetGraphCondition } from '../fleetgraph/types.js';
+import { getFleetGraphCompiledGraph } from '../fleetgraph/compiled-graph.js';
 
 const router = Router();
-
-const MUTATION_TOOL_NAMES = new Set([
-  'create_document',
-  'update_document',
-  'delete_document',
-  'delete_documents_by_title',
-  'create_project',
-  'update_project',
-  'archive_project',
-  'create_sprint',
-  'move_item_to_sprint',
-  'close_sprint',
-  'update_work_item_fields',
-  'link_documents',
-  'unlink_documents',
-  'bulk_edit_documents',
-  'create_comment',
-]);
-
-function isMutationToolName(name: string): boolean {
-  return MUTATION_TOOL_NAMES.has(name);
-}
 
 async function requireWorkspaceAdmin(userId: string, workspaceId: string): Promise<boolean> {
   const result = await pool.query(
@@ -212,6 +190,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
     return;
   }
   const config = loadFleetGraphConfig();
+  const graph = getFleetGraphCompiledGraph();
   const runEnvelope: FleetGraphRunEnvelope = {
     runId: crypto.randomUUID(),
     triggerType: 'user_request',
@@ -229,51 +208,29 @@ router.post('/chat', authMiddleware, async (req, res) => {
   await createLangSmithRun(config, runEnvelope);
 
   try {
-    const toolCall = inferToolCallFromPrompt({
+    const graphResult = await graph.invoke({
+      mode: 'on_demand',
+      workspaceId: req.workspaceId,
+      userId: req.userId ?? '',
       prompt,
       contextScope,
-      documentId: contextScope === 'document' ? documentId : undefined,
+      accessMode,
+      requiresMutationConfirm,
+      explicitConfirm,
+      config,
+      documentType,
+      documentId,
     });
-    if (toolCall) {
-      const shouldRequireConfirm =
-        accessMode === 'ask_permission'
-          ? isMutationToolName(toolCall.name)
-          : requiresMutationConfirm;
-      if (shouldRequireConfirm && !explicitConfirm) {
-        runEnvelope.payload = {
-          ...runEnvelope.payload,
-          accessMode,
-          toolCall,
-          requiresConfirm: true,
-        };
-        await finishLangSmithRun(config, runEnvelope, 'completed');
-        res.json({
-          contextWindowDays: 30,
-          contextScope,
-          degraded: false,
-          degradedReason: null,
-          context: null,
-          reasoning: { summary: `Action proposed: ${toolCall.name}` },
-          response: `Action proposed (${toolCall.name}). Explicit confirm is required before mutation.`,
-          requiresConfirm: true,
-          toolCall,
-        });
-        return;
-      }
 
+    if (graphResult.kind === 'tool_executed' && graphResult.toolCall && graphResult.toolResult) {
       const childRunId = crypto.randomUUID();
       await createLangSmithChildRun(
         config,
         runEnvelope.runId,
         childRunId,
-        `tool.${toolCall.name}`,
-        { ...toolCall.args, workspaceId: req.workspaceId }
+        `tool.${graphResult.toolCall.name}`,
+        { ...graphResult.toolCall.args, workspaceId: req.workspaceId }
       );
-      const toolResult = await executeToolCall({
-        workspaceId: req.workspaceId,
-        userId: req.userId ?? '',
-        toolCall,
-      });
       await finishLangSmithRun(
         config,
         {
@@ -282,95 +239,75 @@ router.post('/chat', authMiddleware, async (req, res) => {
           workspaceId: req.workspaceId,
           entityId: documentId || req.workspaceId,
           entityType: contextScope,
-          payload: { tool: toolCall.name, ...toolResult.data },
+          payload: { tool: graphResult.toolCall.name, ...graphResult.toolResult.data },
           createdAt: new Date().toISOString(),
         },
-        toolResult.ok ? 'completed' : 'failed',
-        toolResult.ok ? undefined : toolResult.summary
+        graphResult.toolResult.ok ? 'completed' : 'failed',
+        graphResult.toolResult.ok ? undefined : graphResult.toolResult.summary
       );
-
-      runEnvelope.payload = {
-        ...runEnvelope.payload,
-        toolCall,
-        toolResult,
-        requiresConfirm: false,
-      };
-      await finishLangSmithRun(config, runEnvelope, 'completed');
-      res.json({
-        contextWindowDays: 30,
-        contextScope,
-        degraded: false,
-        degradedReason: null,
-        context: null,
-        reasoning: { summary: `Executed ${toolCall.name}` },
-        response: toolResult.summary,
-        requiresConfirm: false,
-        toolCall,
-        toolResult,
-      });
-      return;
     }
 
-    const context =
-      contextScope === 'workspace'
-        ? await loadWorkspaceContext(req.workspaceId)
-        : await loadViewContext(documentType, documentId);
-    const reasoning = await reasonOnContext(context, prompt, config, contextScope);
-
-    const reasoningChildRunId = crypto.randomUUID();
-    const llmUsed = Boolean((reasoning as { llmUsed?: unknown }).llmUsed);
-    const llmName = llmUsed ? 'reasoning.llm' : 'reasoning.fallback';
-    const llmRunType = llmUsed ? 'llm' : 'chain';
-    await createLangSmithChildRun(
-      config,
-      runEnvelope.runId,
-      reasoningChildRunId,
-      llmName,
-      {
-        scope: contextScope,
-        provider: (reasoning as { provider?: unknown }).provider ?? null,
-        model: (reasoning as { model?: unknown }).model ?? null,
-        systemPrompt: (reasoning as { systemPrompt?: unknown }).systemPrompt ?? null,
-        userPrompt: (reasoning as { userPrompt?: unknown }).userPrompt ?? null,
-      },
-      llmRunType
-    );
-    await finishLangSmithRun(
-      config,
-      {
-        runId: reasoningChildRunId,
-        triggerType: 'user_request',
-        workspaceId: req.workspaceId,
-        entityId: contextScope === 'document' ? documentId : req.workspaceId,
-        entityType: contextScope,
-        payload: {
-          llmUsed,
-          llmSummary: (reasoning as { llmSummary?: unknown }).llmSummary ?? null,
-          fallbackSummary: (reasoning as { summary?: unknown }).summary ?? null,
+    if (graphResult.kind === 'reasoned' && graphResult.reasoning) {
+      const reasoning = graphResult.reasoning;
+      const reasoningChildRunId = crypto.randomUUID();
+      const llmUsed = Boolean((reasoning as { llmUsed?: unknown }).llmUsed);
+      const llmName = llmUsed ? 'reasoning.llm' : 'reasoning.fallback';
+      const llmRunType = llmUsed ? 'llm' : 'chain';
+      await createLangSmithChildRun(
+        config,
+        runEnvelope.runId,
+        reasoningChildRunId,
+        llmName,
+        {
+          scope: contextScope,
+          provider: (reasoning as { provider?: unknown }).provider ?? null,
+          model: (reasoning as { model?: unknown }).model ?? null,
+          systemPrompt: (reasoning as { systemPrompt?: unknown }).systemPrompt ?? null,
+          userPrompt: (reasoning as { userPrompt?: unknown }).userPrompt ?? null,
         },
-        createdAt: new Date().toISOString(),
-      },
-      'completed'
-    );
-
-    const response = generateResponse(reasoning, { requiresMutationConfirm, explicitConfirm });
+        llmRunType
+      );
+      await finishLangSmithRun(
+        config,
+        {
+          runId: reasoningChildRunId,
+          triggerType: 'user_request',
+          workspaceId: req.workspaceId,
+          entityId: contextScope === 'document' ? documentId : req.workspaceId,
+          entityType: contextScope,
+          payload: {
+            llmUsed,
+            llmSummary: (reasoning as { llmSummary?: unknown }).llmSummary ?? null,
+            fallbackSummary: (reasoning as { summary?: unknown }).summary ?? null,
+          },
+          createdAt: new Date().toISOString(),
+        },
+        'completed'
+      );
+    }
 
     runEnvelope.payload = {
       ...runEnvelope.payload,
-      contextLoaded: Boolean(context.document),
-      historyCount: Array.isArray(context.history) ? context.history.length : 0,
-      requiresConfirm: response.requiresConfirm,
+      graphKind: graphResult.kind,
+      toolCall: graphResult.toolCall,
+      toolResult: graphResult.toolResult,
+      contextLoaded: graphResult.contextLoaded ?? null,
+      historyCount: graphResult.historyCount ?? null,
+      requiresConfirm: graphResult.requiresConfirm,
     };
     await finishLangSmithRun(config, runEnvelope, 'completed');
 
     res.json({
       contextWindowDays: 30,
-      contextScope,
-      degraded: Boolean((context as { degraded?: boolean }).degraded),
-      degradedReason: (context as { degradedReason?: string }).degradedReason ?? null,
-      context,
-      reasoning,
-      ...response,
+      contextScope: graphResult.contextScope,
+      degraded: graphResult.degraded,
+      degradedReason: graphResult.degradedReason,
+      context: null,
+      reasoning: graphResult.reasoning ?? { summary: graphResult.response },
+      response: graphResult.response,
+      requiresConfirm: graphResult.requiresConfirm,
+      toolCall: graphResult.toolCall,
+      toolResult: graphResult.toolResult,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
