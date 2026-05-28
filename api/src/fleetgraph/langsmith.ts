@@ -68,7 +68,7 @@ export async function createLangSmithRun(config: FleetGraphConfig, envelope: Fle
       signal: controller.signal,
       body: JSON.stringify({
         id: envelope.runId,
-        name: 'fleetgraph_run',
+        name: `fleetgraph_run[${envelope.triggerType}]`,
         run_type: 'chain',
         inputs: {
           triggerType: envelope.triggerType,
