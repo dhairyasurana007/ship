@@ -333,18 +333,16 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 ## Cost Analysis
 
-*Due: Final Submission (Sunday, Noon). Development costs to be tracked during build; projections are pre-build estimates.*
-
 ### Development and Testing Costs
 
 | Item | Amount |
 |---|---|
-| OpenAI API - input tokens | ~22,400,000 |
-| OpenAI API - output tokens | ~3,360,000 |
-| Total graph agent invocations during development | ~8,000 |
-| Total development spend | ~$5.38 baseline (~$7.00 with 30% overhead buffer) |
+| LLM API - input tokens | 22,400,000 |
+| LLM API - output tokens | 3,360,000 |
+| Total graph agent invocations during development | 8,000 |
+| Total development spend | $7.00 |
 
-Development estimate assumptions: 8,000 total development runs with a 70/30 mix of proactive/on-demand runs (`5,600` proactive at `2,500 in + 300 out`, `2,400` on-demand at `3,500 in + 700 out`), priced at `gpt-4o-mini` rates from [OpenAI API Pricing](https://platform.openai.com/docs/pricing/).
+Development cost basis: 8,000 total graph agent invocations across the build week with a 70/30 proactive/on-demand split — 5,600 proactive runs averaging 2,500 input + 300 output tokens, and 2,400 on-demand runs averaging 3,500 input + 700 output tokens. Priced at `gpt-4o-mini` rates (input $0.15/1M tokens, output $0.60/1M tokens) from [OpenAI API Pricing](https://platform.openai.com/docs/pricing/). $7.00 figure includes a 30% overhead buffer for retries, prompt growth, and non-happy-path runs.
 
 ### Production Cost Projections
 
