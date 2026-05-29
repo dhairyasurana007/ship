@@ -82,6 +82,35 @@ export interface OnDemandGraphOutput {
 
 export type FleetGraphInvokeOutput = ProactiveGraphOutput | OnDemandGraphOutput;
 
+/**
+ * Returns true when a prompt looks like random keyboard noise rather than a
+ * meaningful request — e.g. "a;sldfj;alsfj;aewljr;alkjf".
+ *
+ * Heuristics (any one triggers):
+ *  - Empty or whitespace-only after trimming
+ *  - >30 % of non-space chars are non-alphanumeric (punctuation mash)
+ *  - String has >10 letters but <10 % are vowels (consonant-only string)
+ */
+function looksLikeGibberish(prompt: string): boolean {
+  const trimmed = prompt.trim();
+  if (trimmed.length === 0) return true;
+
+  const noSpaces = trimmed.replace(/\s+/g, '');
+  if (noSpaces.length === 0) return true;
+
+  const nonAlphanumeric = (noSpaces.match(/[^a-zA-Z0-9]/g) ?? []).length;
+  if (nonAlphanumeric / noSpaces.length > 0.3) return true;
+
+  const letters = (noSpaces.match(/[a-zA-Z]/g) ?? []).length;
+  const vowels = (noSpaces.match(/[aeiouAEIOU]/g) ?? []).length;
+  if (letters > 10 && vowels / letters < 0.1) return true;
+
+  return false;
+}
+
+const GIBBERISH_RESPONSE =
+  "I'm sorry, I don't understand what you're talking about, can you please try again?";
+
 class FleetGraphCompiledGraph {
   async invoke(input: ProactiveGraphInput): Promise<ProactiveGraphOutput>;
   async invoke(input: OnDemandGraphInput): Promise<OnDemandGraphOutput>;
@@ -113,6 +142,19 @@ class FleetGraphCompiledGraph {
         context: {
           project: projectContext,
         },
+      };
+    }
+
+    // Reject gibberish before doing any tool inference or LLM work
+    if (looksLikeGibberish(input.prompt)) {
+      return {
+        mode: 'on_demand',
+        kind: 'reasoned',
+        contextScope: input.contextScope,
+        response: GIBBERISH_RESPONSE,
+        requiresConfirm: false,
+        degraded: false,
+        degradedReason: null,
       };
     }
 
