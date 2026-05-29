@@ -3,7 +3,6 @@ name: FleetGraph Evals
 on:
   workflow_dispatch:
   push:
-    branches: [early-submission, mvp]
     paths:
       - ".github/workflows/fleetgraph-evals.yml"
       - "FLEETGRAPH.md"
@@ -17,10 +16,20 @@ on:
       - "api/src/db/migrations/042_fleetgraph_mvp_tables.sql"
       - "api/src/db/migrations/043_fleetgraph_approval_requests.sql"
       - "api/src/db/migrations/044_fleetgraph_outputs.sql"
+      - "api/src/db/migrations/045_fleetgraph_runs_trigger_type.sql"
+      - "api/src/db/migrations/046_fleetgraph_state_entity_id.sql"
+      - "api/src/db/migrations/047_fleetgraph_pg_notify_trigger.sql"
       - "api/package.json"
       - "web/package.json"
       - "package.json"
       - "pnpm-lock.yaml"
+  pull_request:
+    paths:
+      - "api/src/fleetgraph/**"
+      - "api/src/routes/fleetgraph.ts"
+      - "api/src/__tests__/fleetgraph-*.test.ts"
+      - "web/src/components/fleetgraph/**"
+      - "e2e/fleetgraph-*.spec.ts"
 
 jobs:
   fleetgraph-api-evals:
@@ -72,6 +81,9 @@ jobs:
           src/__tests__/fleetgraph-observability.test.ts
           src/__tests__/fleetgraph-on-demand-context.test.ts
           src/__tests__/fleetgraph-proactive-classification.test.ts
+          src/__tests__/fleetgraph-search-planner.test.ts
+          src/__tests__/fleetgraph-search-routing.test.ts
+          src/__tests__/fleetgraph-tool-matrix-routing.test.ts
           src/__tests__/fleetgraph-tools-intent.test.ts
           src/__tests__/fleetgraph-trigger-queue.test.ts
           src/__tests__/fleetgraph-trigger-runtime.test.ts
