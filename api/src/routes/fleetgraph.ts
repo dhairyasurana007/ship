@@ -22,18 +22,21 @@ import { getFleetGraphCompiledGraph } from '../fleetgraph/compiled-graph.js';
 const router = Router();
 
 async function requireWorkspaceAdmin(userId: string, workspaceId: string): Promise<boolean> {
-  const result = await pool.query(
-    `SELECT role
-     FROM workspace_memberships
-     WHERE user_id = $1
-       AND workspace_id = $2
-       AND accepted_at IS NOT NULL
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [userId, workspaceId]
-  );
-  const role = result.rows[0]?.role;
-  return role === 'admin' || role === 'owner';
+  try {
+    const result = await pool.query(
+      `SELECT role
+       FROM workspace_memberships
+       WHERE user_id = $1
+         AND workspace_id = $2
+       ORDER BY created_at DESC
+       LIMIT 1`,
+      [userId, workspaceId]
+    );
+    const role = result.rows[0]?.role;
+    return role === 'admin' || role === 'owner';
+  } catch {
+    return false;
+  }
 }
 
 function traceLinkFor(runId: string): string {
