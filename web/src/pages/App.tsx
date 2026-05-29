@@ -67,6 +67,11 @@ export function AppLayout() {
   const [projectSetupWizardOpen, setProjectSetupWizardOpen] = useState(false);
   const [actionItemsModalOpen, setActionItemsModalOpen] = useState(false);
   const [actionItemsModalShownOnLoad, setActionItemsModalShownOnLoad] = useState(false);
+  // Bug #16: persist which item IDs the user has already seen so we only re-open
+  // when genuinely new items appear (not on every navigation/reload).
+  const seenActionItemIdsRef = useRef<Set<string>>(
+    new Set(JSON.parse(localStorage.getItem('ship:seenActionItemIds') ?? '[]') as string[])
+  );
   const [fleetGraphRuntimeStatus, setFleetGraphRuntimeStatus] = useState<FleetGraphRuntimeStatus | null>(null);
 
   // Session timeout handling
@@ -126,15 +131,20 @@ export function AppLayout() {
     };
   }, []);
 
-  // Show action items modal on initial load if there are pending items
-  // Disabled when localStorage flag is set (used by E2E tests to avoid blocking interactions)
+  // Show action items modal only when there are items the user hasn't seen yet.
+  // Disabled when localStorage flag is set (used by E2E tests to avoid blocking interactions).
+  // Bug #16 fix: compare current item IDs against the persisted seen-set so the
+  // modal doesn't re-open on every navigation/reload for already-dismissed items.
   useEffect(() => {
     if (localStorage.getItem('ship:disableActionItemsModal') === 'true') return;
-    if (!actionItemsModalShownOnLoad && hasActionItems && actionItemsData?.items) {
+    if (actionItemsModalShownOnLoad || !actionItemsData?.items) return;
+    const currentIds = actionItemsData.items.map((item: { id: string }) => item.id);
+    const hasNewItems = currentIds.some((id) => !seenActionItemIdsRef.current.has(id));
+    if (hasNewItems) {
       setActionItemsModalOpen(true);
       setActionItemsModalShownOnLoad(true);
     }
-  }, [actionItemsModalShownOnLoad, hasActionItems, actionItemsData?.items]);
+  }, [actionItemsModalShownOnLoad, actionItemsData?.items]);
 
   // Accessibility: focus management on navigation
   useFocusOnNavigate();
@@ -661,7 +671,14 @@ export function AppLayout() {
       {/* Action Items Modal - shows on login when user has pending accountability tasks */}
       <ActionItemsModal
         open={actionItemsModalOpen}
-        onClose={() => setActionItemsModalOpen(false)}
+        onClose={() => {
+          // Mark all currently visible items as seen so the modal won't reopen for them
+          const currentIds = actionItemsData?.items?.map((item: { id: string }) => item.id) ?? [];
+          const updated = new Set([...seenActionItemIdsRef.current, ...currentIds]);
+          seenActionItemIdsRef.current = updated;
+          try { localStorage.setItem('ship:seenActionItemIds', JSON.stringify([...updated])); } catch { /* quota */ }
+          setActionItemsModalOpen(false);
+        }}
       />
 
       <FleetGraphGlobalLauncher

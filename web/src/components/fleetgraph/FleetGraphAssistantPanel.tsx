@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiPost } from '@/lib/api';
 import { MarkdownMessage } from './MarkdownMessage';
@@ -31,12 +31,33 @@ function mayRequireMutation(prompt: string): boolean {
 export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGraphAssistantPanelProps) {
   const queryClient = useQueryClient();
   const [prompt, setPrompt] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    try {
+      const stored = sessionStorage.getItem(`fg_chat_${documentId}`);
+      return stored ? (JSON.parse(stored) as ChatMessage[]) : [];
+    } catch {
+      return [];
+    }
+  });
   const [loading, setLoading] = useState(false);
   const [thinkingStep, setThinkingStep] = useState<string | null>(null);
   const [accessMode, setAccessMode] = useState<AccessMode>('ask_permission');
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const loadingRef = useRef(false);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, loading]);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(`fg_chat_${documentId}`, JSON.stringify(messages));
+    } catch {
+      // sessionStorage unavailable — no-op
+    }
+  }, [messages, documentId]);
 
   function invalidateDocumentCaches(): void {
     void queryClient.invalidateQueries({ queryKey: ['documents'], refetchType: 'active' });
@@ -60,8 +81,10 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
   }
 
   async function send(explicitPrompt?: string, explicitConfirm = false): Promise<void> {
+    if (loadingRef.current) return;
     const promptValue = (explicitPrompt ?? prompt).trim();
     if (!promptValue) return;
+    loadingRef.current = true;
     if (!explicitPrompt) {
       setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
       setPrompt('');
@@ -94,6 +117,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
     } finally {
       stopThinkingUpdates();
       setLoading(false);
+      loadingRef.current = false;
     }
   }
 
@@ -153,6 +177,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
             </div>
           </div>
         )}
+        <div ref={messagesEndRef} />
       </div>
       <textarea
         value={prompt}

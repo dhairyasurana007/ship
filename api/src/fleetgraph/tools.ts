@@ -34,9 +34,13 @@ export interface FleetGraphToolResult {
   data?: Record<string, unknown>;
 }
 
+const MAX_TITLE_LENGTH = 255;
+
 function extractQuoted(prompt: string): string | null {
   const match = prompt.match(/"([^"]+)"/);
-  return match?.[1] ?? null;
+  const value = match?.[1] ?? null;
+  // Bug #13: cap titles at 255 chars to match DB varchar limit
+  return value ? value.substring(0, MAX_TITLE_LENGTH) : null;
 }
 
 function extractAfterPattern(prompt: string, pattern: RegExp): string | null {
@@ -238,7 +242,12 @@ export function inferToolCallFromPrompt(input: {
     if (!docId) return null;
     return { name: 'summarize_comment_thread', args: { documentId: docId } };
   }
-  if (/(timeline|history|audit)/.test(lower)) {
+  // A prompt that starts with a question word is a read request, not a command.
+  // Prevents "what documents were deleted?" from routing to delete_document,
+  // and "what happened in the history?" from routing to get_timeline_changes.
+  const looksLikeQuestion = /^(what|which|where|when|who|how|can|could|would|is|are|do|does|did|have|has|tell me|show me)\b/i.test(lower);
+
+  if (!looksLikeQuestion && /(timeline|history|audit)/.test(lower)) {
     return { name: 'get_timeline_changes', args: {} };
   }
   if (/(workspace rules|validate workspace|hygiene)/.test(lower)) {
@@ -253,12 +262,15 @@ export function inferToolCallFromPrompt(input: {
     return { name: 'generate_project_health_report', args: { projectTitle } };
   }
 
-  if (/(create|add|new)\s+/.test(lower) && hasDocNoun) {
+  // Exclude prompts that begin with an update/rename verb — the "new" keyword
+  // inside a quoted title (e.g. 'rename this to "My New Title"') would otherwise
+  // incorrectly match the create branch before the rename branch is reached.
+  if (/(create|add|new)\s+/.test(lower) && hasDocNoun && !/(update|edit|modify|rename|change)\s+/.test(lower)) {
     const title = extractQuoted(prompt) ?? 'Untitled';
     return { name: 'create_document', args: { documentType: extractDocType(lower), title } };
   }
 
-  if (/(delete|remove)\s+/.test(lower) && (hasDocNoun || inDocumentScope)) {
+  if (!looksLikeQuestion && /(delete|remove)\s+/.test(lower) && (hasDocNoun || inDocumentScope)) {
     if (input.contextScope === 'workspace') {
       const title = extractQuoted(prompt);
       if (!title) return null;
@@ -280,6 +292,8 @@ export function inferToolCallFromPrompt(input: {
       ? extractAfterPattern(prompt, /(?:update|change|set|edit|modify)(?:\s+the)?\s+(?:content|text|body)(?:\s+to)?\s+(.+)$/i)
       : null;
     const contentText = contentFromQuoted ?? contentFromUnquoted;
+    // If neither title nor content was extracted, fall through to LLM — don't show a useless confirm
+    if (!title && !contentText) return null;
     return {
       name: 'update_document',
       args: {
@@ -586,9 +600,16 @@ export async function executeToolCall(input: {
       if (!mergedById.has(id)) mergedById.set(id, row);
     }
     const results = Array.from(mergedById.values()).slice(0, plan.limit);
+    const titleSnippet = results
+      .slice(0, 5)
+      .map((r) => `"${String(r.title ?? 'Untitled')}"`)
+      .join(', ');
+    const ellipsis = results.length > 5 ? `, …` : '';
     return {
       ok: true,
-      summary: `Found ${results.length} matching entities.`,
+      summary: results.length === 0
+        ? 'No matching entities found.'
+        : `Found ${results.length} matching entit${results.length === 1 ? 'y' : 'ies'}: ${titleSnippet}${ellipsis}.`,
       data: { results, plan },
     };
   }

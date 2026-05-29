@@ -137,7 +137,9 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     setDegradedNotice(null);
     startThinkingUpdates();
     try {
-      const contextScope = hasDocumentContext ? 'document' : 'workspace';
+      // Global launcher always uses workspace scope for cross-workspace visibility.
+      // (Bug #10: was incorrectly using document scope when a documentId was present)
+      const contextScope = 'workspace';
       const requiresMutationConfirm = accessMode === 'ask_permission' && mayRequireMutation(promptValue);
       const res = await apiPost('/api/fleetgraph/chat', {
         accessMode,
@@ -222,7 +224,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             </button>
           </div>
           <p className="mt-2 text-xs text-muted">
-            Context scope: {hasDocumentContext ? 'document-level (current document).' : 'workspace-level (current workspace only).'}
+            Context scope: workspace-level.
           </p>
           {degradedNotice && (
             <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
@@ -230,7 +232,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             </p>
           )}
           <div className="mt-2 h-56 space-y-2 overflow-y-auto rounded border border-border bg-muted/20 p-2">
-            {messages.length === 0 && <p className="text-xs text-muted">Ask about the current document context.</p>}
+            {messages.length === 0 && <p className="text-xs text-muted">Ask anything about your workspace — issues, sprints, projects, or team status.</p>}
             {messages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={message.role === 'assistant' ? 'flex justify-start' : 'flex justify-end'}>
                 <div

@@ -91,25 +91,52 @@ export type FleetGraphInvokeOutput = ProactiveGraphOutput | OnDemandGraphOutput;
  *  - >30 % of non-space chars are non-alphanumeric (punctuation mash)
  *  - String has >10 letters but <10 % are vowels (consonant-only string)
  */
-function looksLikeGibberish(prompt: string): boolean {
+export function looksLikeGibberish(prompt: string): boolean {
   const trimmed = prompt.trim();
   if (trimmed.length === 0) return true;
 
   const noSpaces = trimmed.replace(/\s+/g, '');
   if (noSpaces.length === 0) return true;
 
-  const nonAlphanumeric = (noSpaces.match(/[^a-zA-Z0-9]/g) ?? []).length;
-  if (nonAlphanumeric / noSpaces.length > 0.3) return true;
+  // Only count ASCII non-alphanumeric as noise — Unicode letters/digits are valid
+  const nonAlphanumericNoise = (noSpaces.match(/[^\p{L}\p{N}]/gu) ?? []).length;
+  if (nonAlphanumericNoise / noSpaces.length > 0.3) return true;
 
   const letters = (noSpaces.match(/[a-zA-Z]/g) ?? []).length;
   const vowels = (noSpaces.match(/[aeiouAEIOU]/g) ?? []).length;
   if (letters > 10 && vowels / letters < 0.1) return true;
+
+  // Long consecutive consonant runs (≥4) appearing 2+ times → keyboard mash
+  const longConsonantRuns = (noSpaces.match(/[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}/g) ?? []).length;
+  if (longConsonantRuns >= 2) return true;
 
   return false;
 }
 
 const GIBBERISH_RESPONSE =
   "I'm sorry, I don't understand what you're talking about, can you please try again?";
+
+function buildConfirmMessage(toolCall: FleetGraphToolCall): string {
+  const name = toolCall.name;
+  const args = toolCall.args;
+  const title = typeof args.title === 'string' ? `"${args.title}"` : null;
+  const docId = typeof args.documentId === 'string' ? args.documentId.substring(0, 8) + '...' : null;
+  switch (name) {
+    case 'create_document': return `Create ${args.documentType ?? 'document'} titled ${title ?? '"Untitled"'}?`;
+    case 'update_document': return `Update document${title ? ` title to ${title}` : ''}${docId ? ` (${docId})` : ''}?`;
+    case 'delete_document': return `Delete current document (${docId ?? 'this document'})?`;
+    case 'delete_documents_by_title': return `Delete all documents titled ${title ?? '(unknown)'}?`;
+    case 'move_item_to_sprint': return `Move issue "${args.issueTitle}" to sprint "${args.targetSprintTitle}"?`;
+    case 'close_sprint': return `Close sprint (${docId ?? 'current sprint'})?`;
+    case 'create_sprint': return `Create sprint titled ${title ?? '"Untitled"'}?`;
+    case 'create_project': return `Create project titled ${title ?? '"Untitled"'}?`;
+    case 'archive_project': return `Archive project (${docId ?? 'current project'})?`;
+    case 'create_comment': return `Add comment to current document?`;
+    case 'update_work_item_fields': return `Update status for "${args.issueTitle}" to "${args.status}"?`;
+    case 'bulk_edit_documents': return `Bulk edit documents titled ${title ?? '(unknown)'}?`;
+    default: return `Confirm action: ${name}?`;
+  }
+}
 
 class FleetGraphCompiledGraph {
   async invoke(input: ProactiveGraphInput): Promise<ProactiveGraphOutput>;
@@ -175,7 +202,7 @@ class FleetGraphCompiledGraph {
           mode: 'on_demand',
           kind: 'tool_confirm',
           contextScope: input.contextScope,
-          response: `Action proposed (${toolCall.name}). Explicit confirm is required before mutation.`,
+          response: buildConfirmMessage(toolCall),
           requiresConfirm: true,
           degraded: false,
           degradedReason: null,
