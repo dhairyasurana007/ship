@@ -250,8 +250,13 @@ class FleetGraphCompiledGraph {
     }
 
     const reasoning = await reasonOnContext(context, input.prompt, input.config, input.contextScope);
+    // When no tool was identified (we're in the LLM reasoning path), there is nothing
+    // concrete to confirm — suppress the mutation-confirm flag so the LLM can respond
+    // directly instead of showing a useless "Action proposed" confirm dialog.
+    // (Bug #17 root cause: client sends requiresMutationConfirm=true for any "update"
+    //  prompt; without this guard, the LLM path echoes it back even when no tool fired.)
     const response = generateResponse(reasoning, {
-      requiresMutationConfirm: input.requiresMutationConfirm,
+      requiresMutationConfirm: false,
       explicitConfirm: input.explicitConfirm,
     });
 
