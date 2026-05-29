@@ -29,11 +29,10 @@ import { looksLikeGibberish } from '../compiled-graph.js';
 
 describe('looksLikeGibberish', () => {
   it(
-    // Bug #1: "a;sldfj;alsfj;aewljr;alkjf" has ~53% non-alphanumeric chars
-    // (semicolons) yet the old threshold was >30%, which *should* catch it —
-    // but at the time of the bug the threshold was documented as only 15%.
-    // Fix: confirm the threshold is >30% non-alphanumeric (not >15%).
-    'Bug #1 — semicolon-mash "a;sldfj;alsfj;aewljr;alkjf" should return true',
+    // Bug #1: "a;sldfj;alsfj;aewljr;alkjf" has ~15% non-alphanumeric (semicolons)
+    // which is below the 30% noise threshold, but it contains "sldfj" — a 5-consonant
+    // run — which triggers the consonant-cluster heuristic (≥5 chars, ≥1 occurrence).
+    'Bug #1 — consonant-mash "a;sldfj;alsfj;aewljr;alkjf" should return true',
     () => {
       expect(looksLikeGibberish('a;sldfj;alsfj;aewljr;alkjf')).toBe(true);
     }

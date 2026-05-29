@@ -106,9 +106,11 @@ export function looksLikeGibberish(prompt: string): boolean {
   const vowels = (noSpaces.match(/[aeiouAEIOU]/g) ?? []).length;
   if (letters > 10 && vowels / letters < 0.1) return true;
 
-  // Long consecutive consonant runs (≥4) appearing 2+ times → keyboard mash
-  const longConsonantRuns = (noSpaces.match(/[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{4,}/g) ?? []).length;
-  if (longConsonantRuns >= 2) return true;
+  // Long consecutive consonant runs (≥5) appearing 1+ times → keyboard mash.
+  // Threshold is 5 not 4: common English words contain 4-consonant clusters
+  // (e.g. "workspace" → rksp, "recently" → ntly) which would false-positive at 4.
+  const longConsonantRuns = (noSpaces.match(/[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{5,}/g) ?? []).length;
+  if (longConsonantRuns >= 1) return true;
 
   return false;
 }
