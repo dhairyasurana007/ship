@@ -107,9 +107,9 @@ export function looksLikeGibberish(prompt: string): boolean {
   if (letters > 10 && vowels / letters < 0.1) return true;
 
   // Long consecutive consonant runs (≥5) appearing 1+ times → keyboard mash.
-  // Threshold is 5 not 4: common English words contain 4-consonant clusters
-  // (e.g. "workspace" → rksp, "recently" → ntly) which would false-positive at 4.
-  const longConsonantRuns = (noSpaces.match(/[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{5,}/g) ?? []).length;
+  // Use the ORIGINAL trimmed string (not noSpaces) so word boundaries are preserved —
+  // concatenating spaces-removed words creates false cross-word runs like "recentlydeleted" → ntlyd.
+  const longConsonantRuns = (trimmed.match(/[bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ]{5,}/g) ?? []).length;
   if (longConsonantRuns >= 1) return true;
 
   return false;
