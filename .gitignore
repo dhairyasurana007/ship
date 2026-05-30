@@ -127,6 +127,3 @@ audit-evidence/
 
 # Temporary scratch files from dev/testing sessions
 tmp_*
-
-# Local docker-compose overrides
-docker-compose.local.yml
