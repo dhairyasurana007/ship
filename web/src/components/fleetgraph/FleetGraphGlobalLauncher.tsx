@@ -103,11 +103,22 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   }
 
   useEffect(() => {
-    // Small delay ensures auth session cookie is confirmed before fetching
     const t = setTimeout(() => {
       void loadOutputs().then(() => void loadApprovals());
     }, 300);
     return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    function handleOpen() {
+      setOpen(true);
+      setMessages((prev) => prev.length === 0 ? [{ role: 'assistant', text: WELCOME_MESSAGE }] : prev);
+      void loadOutputs();
+      void loadApprovals();
+    }
+    window.addEventListener('fleetgraph:open', handleOpen);
+    return () => window.removeEventListener('fleetgraph:open', handleOpen);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -278,7 +289,28 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             </p>
           )}
           <div className="mt-2 h-56 space-y-2 overflow-y-auto rounded border border-border bg-muted/20 p-2">
-            {messages.length === 0 && <p className="text-xs text-muted">Ask anything about your workspace — issues, sprints, projects, or team status.</p>}
+            {messages.length === 0 && (
+              <div className="space-y-1">
+                <p className="text-xs text-muted">Suggested:</p>
+                {(documentType === 'sprint'
+                  ? ['What issues are at risk in this sprint?', 'Show scope changes since sprint start', 'Who is over capacity?']
+                  : documentType === 'issue'
+                  ? ['Is this issue blocked?', 'Summarize recent activity on this issue', 'Who should own this?']
+                  : documentType === 'project'
+                  ? ['What is the health of this project?', 'Which sprints are behind?', 'Are there any orphaned issues?']
+                  : ['What should I focus on today?', 'Which sprints are at risk?', 'Show me all unassigned issues']
+                ).map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    className="block w-full rounded border border-border bg-background px-2 py-1 text-left text-xs text-muted hover:text-foreground hover:bg-muted/40 transition-colors"
+                    onClick={() => { setPrompt(suggestion); }}
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            )}
             {messages.map((message, index) => (
               <div key={`${message.role}-${index}`} className={message.role === 'assistant' ? 'flex justify-start' : 'flex justify-end'}>
                 <div
@@ -397,7 +429,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
       {/* Alerts & approvals — fixed bottom-right, independent of button position */}
       {(outputs.length > 0 || approvals.length > 0) && (
-        <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+        <div className={`fixed z-50 flex w-72 flex-col gap-2 ${open ? 'bottom-4 right-[22rem]' : 'bottom-4 right-4'} transition-all`}>
           {outputs.length > 0 && (
             <div className="rounded border border-border bg-background text-xs shadow-lg">
               {/* Header — always visible, click to toggle */}

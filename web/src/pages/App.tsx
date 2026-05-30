@@ -554,17 +554,38 @@ export function AppLayout() {
                   </Tooltip>
                 )}
                 {activeMode === 'issues' && (
-                  <Tooltip content="New issue">
-                    <button
-                      onClick={handleCreateIssue}
-                      className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-border hover:text-foreground transition-colors"
-                      aria-label="New issue"
-                    >
-                      <PlusIcon />
-                    </button>
-                  </Tooltip>
+                  <>
+                    <Tooltip content="Ask FleetGraph about issues">
+                      <button
+                        onClick={() => window.dispatchEvent(new Event('fleetgraph:open'))}
+                        className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-border hover:text-foreground transition-colors"
+                        aria-label="Ask FleetGraph"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H7l-4 3v-5.5A8.5 8.5 0 1 1 21 11.5Z" /></svg>
+                      </button>
+                    </Tooltip>
+                    <Tooltip content="New issue">
+                      <button
+                        onClick={handleCreateIssue}
+                        className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-border hover:text-foreground transition-colors"
+                        aria-label="New issue"
+                      >
+                        <PlusIcon />
+                      </button>
+                    </Tooltip>
+                  </>
                 )}
                 {activeMode === 'projects' && (
+                  <>
+                    <Tooltip content="Ask FleetGraph about projects">
+                      <button
+                        onClick={() => window.dispatchEvent(new Event('fleetgraph:open'))}
+                        className="flex h-6 w-6 items-center justify-center rounded text-muted hover:bg-border hover:text-foreground transition-colors"
+                        aria-label="Ask FleetGraph"
+                      >
+                        <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H7l-4 3v-5.5A8.5 8.5 0 1 1 21 11.5Z" /></svg>
+                      </button>
+                    </Tooltip>
                   <Tooltip content="New project">
                     <button
                       onClick={handleCreateProject}
@@ -574,6 +595,7 @@ export function AppLayout() {
                       <PlusIcon />
                     </button>
                   </Tooltip>
+                  </>
                 )}
                 <Tooltip content="Collapse sidebar">
                   <button

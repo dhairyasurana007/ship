@@ -50,10 +50,15 @@ export interface FleetGraphCondition {
 export interface FleetGraphIssueRecord {
   id: string;
   workspaceId: string;
+  title: string | null;
+  assigneeId: string | null;
+  assigneeName: string | null;
   updatedAt: string;
   state: string | null;
   sprintId: string | null;
+  sprintTitle: string | null;
   projectId: string | null;
+  projectTitle: string | null;
   hasBlockerText: boolean;
   blockerUpdatedAt?: string | null;
   createdAt: string;

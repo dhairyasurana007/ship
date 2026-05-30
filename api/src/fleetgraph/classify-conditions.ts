@@ -10,13 +10,21 @@ export function classifyConditions(issues: FleetGraphIssueRecord[]): FleetGraphC
   const output: FleetGraphCondition[] = [];
 
   for (const issue of issues) {
+    const ctx = {
+      issueTitle: issue.title ?? undefined,
+      assigneeId: issue.assigneeId ?? undefined,
+      assigneeName: issue.assigneeName ?? undefined,
+      projectTitle: issue.projectTitle ?? undefined,
+      sprintTitle: issue.sprintTitle ?? undefined,
+    };
+
     if (!TERMINAL_STATES.has((issue.state ?? '').toLowerCase()) && hoursSince(issue.updatedAt) >= 24) {
       output.push({
         type: 'stale_issue',
         severity: hoursSince(issue.updatedAt) >= 72 ? 'critical' : 'warning',
         entityId: issue.id,
         workspaceId: issue.workspaceId,
-        details: { staleHours: Math.floor(hoursSince(issue.updatedAt)) },
+        details: { staleHours: Math.floor(hoursSince(issue.updatedAt)), ...ctx },
       });
     }
 
@@ -27,7 +35,7 @@ export function classifyConditions(issues: FleetGraphIssueRecord[]): FleetGraphC
         severity: ageDays >= 7 ? 'critical' : 'warning',
         entityId: issue.id,
         workspaceId: issue.workspaceId,
-        details: { orphanAgeDays: ageDays },
+        details: { orphanAgeDays: ageDays, ...ctx },
       });
     }
 
@@ -37,7 +45,7 @@ export function classifyConditions(issues: FleetGraphIssueRecord[]): FleetGraphC
         severity: hoursSince(issue.blockerUpdatedAt) >= 72 ? 'critical' : 'warning',
         entityId: issue.id,
         workspaceId: issue.workspaceId,
-        details: { blockerAgeHours: Math.floor(hoursSince(issue.blockerUpdatedAt)) },
+        details: { blockerAgeHours: Math.floor(hoursSince(issue.blockerUpdatedAt)), ...ctx },
       });
     }
 
@@ -48,9 +56,64 @@ export function classifyConditions(issues: FleetGraphIssueRecord[]): FleetGraphC
         severity: 'info',
         entityId: issue.id,
         workspaceId: issue.workspaceId,
-        details: { createdAt: issue.createdAt, sprintId: issue.sprintId },
+        details: { createdAt: issue.createdAt, sprintId: issue.sprintId, ...ctx },
       });
     }
+  }
+
+  return output;
+}
+
+/**
+ * Cross-detection: find projects that have orphaned issues AND the project has
+ * team members who aren't assigned to any active issue (capacity mismatch).
+ */
+export function classifyCapacityMismatch(issues: FleetGraphIssueRecord[]): FleetGraphCondition[] {
+  const output: FleetGraphCondition[] = [];
+  const TERMINAL = new Set(['done', 'closed', 'cancelled']);
+
+  // Group by project
+  const byProject = new Map<string, FleetGraphIssueRecord[]>();
+  for (const issue of issues) {
+    if (!issue.projectId) continue;
+    const bucket = byProject.get(issue.projectId) ?? [];
+    bucket.push(issue);
+    byProject.set(issue.projectId, bucket);
+  }
+
+  for (const [projectId, projectIssues] of byProject) {
+    const orphans = projectIssues.filter(
+      (i) => !TERMINAL.has((i.state ?? '').toLowerCase()) && !i.sprintId && !i.assigneeId
+    );
+    if (orphans.length === 0) continue;
+
+    // Find assignees active on this project
+    const activeAssignees = new Set(
+      projectIssues
+        .filter((i) => !TERMINAL.has((i.state ?? '').toLowerCase()) && i.assigneeId)
+        .map((i) => i.assigneeId!)
+    );
+
+    // All known team members in this project
+    const allMembers = new Set(
+      projectIssues.filter((i) => i.assigneeId).map((i) => i.assigneeId!)
+    );
+
+    const freeMembers = [...allMembers].filter((m) => !activeAssignees.has(m));
+    if (freeMembers.length === 0) continue;
+
+    const sample = orphans[0]!;
+    output.push({
+      type: 'capacity_mismatch',
+      severity: 'info',
+      entityId: projectId,
+      workspaceId: sample.workspaceId,
+      details: {
+        orphanCount: orphans.length,
+        freeMemberCount: freeMembers.length,
+        projectTitle: sample.projectTitle ?? undefined,
+      },
+    });
   }
 
   return output;

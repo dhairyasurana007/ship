@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { classifyConditions } from './classify-conditions.js';
+import { classifyCapacityMismatch, classifyConditions } from './classify-conditions.js';
 import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContext } from './on-demand.js';
 import { fetchIssues, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
@@ -163,7 +163,10 @@ class FleetGraphCompiledGraph {
         }
         throw err;
       }
-      const conditions = classifyConditions(issues);
+      const conditions = [
+        ...classifyConditions(issues),
+        ...classifyCapacityMismatch(issues),
+      ];
       return {
         mode: 'proactive',
         conditions,

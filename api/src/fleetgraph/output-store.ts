@@ -84,7 +84,7 @@ export async function persistFleetGraphOutputs(
     const mappedOutput = outputs.find((o) => o.conditions.includes(condition.type));
     if (!mappedOutput) continue;
     const recipients = await resolveRecipients(condition);
-    const message = buildMessage(condition);
+    const message = mappedOutput.message || buildMessage(condition);
 
     if (recipients.length === 0) {
       await pool.query(

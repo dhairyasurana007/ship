@@ -1,8 +1,57 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useMyWeekQuery, StandupSlot } from '@/hooks/useMyWeekQuery';
-import { apiPost } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 import { cn } from '@/lib/cn';
+
+function FleetGraphDigest() {
+  const [alerts, setAlerts] = useState<{ id: string; title: string; message: string; condition_type: string }[]>([]);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      try {
+        const res = await apiGet('/api/fleetgraph/outputs');
+        if (!res.ok) return;
+        const data = await res.json() as { outputs?: { id: string; title: string; message: string; condition_type: string }[] };
+        setAlerts((data.outputs ?? []).slice(0, 3));
+      } catch { /* silent */ }
+    }, 400);
+    return () => clearTimeout(t);
+  }, []);
+
+  if (alerts.length === 0) return null;
+
+  return (
+    <section className="mb-6 rounded-lg border border-border bg-muted/10 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5">
+          <svg viewBox="0 0 24 24" className="h-4 w-4 text-accent" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H7l-4 3v-5.5A8.5 8.5 0 1 1 21 11.5Z" />
+          </svg>
+          <h2 className="text-sm font-medium text-foreground">FleetGraph — Today's Digest</h2>
+        </div>
+        <button
+          type="button"
+          className="text-xs text-accent hover:underline"
+          onClick={() => window.dispatchEvent(new Event('fleetgraph:open'))}
+        >
+          Ask FleetGraph →
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {alerts.map((a) => (
+          <div key={a.id} className="flex items-start gap-2 text-xs">
+            <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
+            <div>
+              <span className="font-medium text-foreground">{a.title}</span>
+              <span className="ml-1 text-muted">{a.message}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 function formatDateRange(startDate: string, endDate: string): string {
   const start = new Date(startDate + 'T00:00:00Z');
@@ -147,6 +196,8 @@ export function MyWeekPage() {
 
       <div className="flex-1 overflow-y-auto">
       <div className="max-w-3xl mx-auto px-6 py-8">
+
+        <FleetGraphDigest />
 
         {/* Project Assignments */}
         {projects.length > 0 && (
