@@ -90,8 +90,16 @@ export async function persistFleetGraphOutputs(
       await pool.query(
         `INSERT INTO fleetgraph_outputs (
           workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata
-        ) VALUES ($1, $2, $3, $4, $5::uuid, $6, NULL, $7, $8, $9::jsonb)
-        ON CONFLICT (workspace_id, condition_type, entity_id, recipient_user_id) DO NOTHING`,
+        )
+        SELECT $1, $2, $3, $4, $5::uuid, $6, NULL, $7, $8, $9::jsonb
+        WHERE NOT EXISTS (
+          SELECT 1 FROM fleetgraph_outputs
+          WHERE workspace_id = $1
+            AND condition_type = $3
+            AND entity_id = $5::uuid
+            AND recipient_user_id IS NULL
+            AND dismissed_at IS NULL
+        )`,
         [
           workspaceId,
           runId,
@@ -111,8 +119,16 @@ export async function persistFleetGraphOutputs(
       await pool.query(
         `INSERT INTO fleetgraph_outputs (
           workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata
-        ) VALUES ($1, $2, $3, $4, $5::uuid, $6, $7::uuid, $8, $9, $10::jsonb)
-        ON CONFLICT (workspace_id, condition_type, entity_id, recipient_user_id) DO NOTHING`,
+        )
+        SELECT $1, $2, $3, $4, $5::uuid, $6, $7::uuid, $8, $9, $10::jsonb
+        WHERE NOT EXISTS (
+          SELECT 1 FROM fleetgraph_outputs
+          WHERE workspace_id = $1
+            AND condition_type = $3
+            AND entity_id = $5::uuid
+            AND recipient_user_id = $7::uuid
+            AND dismissed_at IS NULL
+        )`,
         [
           workspaceId,
           runId,

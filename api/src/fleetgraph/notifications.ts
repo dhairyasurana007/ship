@@ -15,8 +15,14 @@ function conditionTitle(c: FleetGraphCondition): string {
   const project = c.details?.projectTitle ? String(c.details.projectTitle) : null;
   const sprint = c.details?.sprintTitle ? String(c.details.sprintTitle) : null;
 
-  // Build context suffix: prefer most specific — sprint > project
-  const context = sprint ? ` · ${sprint}` : project ? ` · ${project}` : '';
+  // Build context suffix: always include both project and sprint when available
+  const context = project && sprint
+    ? ` — ${project} · ${sprint}`
+    : sprint
+    ? ` — ${sprint}`
+    : project
+    ? ` — ${project}`
+    : '';
 
   switch (c.type) {
     case 'stale_issue': {
@@ -25,11 +31,13 @@ function conditionTitle(c: FleetGraphCondition): string {
       return issue ? `${issue} is stale${age}${context}` : `Stale issue${age}${context}`;
     }
     case 'sprint_scope_creep':
-      return sprint
-        ? `Scope creep in ${sprint}${project ? ` · ${project}` : ''}`
+      return issue
+        ? `${issue} added to sprint late${context}`
+        : sprint
+        ? `Issue added to ${sprint} late${project ? ` — ${project}` : ''}`
         : project
-        ? `Scope creep in ${project}`
-        : 'Sprint scope creep detected';
+        ? `Late sprint addition in ${project}`
+        : 'Issue added to sprint after start';
     case 'unresolved_blocker':
       return issue ? `${issue} is blocked${context}` : `Unresolved blocker${context}`;
     case 'orphaned_issue':
