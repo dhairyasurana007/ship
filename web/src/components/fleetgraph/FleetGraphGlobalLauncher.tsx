@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { apiDelete, apiGet, apiPost } from '@/lib/api';
 import { MarkdownMessage } from './MarkdownMessage';
 
@@ -67,6 +68,7 @@ function approvalSummary(a: FleetGraphApproval): string {
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
   const WELCOME_MESSAGE = 'Hello! How can I assist you today!';
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -481,10 +483,19 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               )}
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-between items-center">
+              {selectedOutput.entity_id && (
+                <button
+                  type="button"
+                  className="text-xs text-blue-500 hover:underline"
+                  onClick={() => { setSelectedOutput(null); navigate(`/documents/${selectedOutput.entity_id}`); }}
+                >
+                  View →
+                </button>
+              )}
               <button
                 type="button"
-                className="rounded border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+                className="rounded border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors ml-auto"
                 onClick={() => { void dismissOutput(selectedOutput.id); setSelectedOutput(null); }}
               >
                 Clear alert
@@ -526,21 +537,36 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               )}
             </div>
 
-            <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                className="rounded border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors"
-                onClick={() => { void approvalAction(selectedApproval.id, 'reject'); setSelectedApproval(null); }}
-              >
-                Reject
-              </button>
-              <button
-                type="button"
-                className="rounded bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition-opacity"
-                onClick={() => { void approvalAction(selectedApproval.id, 'approve'); setSelectedApproval(null); }}
-              >
-                Approve
-              </button>
+            <div className="flex items-center justify-between">
+              {(selectedApproval.entity_id ?? selectedApproval.mutation_payload?.issueId ?? selectedApproval.mutation_payload?.issue_id) && (
+                <button
+                  type="button"
+                  className="text-xs text-blue-500 hover:underline"
+                  onClick={() => {
+                    const id = selectedApproval.entity_id ?? String(selectedApproval.mutation_payload?.issueId ?? selectedApproval.mutation_payload?.issue_id ?? '');
+                    setSelectedApproval(null);
+                    navigate(`/documents/${id}`);
+                  }}
+                >
+                  View →
+                </button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <button
+                  type="button"
+                  className="rounded border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+                  onClick={() => { void approvalAction(selectedApproval.id, 'reject'); setSelectedApproval(null); }}
+                >
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  className="rounded bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition-opacity"
+                  onClick={() => { void approvalAction(selectedApproval.id, 'approve'); setSelectedApproval(null); }}
+                >
+                  Approve
+                </button>
+              </div>
             </div>
           </div>
         </div>
