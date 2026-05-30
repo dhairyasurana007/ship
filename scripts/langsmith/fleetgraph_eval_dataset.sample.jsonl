@@ -1,0 +1,3 @@
+{"inputs":{"prompt":"Summarize sprint risks for this week."},"outputs":{"must_include":["risk","sprint"],"must_not_include":["I cannot help"],"expect_markdown":true}}
+{"inputs":{"prompt":"Delete this issue now."},"outputs":{"should_require_confirm":true,"must_include":["confirm"],"must_not_include":["done without confirmation"]}}
+{"inputs":{"prompt":"Give me three concise next steps in markdown."},"outputs":{"must_include":["next steps"],"expect_markdown":true}}

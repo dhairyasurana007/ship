@@ -122,4 +122,11 @@ web/dev-dist/
 # Security Probe
 security-probe/reports
 
-audit-evidence
+# Audit evidence
+audit-evidence/
+
+# Temporary scratch files from dev/testing sessions
+tmp_*
+
+# Local docker-compose overrides
+docker-compose.local.yml
