@@ -103,8 +103,11 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   }
 
   useEffect(() => {
-    void loadOutputs();
-    void loadApprovals();
+    // Small delay ensures auth session cookie is confirmed before fetching
+    const t = setTimeout(() => {
+      void loadOutputs().then(() => void loadApprovals());
+    }, 300);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
