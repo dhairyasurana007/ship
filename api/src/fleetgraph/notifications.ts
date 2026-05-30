@@ -10,22 +10,34 @@ export interface FleetGraphOutputMessage {
 const ACTION_REQUIRED = new Set(['unresolved_blocker', 'orphaned_issue']);
 
 function conditionTitle(c: FleetGraphCondition): string {
-  const issue = c.details?.issueTitle ? `"${String(c.details.issueTitle)}"` : 'an issue';
-  const project = c.details?.projectTitle ? ` in ${String(c.details.projectTitle)}` : '';
-  const sprint = c.details?.sprintTitle ? ` (${String(c.details.sprintTitle)})` : '';
+  const rawTitle = c.details?.issueTitle ? String(c.details.issueTitle) : null;
+  const issue = rawTitle && rawTitle.toLowerCase() !== 'untitled' ? `"${rawTitle}"` : null;
+  const project = c.details?.projectTitle ? String(c.details.projectTitle) : null;
+  const sprint = c.details?.sprintTitle ? String(c.details.sprintTitle) : null;
+
+  // Build context suffix: prefer most specific — sprint > project
+  const context = sprint ? ` · ${sprint}` : project ? ` · ${project}` : '';
+
   switch (c.type) {
     case 'stale_issue': {
-      const hours = c.details?.staleHours ? `${Math.floor(Number(c.details.staleHours) / 24)}d` : '';
-      return `Stale issue${hours ? ` (${hours})` : ''}: ${issue}${project}`;
+      const days = c.details?.staleHours ? Math.floor(Number(c.details.staleHours) / 24) : null;
+      const age = days !== null ? ` (${days}d stale)` : '';
+      return issue ? `${issue} is stale${age}${context}` : `Stale issue${age}${context}`;
     }
     case 'sprint_scope_creep':
-      return `Scope creep detected${sprint || project}`;
+      return sprint
+        ? `Scope creep in ${sprint}${project ? ` · ${project}` : ''}`
+        : project
+        ? `Scope creep in ${project}`
+        : 'Sprint scope creep detected';
     case 'unresolved_blocker':
-      return `Unresolved blocker: ${issue}${project}`;
+      return issue ? `${issue} is blocked${context}` : `Unresolved blocker${context}`;
     case 'orphaned_issue':
-      return `Orphaned issue: ${issue}${project}`;
+      return issue ? `${issue} has no assignee or sprint${context}` : `Orphaned issue${context}`;
     case 'capacity_mismatch':
-      return `Capacity mismatch${project}: ${String(c.details?.orphanCount ?? 0)} unassigned issue(s), ${String(c.details?.freeMemberCount ?? 0)} free member(s)`;
+      return project
+        ? `${String(c.details?.orphanCount ?? 0)} unassigned issues in ${project} — ${String(c.details?.freeMemberCount ?? 0)} member(s) free`
+        : `Capacity mismatch: ${String(c.details?.orphanCount ?? 0)} unassigned, ${String(c.details?.freeMemberCount ?? 0)} free`;
     default:
       return c.type.replace(/_/g, ' ');
   }
