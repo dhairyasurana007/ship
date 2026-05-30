@@ -36,7 +36,7 @@ export interface TriggerEvent {
   updatedAt?: string;
 }
 
-export type FleetGraphConditionType = 'stale_issue' | 'sprint_scope_creep' | 'unresolved_blocker' | 'orphaned_issue';
+export type FleetGraphConditionType = 'stale_issue' | 'sprint_scope_creep' | 'unresolved_blocker' | 'orphaned_issue' | 'capacity_mismatch';
 export type FleetGraphSeverity = 'info' | 'warning' | 'critical';
 
 export interface FleetGraphCondition {

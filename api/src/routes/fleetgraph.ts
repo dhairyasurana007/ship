@@ -115,7 +115,7 @@ router.delete('/outputs', authMiddleware, async (req, res) => {
 
 router.delete('/outputs/:id', authMiddleware, async (req, res) => {
   if (!req.workspaceId) { res.status(401).json({ error: 'unauthorized' }); return; }
-  await dismissFleetGraphOutput(req.params.id, req.workspaceId);
+  await dismissFleetGraphOutput(String(req.params.id), req.workspaceId);
   res.json({ ok: true });
 });
 

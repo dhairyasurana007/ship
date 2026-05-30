@@ -39,7 +39,7 @@ function conditionTitle(c: FleetGraphCondition): string {
         ? `${String(c.details?.orphanCount ?? 0)} unassigned issues in ${project} — ${String(c.details?.freeMemberCount ?? 0)} member(s) free`
         : `Capacity mismatch: ${String(c.details?.orphanCount ?? 0)} unassigned, ${String(c.details?.freeMemberCount ?? 0)} free`;
     default:
-      return c.type.replace(/_/g, ' ');
+      return (c.type as string).replace(/_/g, ' ');
   }
 }
 
