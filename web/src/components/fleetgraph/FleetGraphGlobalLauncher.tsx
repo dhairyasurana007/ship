@@ -325,7 +325,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
       <button
         type="button"
-        className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${open ? 'bg-accent/20 text-accent' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
+        className={`relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${open ? 'bg-border text-foreground' : 'text-muted hover:bg-border/50 hover:text-foreground'}`}
         onClick={() => {
           setOpen((v) => {
             const next = !v;
@@ -341,7 +341,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             return next;
           });
         }}
-        aria-label="Open FleetGraph assistant window"
+        aria-label="FleetGraph Assistant"
         title="FleetGraph Assistant"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -349,40 +349,49 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           <path d="M8.5 10.5h7" />
           <path d="M8.5 14h5" />
         </svg>
+        {approvals.length > 0 && (
+          <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-orange-500" />
+        )}
       </button>
-      {outputs.length > 0 && (
-        <div className="mt-2 w-80 rounded border border-border bg-background p-2 text-xs">
-          <p className="mb-1 font-semibold text-muted">Recent FleetGraph alerts</p>
-          <div className="space-y-1">
-            {outputs.map((o) => (
-              <div key={o.id} className="rounded border border-border bg-muted/20 p-1">
-                <p className="font-medium text-foreground">{o.title}</p>
-                <p className="text-muted">{o.message}</p>
+
+      {/* Alerts & approvals — fixed bottom-right, independent of button position */}
+      {(outputs.length > 0 || approvals.length > 0) && (
+        <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
+          {outputs.length > 0 && (
+            <div className="rounded border border-border bg-background p-2 text-xs shadow-lg">
+              <p className="mb-1 font-semibold text-muted">Recent FleetGraph alerts</p>
+              <div className="space-y-1">
+                {outputs.map((o) => (
+                  <div key={o.id} className="rounded border border-border bg-muted/20 p-1">
+                    <p className="font-medium text-foreground">{o.title}</p>
+                    <p className="text-muted">{o.message}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-      {approvals.length > 0 && (
-        <div className="mt-2 w-80 rounded border border-border bg-background p-2 text-xs">
-          <p className="mb-1 font-semibold text-muted">Pending approvals</p>
-          <div className="space-y-1">
-            {approvals.map((a) => (
-              <div key={a.id} className="rounded border border-border bg-muted/20 p-1">
-                <p className="font-medium text-foreground">{a.mutation_type}</p>
-                <p className="text-muted">Status: {a.status}</p>
-                <div className="mt-1 flex gap-1">
-                  <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'approve')}>Approve</button>
-                  {readRecommendedApprovalAction(a) === 'reject' && (
-                    <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'reject')}>Reject</button>
-                  )}
-                  {readRecommendedApprovalAction(a) === 'execute' && (
-                    <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'execute')}>Execute</button>
-                  )}
-                </div>
+            </div>
+          )}
+          {approvals.length > 0 && (
+            <div className="rounded border border-border bg-background p-2 text-xs shadow-lg">
+              <p className="mb-1 font-semibold text-muted">Pending approvals</p>
+              <div className="space-y-1">
+                {approvals.map((a) => (
+                  <div key={a.id} className="rounded border border-border bg-muted/20 p-1">
+                    <p className="font-medium text-foreground">{a.mutation_type}</p>
+                    <p className="text-muted">Status: {a.status}</p>
+                    <div className="mt-1 flex gap-1">
+                      <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'approve')}>Approve</button>
+                      {readRecommendedApprovalAction(a) === 'reject' && (
+                        <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'reject')}>Reject</button>
+                      )}
+                      {readRecommendedApprovalAction(a) === 'execute' && (
+                        <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'execute')}>Execute</button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </div>
+          )}
         </div>
       )}
     </div>
