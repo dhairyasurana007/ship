@@ -70,6 +70,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
+  const [alertsMinimized, setAlertsMinimized] = useState(false);
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(false);
@@ -395,39 +396,53 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       {(outputs.length > 0 || approvals.length > 0) && (
         <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
           {outputs.length > 0 && (
-            <div className="rounded border border-border bg-background p-2 text-xs shadow-lg">
-              <div className="mb-1 flex items-center justify-between">
-                <p className="font-semibold text-muted">FleetGraph alerts</p>
-                <button
-                  type="button"
-                  className="text-muted hover:text-foreground transition-colors"
-                  onClick={() => void dismissAllOutputs()}
-                >
-                  Clear all
-                </button>
+            <div className="rounded border border-border bg-background text-xs shadow-lg">
+              {/* Header — always visible, click to toggle */}
+              <div
+                className="flex cursor-pointer items-center justify-between px-2 py-1.5 hover:bg-muted/30 transition-colors"
+                onClick={() => setAlertsMinimized((v) => !v)}
+              >
+                <p className="font-semibold text-muted">
+                  FleetGraph alerts ({outputs.length})
+                </p>
+                <div className="flex items-center gap-2">
+                  {!alertsMinimized && (
+                    <button
+                      type="button"
+                      className="text-muted hover:text-foreground transition-colors"
+                      onClick={(e) => { e.stopPropagation(); void dismissAllOutputs(); }}
+                    >
+                      Clear all
+                    </button>
+                  )}
+                  <span className="text-muted">{alertsMinimized ? '▲' : '▼'}</span>
+                </div>
               </div>
-              <div className="space-y-1">
-                {outputs.map((o) => (
-                  <div
-                    key={o.id}
-                    className="cursor-pointer rounded border border-border bg-muted/20 p-2 hover:bg-muted/40 transition-colors"
-                    onClick={() => setSelectedOutput(o)}
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="font-medium text-foreground">{o.title}</p>
-                      <button
-                        type="button"
-                        className="shrink-0 text-muted hover:text-foreground transition-colors"
-                        onClick={(e) => { e.stopPropagation(); void dismissOutput(o.id); }}
-                        aria-label="Clear alert"
-                      >
-                        ✕
-                      </button>
+              {/* Expandable body */}
+              {!alertsMinimized && (
+                <div className="space-y-1 border-t border-border p-2">
+                  {outputs.map((o) => (
+                    <div
+                      key={o.id}
+                      className="cursor-pointer rounded border border-border bg-muted/20 p-2 hover:bg-muted/40 transition-colors"
+                      onClick={() => setSelectedOutput(o)}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-medium text-foreground">{o.title}</p>
+                        <button
+                          type="button"
+                          className="shrink-0 text-muted hover:text-foreground transition-colors"
+                          onClick={(e) => { e.stopPropagation(); void dismissOutput(o.id); }}
+                          aria-label="Clear alert"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                      <p className="mt-0.5 text-muted line-clamp-1">{o.message}</p>
                     </div>
-                    <p className="mt-0.5 text-muted line-clamp-1">{o.message}</p>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
           {approvals.length > 0 && (
