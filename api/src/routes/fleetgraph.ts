@@ -14,7 +14,7 @@ import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContex
 import { loadFleetGraphConfig } from '../fleetgraph/config.js';
 import { createLangSmithChildRun, createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
 import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
-import { createFleetGraphOutput, listFleetGraphOutputsForWorkspace } from '../fleetgraph/output-store.js';
+import { createFleetGraphOutput, dismissAllFleetGraphOutputs, dismissFleetGraphOutput, listFleetGraphOutputsForWorkspace } from '../fleetgraph/output-store.js';
 import { evaluateDedup, type DedupStateValue } from '../fleetgraph/dedup-worsening.js';
 import type { FleetGraphCondition } from '../fleetgraph/types.js';
 import { getFleetGraphCompiledGraph } from '../fleetgraph/compiled-graph.js';
@@ -105,6 +105,18 @@ router.get('/outputs', authMiddleware, async (req, res) => {
   }
   const outputs = await listFleetGraphOutputsForWorkspace(req.workspaceId, req.userId);
   res.json({ outputs });
+});
+
+router.delete('/outputs', authMiddleware, async (req, res) => {
+  if (!req.workspaceId || !req.userId) { res.status(401).json({ error: 'unauthorized' }); return; }
+  await dismissAllFleetGraphOutputs(req.workspaceId, req.userId);
+  res.json({ ok: true });
+});
+
+router.delete('/outputs/:id', authMiddleware, async (req, res) => {
+  if (!req.workspaceId) { res.status(401).json({ error: 'unauthorized' }); return; }
+  await dismissFleetGraphOutput(req.params.id, req.workspaceId);
+  res.json({ ok: true });
 });
 
 router.get('/runtime-status', authMiddleware, async (req, res) => {

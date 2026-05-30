@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { apiGet, apiPost } from '@/lib/api';
+import { apiDelete, apiGet, apiPost } from '@/lib/api';
 import { MarkdownMessage } from './MarkdownMessage';
 
 interface FleetGraphGlobalLauncherProps {
@@ -15,9 +15,16 @@ interface ChatMessage {
 
 interface FleetGraphOutput {
   id: string;
+  run_id?: string;
+  condition_type: string;
+  output_kind?: string;
+  entity_id?: string;
+  entity_type?: string;
+  recipient_user_id?: string;
   title: string;
   message: string;
-  condition_type: string;
+  metadata?: Record<string, unknown>;
+  created_at?: string;
 }
 
 interface FleetGraphApproval {
@@ -71,6 +78,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [accessMode, setAccessMode] = useState<AccessMode>('ask_permission');
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
   const [selectedApproval, setSelectedApproval] = useState<FleetGraphApproval | null>(null);
+  const [selectedOutput, setSelectedOutput] = useState<FleetGraphOutput | null>(null);
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -106,6 +114,20 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     } catch {
       // silent fallback
     }
+  }
+
+  async function dismissOutput(id: string): Promise<void> {
+    try {
+      await apiDelete(`/api/fleetgraph/outputs/${id}`);
+      setOutputs((prev) => prev.filter((o) => o.id !== id));
+    } catch { /* silent */ }
+  }
+
+  async function dismissAllOutputs(): Promise<void> {
+    try {
+      await apiDelete('/api/fleetgraph/outputs');
+      setOutputs([]);
+    } catch { /* silent */ }
   }
 
   async function loadApprovals(): Promise<void> {
@@ -372,12 +394,35 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         <div className="fixed bottom-4 right-4 z-50 flex w-80 flex-col gap-2">
           {outputs.length > 0 && (
             <div className="rounded border border-border bg-background p-2 text-xs shadow-lg">
-              <p className="mb-1 font-semibold text-muted">Recent FleetGraph alerts</p>
+              <div className="mb-1 flex items-center justify-between">
+                <p className="font-semibold text-muted">FleetGraph alerts</p>
+                <button
+                  type="button"
+                  className="text-muted hover:text-foreground transition-colors"
+                  onClick={() => void dismissAllOutputs()}
+                >
+                  Clear all
+                </button>
+              </div>
               <div className="space-y-1">
                 {outputs.map((o) => (
-                  <div key={o.id} className="rounded border border-border bg-muted/20 p-1">
-                    <p className="font-medium text-foreground">{o.title}</p>
-                    <p className="text-muted">{o.message}</p>
+                  <div
+                    key={o.id}
+                    className="cursor-pointer rounded border border-border bg-muted/20 p-2 hover:bg-muted/40 transition-colors"
+                    onClick={() => setSelectedOutput(o)}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium text-foreground">{o.title}</p>
+                      <button
+                        type="button"
+                        className="shrink-0 text-muted hover:text-foreground transition-colors"
+                        onClick={(e) => { e.stopPropagation(); void dismissOutput(o.id); }}
+                        aria-label="Clear alert"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <p className="mt-0.5 text-muted line-clamp-1">{o.message}</p>
                   </div>
                 ))}
               </div>
@@ -400,6 +445,52 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Alert detail modal */}
+      {selectedOutput && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => setSelectedOutput(null)}>
+          <div className="w-96 rounded-lg border border-border bg-background p-4 shadow-xl text-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="font-semibold text-foreground">Alert Detail</h3>
+              <button type="button" className="text-muted hover:text-foreground" onClick={() => setSelectedOutput(null)}>✕</button>
+            </div>
+
+            <p className="text-foreground font-medium mb-3">{selectedOutput.title}</p>
+            <p className="text-muted text-xs mb-4">{selectedOutput.message}</p>
+
+            <div className="space-y-2 text-xs text-muted mb-4">
+              {selectedOutput.condition_type && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Condition</span><span>{selectedOutput.condition_type.replace(/_/g, ' ')}</span></div>
+              )}
+              {selectedOutput.output_kind && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Kind</span><span>{selectedOutput.output_kind.replace(/_/g, ' ')}</span></div>
+              )}
+              {selectedOutput.entity_id && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Affected</span><span>{selectedOutput.entity_id}</span></div>
+              )}
+              {selectedOutput.created_at && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Created</span><span>{new Date(selectedOutput.created_at).toLocaleString()}</span></div>
+              )}
+              {selectedOutput.metadata && Object.keys(selectedOutput.metadata).length > 0 && (
+                <div className="mt-2">
+                  <p className="font-medium text-foreground/70 mb-1">Details</p>
+                  <pre className="rounded bg-muted/30 p-2 text-[11px] overflow-auto max-h-32 whitespace-pre-wrap">{JSON.stringify(selectedOutput.metadata, null, 2)}</pre>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                className="rounded border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+                onClick={() => { void dismissOutput(selectedOutput.id); setSelectedOutput(null); }}
+              >
+                Clear alert
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

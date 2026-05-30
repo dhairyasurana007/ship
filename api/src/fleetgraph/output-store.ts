@@ -134,11 +134,29 @@ export async function listFleetGraphOutputsForWorkspace(workspaceId: string, use
      FROM fleetgraph_outputs
      WHERE workspace_id = $1
        AND (recipient_user_id IS NULL OR recipient_user_id = $2::uuid)
+       AND dismissed_at IS NULL
      ORDER BY created_at DESC
      LIMIT 100`,
     [workspaceId, userId]
   );
   return result.rows;
+}
+
+export async function dismissFleetGraphOutput(id: string, workspaceId: string): Promise<void> {
+  await pool.query(
+    `UPDATE fleetgraph_outputs SET dismissed_at = now() WHERE id = $1 AND workspace_id = $2`,
+    [id, workspaceId]
+  );
+}
+
+export async function dismissAllFleetGraphOutputs(workspaceId: string, userId: string): Promise<void> {
+  await pool.query(
+    `UPDATE fleetgraph_outputs SET dismissed_at = now()
+     WHERE workspace_id = $1
+       AND (recipient_user_id IS NULL OR recipient_user_id = $2::uuid)
+       AND dismissed_at IS NULL`,
+    [workspaceId, userId]
+  );
 }
 
 export async function createFleetGraphOutput(input: {
