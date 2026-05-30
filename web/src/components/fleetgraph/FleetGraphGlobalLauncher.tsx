@@ -538,7 +538,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             </div>
 
             <div className="flex items-center justify-between">
-              {(selectedApproval.entity_id ?? selectedApproval.mutation_payload?.issueId ?? selectedApproval.mutation_payload?.issue_id) && (
+              {Boolean(selectedApproval.entity_id ?? selectedApproval.mutation_payload?.issueId ?? selectedApproval.mutation_payload?.issue_id) && (
                 <button
                   type="button"
                   className="text-xs text-blue-500 hover:underline"
