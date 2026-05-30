@@ -406,15 +406,6 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                   FleetGraph alerts ({outputs.length})
                 </p>
                 <div className="flex items-center gap-2">
-                  {!alertsMinimized && (
-                    <button
-                      type="button"
-                      className="text-muted hover:text-foreground transition-colors"
-                      onClick={(e) => { e.stopPropagation(); void dismissAllOutputs(); }}
-                    >
-                      Clear all
-                    </button>
-                  )}
                   <span className="text-muted">{alertsMinimized ? '▲' : '▼'}</span>
                 </div>
               </div>
