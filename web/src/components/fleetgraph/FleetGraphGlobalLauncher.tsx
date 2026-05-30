@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost } from '@/lib/api';
 import { MarkdownMessage } from './MarkdownMessage';
@@ -81,6 +81,12 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     const lower = promptText.toLowerCase();
     return /(create|add|new|move|reassign|assign|change state|close|cancel|reopen|update|edit|modify|delete|remove)/.test(lower);
   }
+
+  useEffect(() => {
+    void loadOutputs();
+    void loadApprovals();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function loadOutputs(): Promise<void> {
     try {
@@ -199,16 +205,15 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   }
 
   return (
-    <div className="fixed bottom-4 right-4 z-50" onMouseMove={onDrag} onMouseUp={endDrag} onMouseLeave={endDrag}>
+    <div className="relative" onMouseMove={onDrag} onMouseUp={endDrag} onMouseLeave={endDrag}>
       {open && (
         <div
           data-fleetgraph-panel
           style={{
             position: 'fixed',
-            left: windowPos.x ? `${windowPos.x}px` : undefined,
+            left: windowPos.x ? `${windowPos.x}px` : '4rem',
             top: windowPos.y ? `${windowPos.y}px` : undefined,
-            right: windowPos.x ? undefined : '1rem',
-            bottom: windowPos.y ? undefined : '4.5rem',
+            bottom: windowPos.y ? undefined : '3rem',
           }}
           className="w-80 rounded-lg border border-border bg-background p-3 shadow-lg"
         >
@@ -320,7 +325,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
       <button
         type="button"
-        className="inline-flex h-12 items-center gap-2 rounded-full border border-sky-300 bg-sky-50 px-5 text-sm font-semibold text-sky-800 shadow-sm transition-colors hover:bg-sky-100"
+        className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${open ? 'bg-accent/20 text-accent' : 'text-muted-foreground hover:bg-muted hover:text-foreground'}`}
         onClick={() => {
           setOpen((v) => {
             const next = !v;
@@ -337,15 +342,15 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           });
         }}
         aria-label="Open FleetGraph assistant window"
+        title="FleetGraph Assistant"
       >
         <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5H7l-4 3v-5.5A8.5 8.5 0 1 1 21 11.5Z" />
           <path d="M8.5 10.5h7" />
           <path d="M8.5 14h5" />
         </svg>
-        Help
       </button>
-      {open && outputs.length > 0 && (
+      {outputs.length > 0 && (
         <div className="mt-2 w-80 rounded border border-border bg-background p-2 text-xs">
           <p className="mb-1 font-semibold text-muted">Recent FleetGraph alerts</p>
           <div className="space-y-1">
@@ -358,7 +363,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           </div>
         </div>
       )}
-      {open && approvals.length > 0 && (
+      {approvals.length > 0 && (
         <div className="mt-2 w-80 rounded border border-border bg-background p-2 text-xs">
           <p className="mb-1 font-semibold text-muted">Pending approvals</p>
           <div className="space-y-1">

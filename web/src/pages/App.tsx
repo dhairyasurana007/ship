@@ -499,6 +499,10 @@ export function AppLayout() {
 
           {/* User avatar & settings at bottom */}
           <div className="flex flex-col items-center gap-2">
+            <FleetGraphGlobalLauncher
+              documentId={currentDocumentId ?? undefined}
+              documentType={currentDocumentType ?? undefined}
+            />
             <RailIcon
               icon={<SettingsIcon />}
               label="Settings"
@@ -681,10 +685,6 @@ export function AppLayout() {
         }}
       />
 
-      <FleetGraphGlobalLauncher
-        documentId={currentDocumentId ?? undefined}
-        documentType={currentDocumentType ?? undefined}
-      />
     </div>
     </SelectionPersistenceProvider>
     </TooltipProvider>
