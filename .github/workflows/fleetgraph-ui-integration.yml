@@ -1,0 +1,43 @@
+name: FleetGraph UI Integration
+
+on:
+  push:
+    branches: [mvp, master]
+    paths:
+      - ".github/workflows/fleetgraph-ui-integration.yml"
+      - "web/src/components/fleetgraph/**"
+      - "web/src/components/UnifiedEditor.tsx"
+      - "api/src/routes/fleetgraph.ts"
+      - "api/src/fleetgraph/**"
+      - "web/package.json"
+      - "pnpm-lock.yaml"
+      - "package.json"
+  pull_request:
+    paths:
+      - ".github/workflows/fleetgraph-ui-integration.yml"
+      - "web/src/components/fleetgraph/**"
+      - "web/src/components/UnifiedEditor.tsx"
+      - "api/src/routes/fleetgraph.ts"
+      - "api/src/fleetgraph/**"
+      - "web/package.json"
+      - "pnpm-lock.yaml"
+      - "package.json"
+
+jobs:
+  web-fleetgraph-ui-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run fleetgraph UI tests
+        run: corepack pnpm -C web exec vitest run src/components/fleetgraph/FleetGraphAssistantPanel.test.tsx
+

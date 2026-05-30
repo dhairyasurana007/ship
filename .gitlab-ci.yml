@@ -1,0 +1,53 @@
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+      when: always
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
+    - when: never
+
+stages:
+  - test
+
+ci_smoke:
+  stage: test
+  script:
+    - echo "CI is wired"
+
+fleetgraph_scaffold:
+  stage: test
+  image: node:20
+  services:
+    - name: postgres:16
+      alias: postgres
+  variables:
+    POSTGRES_DB: ship_dev
+    POSTGRES_USER: ship
+    POSTGRES_PASSWORD: ship_dev_password
+    DATABASE_URL: postgres://ship:ship_dev_password@postgres:5432/ship_dev
+    NODE_ENV: test
+    SESSION_SECRET: test-session-secret
+    CORS_ORIGIN: http://localhost:5173
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "mvp"'
+      when: always
+    - changes:
+        - .gitlab-ci.yml
+        - api/src/fleetgraph/**/*
+        - api/src/db/migrations/042_fleetgraph_mvp_tables.sql
+        - api/src/index.ts
+        - api/src/__tests__/fleetgraph-config.test.ts
+        - api/src/__tests__/fleetgraph-migration.test.ts
+        - api/src/test/setup.ts
+        - api/package.json
+        - pnpm-lock.yaml
+        - package.json
+      when: always
+    - when: never
+  before_script:
+    - corepack enable
+    - corepack prepare pnpm@10 --activate
+    - pnpm install --frozen-lockfile
+  script:
+    - corepack pnpm -C api db:migrate
+    - corepack pnpm -C api test -- src/__tests__/fleetgraph-config.test.ts src/__tests__/fleetgraph-migration.test.ts

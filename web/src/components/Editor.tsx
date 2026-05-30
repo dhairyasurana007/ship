@@ -24,6 +24,7 @@ import { cn } from '@/lib/cn';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { ScrollFade } from '@/components/ui/ScrollFade';
 import { apiPost } from '@/lib/api';
+import { getCrossOriginSessionToken } from '@/lib/api';
 import { createSlashCommands } from './editor/SlashCommands';
 import { DocumentEmbed } from './editor/DocumentEmbed';
 import { DragHandleExtension } from './editor/DragHandle';
@@ -365,8 +366,10 @@ export function Editor({
       };
 
       // Create WebSocket provider with connect: false so we can add listener first
+      const crossOriginSessionToken = getCrossOriginSessionToken();
       wsProvider = new WebsocketProvider(wsUrl, `${roomPrefix}:${documentId}`, ydoc, {
         connect: false,
+        params: crossOriginSessionToken ? { session_id: crossOriginSessionToken } : undefined,
       });
 
       // Add raw message listener before connecting

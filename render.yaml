@@ -8,7 +8,9 @@ services:
       corepack enable
       corepack pnpm install --frozen-lockfile
       corepack pnpm build:api
-    preDeployCommand: corepack pnpm --filter @ship/api db:migrate
+    preDeployCommand: |
+      corepack pnpm --filter @ship/api db:migrate
+      corepack pnpm --filter @ship/api db:seed
     startCommand: corepack pnpm --filter @ship/api start
     healthCheckPath: /health
     autoDeployTrigger: commit

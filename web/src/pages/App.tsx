@@ -36,8 +36,19 @@ import { SelectionPersistenceProvider } from '@/contexts/SelectionPersistenceCon
 import { ActionItemsModal } from '@/components/ActionItemsModal';
 import { AccountabilityBanner } from '@/components/AccountabilityBanner';
 import { ProjectContextSidebar } from '@/components/sidebars/ProjectContextSidebar';
+import { FleetGraphGlobalLauncher } from '@/components/fleetgraph/FleetGraphGlobalLauncher';
+import { apiGet } from '@/lib/api';
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 type Mode = 'docs' | 'issues' | 'projects' | 'programs' | 'sprints' | 'team' | 'settings' | 'dashboard' | 'project-context';
+
+interface FleetGraphRuntimeStatus {
+  runId: string;
+  triggerType: 'pg_event' | 'poll_fallback' | 'schedule' | 'user_request' | string;
+  runStatus: 'queued' | 'running' | 'completed' | 'failed' | 'skipped' | string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export function AppLayout() {
   const { user, logout, isSuperAdmin, impersonating, endImpersonation } = useAuth();
@@ -56,6 +67,12 @@ export function AppLayout() {
   const [projectSetupWizardOpen, setProjectSetupWizardOpen] = useState(false);
   const [actionItemsModalOpen, setActionItemsModalOpen] = useState(false);
   const [actionItemsModalShownOnLoad, setActionItemsModalShownOnLoad] = useState(false);
+  // Bug #16: persist which item IDs the user has already seen so we only re-open
+  // when genuinely new items appear (not on every navigation/reload).
+  const seenActionItemIdsRef = useRef<Set<string>>(
+    new Set(JSON.parse(localStorage.getItem('ship:seenActionItemIds') ?? '[]') as string[])
+  );
+  const [fleetGraphRuntimeStatus, setFleetGraphRuntimeStatus] = useState<FleetGraphRuntimeStatus | null>(null);
 
   // Session timeout handling
   const handleSessionTimeout = useCallback(() => {
@@ -114,15 +131,20 @@ export function AppLayout() {
     };
   }, []);
 
-  // Show action items modal on initial load if there are pending items
-  // Disabled when localStorage flag is set (used by E2E tests to avoid blocking interactions)
+  // Show action items modal only when there are items the user hasn't seen yet.
+  // Disabled when localStorage flag is set (used by E2E tests to avoid blocking interactions).
+  // Bug #16 fix: compare current item IDs against the persisted seen-set so the
+  // modal doesn't re-open on every navigation/reload for already-dismissed items.
   useEffect(() => {
     if (localStorage.getItem('ship:disableActionItemsModal') === 'true') return;
-    if (!actionItemsModalShownOnLoad && hasActionItems && actionItemsData?.items) {
+    if (actionItemsModalShownOnLoad || !actionItemsData?.items) return;
+    const currentIds = actionItemsData.items.map((item: { id: string }) => item.id);
+    const hasNewItems = currentIds.some((id) => !seenActionItemIdsRef.current.has(id));
+    if (hasNewItems) {
       setActionItemsModalOpen(true);
       setActionItemsModalShownOnLoad(true);
     }
-  }, [actionItemsModalShownOnLoad, hasActionItems, actionItemsData?.items]);
+  }, [actionItemsModalShownOnLoad, actionItemsData?.items]);
 
   // Accessibility: focus management on navigation
   useFocusOnNavigate();
@@ -143,6 +165,77 @@ export function AppLayout() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  // Temporary CORS diagnostics - logs once on app load
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/cors-debug`, {
+          credentials: 'include',
+        });
+        const body = await response.json().catch(() => null);
+        if (!cancelled) {
+          console.log('[CORS-DEBUG]', {
+            status: response.status,
+            ok: response.ok,
+            body,
+            browserOrigin: window.location.origin,
+            apiUrl: API_URL,
+          });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('[CORS-DEBUG] request failed', error);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Poll FleetGraph runtime status for lightweight top-of-app activity signals.
+  useEffect(() => {
+    let canceled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const pollStatus = async () => {
+      try {
+        const res = await apiGet('/api/fleetgraph/runtime-status');
+        if (!res.ok) return;
+        const data = await res.json() as { status?: FleetGraphRuntimeStatus | null };
+        if (!canceled) {
+          setFleetGraphRuntimeStatus(data.status ?? null);
+        }
+      } catch {
+        // ignore status polling errors
+      }
+    };
+
+    void pollStatus();
+    timer = setInterval(() => {
+      void pollStatus();
+    }, 15000);
+
+    return () => {
+      canceled = true;
+      if (timer) clearInterval(timer);
+    };
+  }, []);
+
+  const fleetGraphBannerText = useMemo(() => {
+    if (!fleetGraphRuntimeStatus) return null;
+    const isActive = fleetGraphRuntimeStatus.runStatus === 'queued' || fleetGraphRuntimeStatus.runStatus === 'running';
+    if (!isActive) return null;
+    if (fleetGraphRuntimeStatus.triggerType === 'pg_event') {
+      return 'FleetGraph Agent detected database changes and is analyzing them.';
+    }
+    if (fleetGraphRuntimeStatus.triggerType === 'poll_fallback' || fleetGraphRuntimeStatus.triggerType === 'schedule') {
+      return 'FleetGraph Agent is running scheduled analysis.';
+    }
+    return null;
+  }, [fleetGraphRuntimeStatus]);
 
   // Get current document type and ID for /documents/:id routes
   const { currentDocumentType, currentDocumentId, currentDocumentProjectId } = useCurrentDocument();
@@ -293,6 +386,11 @@ export function AppLayout() {
         isCelebrating={isCelebrating}
         urgency={actionItemsData?.has_overdue ? 'overdue' : 'due_today'}
       />
+      {fleetGraphBannerText && (
+        <div className="pointer-events-none fixed right-4 top-4 z-[120] max-w-sm rounded-md border border-sky-300/70 bg-sky-950/95 px-3 py-2 text-xs text-sky-100 shadow-lg">
+          {fleetGraphBannerText}
+        </div>
+      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* Icon Rail - Navigation landmark */}
@@ -573,7 +671,19 @@ export function AppLayout() {
       {/* Action Items Modal - shows on login when user has pending accountability tasks */}
       <ActionItemsModal
         open={actionItemsModalOpen}
-        onClose={() => setActionItemsModalOpen(false)}
+        onClose={() => {
+          // Mark all currently visible items as seen so the modal won't reopen for them
+          const currentIds = actionItemsData?.items?.map((item: { id: string }) => item.id) ?? [];
+          const updated = new Set([...seenActionItemIdsRef.current, ...currentIds]);
+          seenActionItemIdsRef.current = updated;
+          try { localStorage.setItem('ship:seenActionItemIds', JSON.stringify([...updated])); } catch { /* quota */ }
+          setActionItemsModalOpen(false);
+        }}
+      />
+
+      <FleetGraphGlobalLauncher
+        documentId={currentDocumentId ?? undefined}
+        documentType={currentDocumentType ?? undefined}
       />
     </div>
     </SelectionPersistenceProvider>

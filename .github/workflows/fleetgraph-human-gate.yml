@@ -1,0 +1,68 @@
+name: FleetGraph Human Gate
+
+on:
+  push:
+    branches: [mvp, master]
+    paths:
+      - ".github/workflows/fleetgraph-human-gate.yml"
+      - "api/src/fleetgraph/**"
+      - "api/src/routes/fleetgraph.ts"
+      - "api/src/__tests__/fleetgraph-human-gate.test.ts"
+      - "api/src/db/migrations/043_fleetgraph_approval_requests.sql"
+      - "api/src/app.ts"
+      - "api/package.json"
+      - "pnpm-lock.yaml"
+      - "package.json"
+  pull_request:
+    paths:
+      - ".github/workflows/fleetgraph-human-gate.yml"
+      - "api/src/fleetgraph/**"
+      - "api/src/routes/fleetgraph.ts"
+      - "api/src/__tests__/fleetgraph-human-gate.test.ts"
+      - "api/src/db/migrations/043_fleetgraph_approval_requests.sql"
+      - "api/src/app.ts"
+      - "api/package.json"
+      - "pnpm-lock.yaml"
+      - "package.json"
+
+jobs:
+  api-fleetgraph-human-gate-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ship
+          POSTGRES_PASSWORD: ship_dev_password
+          POSTGRES_DB: ship_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ship -d ship_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://ship:ship_dev_password@127.0.0.1:5432/ship_dev
+      NODE_ENV: test
+      SESSION_SECRET: test-session-secret
+      CORS_ORIGIN: http://localhost:5173
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Run DB migrations
+        run: corepack pnpm -C api db:migrate
+      - name: Run human gate tests
+        run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-human-gate.test.ts
+

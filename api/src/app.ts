@@ -35,6 +35,7 @@ import aiRoutes from './routes/ai.js';
 import weeklyPlansRoutes, { weeklyRetrosRouter } from './routes/weekly-plans.js';
 import { documentCommentsRouter, commentsRouter } from './routes/comments.js';
 import queryAuditRoutes from './routes/query-audit.js';
+import fleetGraphRoutes from './routes/fleetgraph.js';
 import { setupSwagger } from './swagger.js';
 import { initializeCAIA } from './services/caia.js';
 import { initializeQueryAudit, queryAuditMiddleware } from './observability/query-audit.js';
@@ -97,9 +98,10 @@ const apiLimiter = rateLimit({
 export function createApp(corsOrigin: string | string[] = 'http://localhost:5173'): express.Express {
   const app = express();
   initializeQueryAudit();
+  const isRender = process.env.RENDER === 'true' || Boolean(process.env.RENDER);
 
   // Trust proxy headers (CloudFront) for secure cookies and correct protocol detection
-  if (process.env.NODE_ENV === 'production') {
+  if (process.env.NODE_ENV === 'production' || isRender) {
     app.set('trust proxy', 1);
 
     // CloudFront with viewer_protocol_policy="redirect-to-https" always serves viewers over HTTPS.
@@ -178,6 +180,26 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
     res.json({ status: 'ok' });
   });
 
+  // Temporary CORS diagnostics endpoint (no auth needed)
+  app.get('/api/cors-debug', (req, res) => {
+    res.json({
+      ok: true,
+      serverSeen: {
+        origin: req.headers.origin ?? null,
+        host: req.headers.host ?? null,
+        forwardedProto: req.headers['x-forwarded-proto'] ?? null,
+      },
+      env: {
+        nodeEnv: process.env.NODE_ENV ?? null,
+        corsOrigin: process.env.CORS_ORIGIN ?? null,
+        sessionCookieSecure,
+        sessionCookieSameSite,
+        sessionCookieProxy,
+        render: process.env.RENDER ?? null,
+      },
+    });
+  });
+
   // API documentation (no auth needed)
   setupSwagger(app);
 
@@ -252,6 +274,7 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
 
   // File upload routes (CSRF protected for POST endpoints)
   app.use('/api/files', conditionalCsrf, filesRouter);
+  app.use('/api/fleetgraph', conditionalCsrf, fleetGraphRoutes);
 
   // Comments routes
   app.use('/api/documents', conditionalCsrf, documentCommentsRouter);

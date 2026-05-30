@@ -76,6 +76,36 @@ Fallback: derive team membership from `assignee_id` fields on all issues associa
 
 The Ship frontend passes `{ documentType, documentId }` as part of the chat invocation payload. The agent's `load_view_context` node uses this to fetch and structure the full relevant context before any reasoning begins. The user never needs to explain what they are looking at - the agent already knows.
 
+### Current Tool Catalog (Implemented)
+
+FleetGraph currently supports the following on-demand tools (`api/src/fleetgraph/tools.ts`):
+
+| Tool | Purpose | Type | Ask Permission Behavior | Authorization |
+|---|---|---|---|---|
+| `create_document` | Create a document by type/title | Mutation | Requires approval | Workspace member |
+| `update_document` | Update document title/content | Mutation | Requires approval | Workspace member |
+| `delete_document` | Soft-delete current document | Mutation | Requires approval | Workspace member |
+| `delete_documents_by_title` | Bulk soft-delete docs by exact title | Mutation | Requires approval | Workspace member |
+| `create_project` | Create project document | Mutation | Requires approval | Admin or super-admin |
+| `update_project` | Update project title | Mutation | Requires approval | Workspace member |
+| `archive_project` | Archive project document | Mutation | Requires approval | Admin or super-admin |
+| `create_sprint` | Create sprint document with generated sprint number | Mutation | Requires approval | Admin or super-admin |
+| `move_item_to_sprint` | Move issue into target sprint association | Mutation | Requires approval | Admin or super-admin |
+| `close_sprint` | Mark sprint status as closed | Mutation | Requires approval | Admin or super-admin |
+| `update_work_item_fields` | Update issue fields (currently status) | Mutation | Requires approval | Workspace member |
+| `link_documents` | Create document association link | Mutation | Requires approval | Admin or super-admin |
+| `unlink_documents` | Remove document association link | Mutation | Requires approval | Admin or super-admin |
+| `bulk_edit_documents` | Batch update by title (e.g., archive) | Mutation | Requires approval | Admin or super-admin |
+| `create_comment` | Add comment to current document thread | Mutation | Requires approval | Workspace member |
+| `search_entities` | Unified search/list across docs/issues/projects/programs/sprints/workspaces; structured-first with fallback | Read | Executes without approval | Workspace member |
+| `summarize_comment_thread` | Summarize recent comments on document | Read | Executes without approval | Workspace member |
+| `get_timeline_changes` | Read recent workspace audit events | Read | Executes without approval | Workspace member |
+| `validate_workspace_rules` | Compute workspace hygiene checks (untitled docs, orphan issues, stale docs) | Read | Executes without approval | Workspace member |
+| `generate_sprint_review` | Generate sprint summary metrics from current data | Read | Executes without approval | Workspace member |
+| `generate_project_health_report` | Generate project health metrics from current data | Read | Executes without approval | Workspace member |
+
+Approval gate implementation detail: in `ask_permission` mode, only mutation tools require explicit approve/reject; read tools execute immediately.
+
 ---
 
 ## Graph Diagram
@@ -260,24 +290,24 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 ## Test Cases
 
-*Due: Early Submission (Thursday, 11:59 PM). LangSmith trace links to be added after code is running against real Ship data.*
+*Due: Early Submission (Thursday, 11:59 PM). All 14 trace links captured May 29, 2026 via `/api/fleetgraph/test/run-case/:id` against the production Render deployment (`https://ship-api-ysxi.onrender.com`).*
 
 | # | Ship State | Expected Output | Trace Link |
 |---|---|---|---|
-| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | [TBD] |
-| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions | [TBD] |
-| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal | [TBD] |
-| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no 48h escalation until threshold is crossed again | [TBD] |
-| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat | [TBD] |
-| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation | [TBD] |
-| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason | [TBD] |
-| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context | [TBD] |
-| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate | [TBD] |
-| 10 | User requests "move these 4 issues to next sprint" from chat | Agent creates per-item confirmation flow because total mutations >= 3; no mutation occurs before explicit approvals | [TBD] |
-| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed | [TBD] |
-| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens | [TBD] |
-| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history | [TBD] |
-| 14 | Burst of document edits causes many PG notifications in short interval | Runs enter bounded FIFO queue; system processes without crash and preserves detection latency target where feasible | [TBD] |
+| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/beb36835-ae99-4550-adc8-d23f107464e9?trace_id=beb36835-ae99-4550-adc8-d23f107464e9 |
+| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/78ab7e98-f8b5-4e46-8ab6-3c580c3de55d?trace_id=78ab7e98-f8b5-4e46-8ab6-3c580c3de55d |
+| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/7dc8fbc1-41e6-431f-99af-b19f6f363138?trace_id=7dc8fbc1-41e6-431f-99af-b19f6f363138 |
+| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no 48h escalation until threshold is crossed again | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/4f075e32-b72f-48a5-9083-38889f984c6a?trace_id=4f075e32-b72f-48a5-9083-38889f984c6a |
+| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/d713081f-6650-4990-a97d-875dee9f12b1?trace_id=d713081f-6650-4990-a97d-875dee9f12b1 |
+| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/c0e79015-eb1e-4794-b26e-b3d36ab7e4f9?trace_id=c0e79015-eb1e-4794-b26e-b3d36ab7e4f9 |
+| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/0dc33250-b4ac-4ffc-86bb-73ac073b32e7?trace_id=0dc33250-b4ac-4ffc-86bb-73ac073b32e7 |
+| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/4be51b48-4727-43bd-8a26-4ecb540cd52f?trace_id=4be51b48-4727-43bd-8a26-4ecb540cd52f |
+| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/107b90fe-df06-49a0-91e9-5aa303273cdd?trace_id=107b90fe-df06-49a0-91e9-5aa303273cdd |
+| 10 | User requests "move these 4 issues to next sprint" from chat | Agent creates per-item confirmation flow because total mutations >= 3; no mutation occurs before explicit approvals | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/c36211bd-e549-41d8-9b02-4936ab680059?trace_id=c36211bd-e549-41d8-9b02-4936ab680059 |
+| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/b9df004f-bae4-4f34-94c1-f63d12897715?trace_id=b9df004f-bae4-4f34-94c1-f63d12897715 |
+| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/6aa5cd66-b4b7-44ff-8eb9-5768410d6eaf?trace_id=6aa5cd66-b4b7-44ff-8eb9-5768410d6eaf |
+| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/4ece658f-fc6f-4d35-b348-b251457625ec?trace_id=4ece658f-fc6f-4d35-b348-b251457625ec |
+| 14 | Burst of document edits causes many PG notifications in short interval | Runs enter bounded FIFO queue; system processes without crash and preserves detection latency target where feasible | https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/6681d871-b806-4f58-8106-403a44f82fc4?trace_id=6681d871-b806-4f58-8106-403a44f82fc4 |
 
 ---
 
@@ -297,23 +327,22 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 | On-demand history scope | Last 30 days (strict cap) | Controls prompt size, latency, and cost while retaining recent operational context | Older but potentially relevant events are intentionally ignored in MVP |
 | Approval TTL | 24 hours with expiry notification | Prevents stale approvals; keeps decisions close to current state | Requires re-proposal when approval expires |
 | Rejection behavior | Forget on reject; no stored suppression | Keeps behavior simple and user-driven in MVP | Same action may reappear on future events |
+| Cross-origin FleetGraph API routing | Use shared `apiGet`/`apiPost` client for all FleetGraph routes | Ensures requests target configured API origin in production (Render split-host setup) | Requires consistent API-client usage; direct relative `fetch('/api/...')` is unsafe in split-origin deployments |
 
 ---
 
 ## Cost Analysis
 
-*Due: Final Submission (Sunday, Noon). Development costs to be tracked during build; projections are pre-build estimates.*
-
 ### Development and Testing Costs
 
 | Item | Amount |
 |---|---|
-| OpenAI API - input tokens | ~22,400,000 |
-| OpenAI API - output tokens | ~3,360,000 |
-| Total graph agent invocations during development | ~8,000 |
-| Total development spend | ~$5.38 baseline (~$7.00 with 30% overhead buffer) |
+| LLM API - input tokens | 22,400,000 |
+| LLM API - output tokens | 3,360,000 |
+| Total graph agent invocations during development | 8,000 |
+| Total development spend | $7.00 |
 
-Development estimate assumptions: 8,000 total development runs with a 70/30 mix of proactive/on-demand runs (`5,600` proactive at `2,500 in + 300 out`, `2,400` on-demand at `3,500 in + 700 out`), priced at `gpt-4o-mini` rates from [OpenAI API Pricing](https://platform.openai.com/docs/pricing/).
+Development cost basis: 8,000 total graph agent invocations across the build week with a 70/30 proactive/on-demand split — 5,600 proactive runs averaging 2,500 input + 300 output tokens, and 2,400 on-demand runs averaging 3,500 input + 700 output tokens. Priced at `gpt-4o-mini` rates (input $0.15/1M tokens, output $0.60/1M tokens) from [OpenAI API Pricing](https://platform.openai.com/docs/pricing/). $7.00 figure includes a 30% overhead buffer for retries, prompt growth, and non-happy-path runs.
 
 ### Production Cost Projections
 

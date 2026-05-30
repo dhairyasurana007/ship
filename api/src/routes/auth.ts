@@ -7,6 +7,7 @@ import { authMiddleware } from '../middleware/auth.js';
 import { ERROR_CODES, HTTP_STATUS, SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
 import { logAuditEvent } from '../services/audit.js';
 import { sessionCookieSameSite, sessionCookieSecure } from '../config/session-cookie.js';
+import { notifySessionStart, notifySessionEnd } from '../fleetgraph/session-tracker.js';
 
 const router: RouterType = Router();
 
@@ -191,6 +192,8 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       path: '/',
     });
 
+    notifySessionStart();
+
     res.json({
       success: true,
       data: {
@@ -238,6 +241,8 @@ router.post('/logout', authMiddleware, async (req: Request, res: Response): Prom
 
     // Delete session from database
     await pool.query('DELETE FROM sessions WHERE id = $1', [req.sessionId]);
+
+    notifySessionEnd();
 
     // Clear cookie with same options used when setting it
     res.clearCookie('session_id', {
