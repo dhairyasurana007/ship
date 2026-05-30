@@ -90,7 +90,8 @@ export async function persistFleetGraphOutputs(
       await pool.query(
         `INSERT INTO fleetgraph_outputs (
           workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata
-        ) VALUES ($1, $2, $3, $4, $5::uuid, $6, NULL, $7, $8, $9::jsonb)`,
+        ) VALUES ($1, $2, $3, $4, $5::uuid, $6, NULL, $7, $8, $9::jsonb)
+        ON CONFLICT (workspace_id, condition_type, entity_id, recipient_user_id) DO NOTHING`,
         [
           workspaceId,
           runId,
@@ -110,7 +111,8 @@ export async function persistFleetGraphOutputs(
       await pool.query(
         `INSERT INTO fleetgraph_outputs (
           workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata
-        ) VALUES ($1, $2, $3, $4, $5::uuid, $6, $7::uuid, $8, $9, $10::jsonb)`,
+        ) VALUES ($1, $2, $3, $4, $5::uuid, $6, $7::uuid, $8, $9, $10::jsonb)
+        ON CONFLICT (workspace_id, condition_type, entity_id, recipient_user_id) DO NOTHING`,
         [
           workspaceId,
           runId,
