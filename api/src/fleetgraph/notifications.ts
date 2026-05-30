@@ -14,7 +14,7 @@ function conditionTitle(c: FleetGraphCondition): string {
   const issueTitle = rawTitle && rawTitle.toLowerCase() !== 'untitled' ? rawTitle : null;
   const project = c.details?.projectTitle ? String(c.details.projectTitle) : null;
 
-  // For capacity mismatch there's no single document — use project-level title
+  // For capacity mismatch there's no single issue — use project-level title
   if (c.type === 'capacity_mismatch') {
     return project
       ? `${project}: capacity mismatch`
@@ -22,7 +22,7 @@ function conditionTitle(c: FleetGraphCondition): string {
   }
 
   // All other types: lead with the document title, fall back to project
-  return issueTitle ?? project ?? 'Untitled issue';
+  return issueTitle ?? project ?? 'Untitled';
 }
 
 function conditionMessage(c: FleetGraphCondition): string {
