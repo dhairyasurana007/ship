@@ -21,7 +21,7 @@ function conditionTitle(c: FleetGraphCondition): string {
       : 'Capacity mismatch';
   }
 
-  // All other types: lead with the document title, fall back to project
+  // All other types: lead with the issue title, fall back to project
   return issueTitle ?? project ?? 'Untitled';
 }
 

@@ -80,8 +80,10 @@ export async function persistFleetGraphOutputs(
 ): Promise<void> {
   if (conditions.length === 0 || outputs.length === 0) return;
 
-  for (const condition of conditions) {
-    const mappedOutput = outputs.find((o) => o.conditions.includes(condition.type));
+  for (let i = 0; i < conditions.length; i++) {
+    const condition = conditions[i]!;
+    // Match 1-to-1 by index — routeOutputs produces one output per condition in the same order
+    const mappedOutput = outputs[i];
     if (!mappedOutput) continue;
     const recipients = await resolveRecipients(condition);
     const message = mappedOutput.message || buildMessage(condition);
