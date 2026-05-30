@@ -1,6 +1,5 @@
 import type { FleetGraphConfig } from './types.js';
 
-const DEFAULT_MODEL = 'gpt-4o-mini';
 const DEFAULT_PROVIDER = 'openai';
 const DEFAULT_OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 const DEFAULT_LANGSMITH_ENDPOINT = 'https://api.smith.langchain.com';
@@ -45,7 +44,7 @@ export function loadFleetGraphConfig(env: NodeJS.ProcessEnv = process.env): Flee
   return {
     enabled,
     provider,
-    model: env.FLEETGRAPH_MODEL || DEFAULT_MODEL,
+    model: (() => { if (!env.FLEETGRAPH_MODEL) throw new Error('FLEETGRAPH_MODEL is required'); return env.FLEETGRAPH_MODEL; })(),
     openAiApiKey,
     openRouterApiKey,
     openRouterBaseUrl,
