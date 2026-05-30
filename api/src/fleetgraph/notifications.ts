@@ -11,67 +11,57 @@ const ACTION_REQUIRED = new Set(['unresolved_blocker', 'orphaned_issue']);
 
 function conditionTitle(c: FleetGraphCondition): string {
   const rawTitle = c.details?.issueTitle ? String(c.details.issueTitle) : null;
-  const issue = rawTitle && rawTitle.toLowerCase() !== 'untitled' ? `"${rawTitle}"` : null;
+  const issueTitle = rawTitle && rawTitle.toLowerCase() !== 'untitled' ? rawTitle : null;
   const project = c.details?.projectTitle ? String(c.details.projectTitle) : null;
-  const sprint = c.details?.sprintTitle ? String(c.details.sprintTitle) : null;
 
-  // Build context suffix: always include both project and sprint when available
-  const context = project && sprint
-    ? ` — ${project} · ${sprint}`
-    : sprint
-    ? ` — ${sprint}`
-    : project
-    ? ` — ${project}`
-    : '';
-
-  switch (c.type) {
-    case 'stale_issue': {
-      const days = c.details?.staleHours ? Math.floor(Number(c.details.staleHours) / 24) : null;
-      const age = days !== null ? ` (${days}d stale)` : '';
-      return issue ? `${issue} is stale${age}${context}` : `Stale issue${age}${context}`;
-    }
-    case 'sprint_scope_creep':
-      return issue
-        ? `${issue} added to sprint late${context}`
-        : sprint
-        ? `Issue added to ${sprint} late${project ? ` — ${project}` : ''}`
-        : project
-        ? `Late sprint addition in ${project}`
-        : 'Issue added to sprint after start';
-    case 'unresolved_blocker':
-      return issue ? `${issue} is blocked${context}` : `Unresolved blocker${context}`;
-    case 'orphaned_issue':
-      return issue ? `${issue} has no assignee or sprint${context}` : `Orphaned issue${context}`;
-    case 'capacity_mismatch':
-      return project
-        ? `${String(c.details?.orphanCount ?? 0)} unassigned issues in ${project} — ${String(c.details?.freeMemberCount ?? 0)} member(s) free`
-        : `Capacity mismatch: ${String(c.details?.orphanCount ?? 0)} unassigned, ${String(c.details?.freeMemberCount ?? 0)} free`;
-    default:
-      return (c.type as string).replace(/_/g, ' ');
+  // For capacity mismatch there's no single document — use project-level title
+  if (c.type === 'capacity_mismatch') {
+    return project
+      ? `${project}: capacity mismatch`
+      : 'Capacity mismatch';
   }
+
+  // All other types: lead with the document title, fall back to project
+  return issueTitle ?? project ?? 'Untitled issue';
 }
 
 function conditionMessage(c: FleetGraphCondition): string {
-  const assignee = c.details?.assigneeName ? ` Assigned to ${String(c.details.assigneeName)}.` : ' No assignee.';
+  const assignee = c.details?.assigneeName ? String(c.details.assigneeName) : null;
+  const project = c.details?.projectTitle ? String(c.details.projectTitle) : null;
+  const sprint = c.details?.sprintTitle ? String(c.details.sprintTitle) : null;
+  const location = project && sprint ? `${project} · ${sprint}` : sprint ?? project ?? null;
+
   switch (c.type) {
     case 'stale_issue': {
       const hours = Number(c.details?.staleHours ?? 0);
-      return `No state change in ${Math.floor(hours / 24)} day(s).${assignee}`;
+      const days = Math.floor(hours / 24);
+      const who = assignee ? `Assigned to ${assignee}.` : 'No assignee.';
+      return location
+        ? `Stale for ${days} day(s) in ${location}. ${who}`
+        : `Stale for ${days} day(s). ${who}`;
     }
-    case 'sprint_scope_creep':
-      return `Issue added to sprint after start date.`;
+    case 'sprint_scope_creep': {
+      const where = location ?? 'the sprint';
+      return `Added to ${where} after the sprint start date.`;
+    }
     case 'unresolved_blocker': {
       const bHours = Number(c.details?.blockerAgeHours ?? 0);
-      return `Blocked for ${Math.floor(bHours / 24)} day(s).${assignee}`;
+      const days = Math.floor(bHours / 24);
+      const who = assignee ? `Assigned to ${assignee}.` : 'No assignee.';
+      return location
+        ? `Blocked for ${days} day(s) in ${location}. ${who}`
+        : `Blocked for ${days} day(s). ${who}`;
     }
     case 'orphaned_issue': {
       const days = Number(c.details?.orphanAgeDays ?? 0);
-      return `No assignee and no sprint for ${days} day(s).`;
+      return location
+        ? `No assignee and no sprint for ${days} day(s). Found in ${location}.`
+        : `No assignee and no sprint for ${days} day(s).`;
     }
     case 'capacity_mismatch': {
       const orphans = Number(c.details?.orphanCount ?? 0);
       const free = Number(c.details?.freeMemberCount ?? 0);
-      return `${free} team member(s) have no active issues but ${orphans} unassigned issue(s) exist in this project.`;
+      return `${free} member(s) are free but ${orphans} issue(s) are unassigned.`;
     }
     default:
       return 'See details.';
