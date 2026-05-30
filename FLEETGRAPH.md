@@ -227,7 +227,7 @@ flowchart TD
 
 ## Trigger Model
 
-**Decision: Hybrid - PostgreSQL LISTEN/NOTIFY as primary trigger, 2-minute scheduled poll as fallback.**
+**Decision: Hybrid - PostgreSQL LISTEN/NOTIFY as primary trigger, 5-minute scheduled poll as fallback.**
 
 ### Why not pure webhooks
 
@@ -245,9 +245,9 @@ A trigger on the `documents` and `document_associations` tables fires `pg_notify
 
 Operational note: because every document change can trigger a run, FleetGraph uses a bounded worker queue with explicit max concurrency to avoid unbounded run storms; runs are processed FIFO once accepted into the queue.
 
-### Fallback - 2-minute scheduled poll
+### Fallback - 5-minute scheduled poll
 
-A cron job runs every 2 minutes:
+A poll runs every 5 minutes (configurable via `FLEETGRAPH_POLL_INTERVAL_MS`, default `300000`):
 
 ```sql
 SELECT id, document_type, updated_at
@@ -263,7 +263,7 @@ This catches changes that bypass the PG trigger (bulk migrations, direct DB writ
 
 | | Poll only | Webhooks | PG LISTEN + poll fallback |
 |---|---|---|---|
-| Detection latency | <= poll interval (~2 min) | Near real-time | <1s primary; <=2 min fallback |
+| Detection latency | <= poll interval (~5 min) | Near real-time | <1s primary; <=5 min fallback |
 | Idle cost | Constant (720 runs/project/day) | Zero | Near-zero (open connection, no LLM) |
 | Reliability | High | Requires Ship changes | High - fallback covers all gaps |
 | Implementation complexity | Low | Medium | Medium (PG trigger + listener) |
@@ -283,7 +283,7 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 ### Detection latency
 
 - PG LISTEN path: trigger fires in <1s; parallel fetch + classify takes ~10-20s total -> well under 1 minute
-- Fallback poll path: worst case 2 minutes + ~20s execution = ~2.5 minutes
+- Fallback poll path: worst case 5 minutes + ~20s execution = ~5.3 minutes
 - Both paths satisfy the <5 minute SLA required by the PRD
 
 ---
@@ -317,9 +317,9 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 | Decision | Choice | Rationale | Tradeoff |
 |---|---|---|---|
-| Graph framework | LangGraph.js | TypeScript - stays in the Ship monorepo; LangSmith tracing included out of the box; no language boundary between Ship and FleetGraph | Python LangGraph has a larger ecosystem and more examples |
+| Graph framework | Custom TypeScript graph runner | TypeScript - stays in the Ship monorepo; manual LangSmith REST instrumentation via `langsmith.ts` (`createLangSmithChildRun` / `finishLangSmithChildRun`); no language boundary between Ship and FleetGraph | LangGraph.js would provide built-in tracing and a richer node/edge API but adds an external dependency; the custom runner is simpler and sufficient for the current graph shape |
 | Trigger mechanism | PG LISTEN/NOTIFY + poll fallback | Ship has no webhook system; PG events are real-time and require no Ship modifications; poll provides resilience | Requires the agent service to maintain a persistent DB connection |
-| Deployment | Separate EB Worker Environment | Isolates the agent's long-running graph executions from the web-serving EB environment; scales independently | Additional EB environment cost; two deployments to maintain |
+| Deployment | In-process on Render (same service as the API) | FleetGraph runs as an in-process module within the Express API on Render; no separate worker service or EB environment; the trigger runtime and graph runner start alongside the server | Long-running graph executions share the web-serving process; a future high-load deployment could extract this to a dedicated worker, but in-process is sufficient for MVP |
 | LLM choice | `gpt-4o-mini` | Balances quality, latency, and cost for both proactive and on-demand agent flows | Lower ceiling than larger frontier models for hardest reasoning tasks |
 | Authentication | `fleetgraph-service` API token via `/api/api-tokens` | No user session required; already supported by Ship's auth layer | Token must be rotated and secured as an env variable; cannot impersonate individual users for write actions |
 | State persistence | `fleetgraph_state` PostgreSQL table | Shares the existing RDS instance; no new infrastructure; survives service restarts | Same DB as production - migrations must be handled carefully |
