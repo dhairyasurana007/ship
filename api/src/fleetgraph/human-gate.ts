@@ -68,7 +68,7 @@ export function approvalTtlHours(): number {
 
 export async function listPendingApprovals(workspaceId: string): Promise<Array<Record<string, unknown>>> {
   const result = await pool.query(
-    `SELECT id, run_id, entity_id, mutation_type, mutation_payload, status, expires_at, created_at, updated_at
+    `SELECT id, run_id, entity_id, mutation_type, mutation_payload, status, requested_by, expires_at, created_at, updated_at
      FROM fleetgraph_approval_requests
      WHERE workspace_id = $1
        AND status IN ('pending', 'approved')

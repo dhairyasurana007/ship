@@ -22,8 +22,13 @@ interface FleetGraphOutput {
 
 interface FleetGraphApproval {
   id: string;
+  run_id?: string;
+  entity_id?: string;
   mutation_type: string;
   status: string;
+  requested_by?: string;
+  expires_at?: string;
+  created_at?: string;
   mutation_payload?: Record<string, unknown>;
 }
 
@@ -38,15 +43,18 @@ interface FleetGraphChatResponse {
 }
 type AccessMode = 'ask_permission' | 'full_access';
 
-type RecommendedApprovalAction = 'reject' | 'execute' | null;
-
-function readRecommendedApprovalAction(approval: FleetGraphApproval): RecommendedApprovalAction {
-  const payload = approval.mutation_payload ?? {};
-  const fromCamel = payload.recommendedAction;
-  const fromSnake = payload.recommended_action;
-  const raw = typeof fromCamel === 'string' ? fromCamel : typeof fromSnake === 'string' ? fromSnake : null;
-  if (raw === 'reject' || raw === 'execute') return raw;
-  return null;
+function approvalSummary(a: FleetGraphApproval): string {
+  const p = a.mutation_payload ?? {};
+  switch (a.mutation_type) {
+    case 'reassign_issue':
+      return `Reassign issue${p.issueTitle ? ` "${String(p.issueTitle)}"` : ''} to ${String(p.assigneeName ?? p.assignee_id ?? 'new assignee')}`;
+    case 'move_issue_sprint':
+      return `Move issue${p.issueTitle ? ` "${String(p.issueTitle)}"` : ''} to sprint ${String(p.sprintTitle ?? p.sprint_id ?? 'new sprint')}`;
+    case 'change_issue_state':
+      return `Change issue${p.issueTitle ? ` "${String(p.issueTitle)}"` : ''} state to "${String(p.newState ?? p.new_state ?? 'unknown')}"`;
+    default:
+      return a.mutation_type.replace(/_/g, ' ');
+  }
 }
 
 export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGraphGlobalLauncherProps) {
@@ -62,6 +70,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [degradedNotice, setDegradedNotice] = useState<string | null>(null);
   const [accessMode, setAccessMode] = useState<AccessMode>('ask_permission');
   const [pendingPrompt, setPendingPrompt] = useState<string | null>(null);
+  const [selectedApproval, setSelectedApproval] = useState<FleetGraphApproval | null>(null);
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -110,9 +119,13 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     }
   }
 
-  async function approvalAction(id: string, action: 'approve' | 'reject' | 'execute'): Promise<void> {
+  async function approvalAction(id: string, action: 'approve' | 'reject'): Promise<void> {
     try {
       await apiPost(`/api/fleetgraph/approvals/${id}/${action}`, {});
+      if (action === 'approve') {
+        // approve then immediately execute
+        await apiPost(`/api/fleetgraph/approvals/${id}/execute`, {});
+      }
       await loadApprovals();
     } catch {
       // silent fallback
@@ -375,23 +388,70 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               <p className="mb-1 font-semibold text-muted">Pending approvals</p>
               <div className="space-y-1">
                 {approvals.map((a) => (
-                  <div key={a.id} className="rounded border border-border bg-muted/20 p-1">
-                    <p className="font-medium text-foreground">{a.mutation_type}</p>
-                    <p className="text-muted">Status: {a.status}</p>
-                    <div className="mt-1 flex gap-1">
-                      <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'approve')}>Approve</button>
-                      {readRecommendedApprovalAction(a) === 'reject' && (
-                        <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'reject')}>Reject</button>
-                      )}
-                      {readRecommendedApprovalAction(a) === 'execute' && (
-                        <button type="button" className="rounded border px-1" onClick={() => void approvalAction(a.id, 'execute')}>Execute</button>
-                      )}
-                    </div>
+                  <div
+                    key={a.id}
+                    className="cursor-pointer rounded border border-border bg-muted/20 p-2 hover:bg-muted/40 transition-colors"
+                    onClick={() => setSelectedApproval(a)}
+                  >
+                    <p className="font-medium text-foreground">{approvalSummary(a)}</p>
+                    <p className="mt-0.5 text-muted">Click to review · {a.expires_at ? `Expires ${new Date(a.expires_at).toLocaleDateString()}` : 'Pending'}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Approval detail modal */}
+      {selectedApproval && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40" onClick={() => setSelectedApproval(null)}>
+          <div className="w-96 rounded-lg border border-border bg-background p-4 shadow-xl text-sm" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-3">
+              <h3 className="font-semibold text-foreground">Approval Request</h3>
+              <button type="button" className="text-muted hover:text-foreground" onClick={() => setSelectedApproval(null)}>✕</button>
+            </div>
+
+            <p className="text-foreground font-medium mb-3">{approvalSummary(selectedApproval)}</p>
+
+            <div className="space-y-2 text-xs text-muted mb-4">
+              {selectedApproval.entity_id && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Affected</span><span>{selectedApproval.entity_id}</span></div>
+              )}
+              {selectedApproval.requested_by && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Requested by</span><span>{selectedApproval.requested_by}</span></div>
+              )}
+              {selectedApproval.created_at && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Created</span><span>{new Date(selectedApproval.created_at).toLocaleString()}</span></div>
+              )}
+              {selectedApproval.expires_at && (
+                <div className="flex gap-2"><span className="w-24 shrink-0 font-medium text-foreground/70">Expires</span><span>{new Date(selectedApproval.expires_at).toLocaleString()}</span></div>
+              )}
+              {selectedApproval.mutation_payload && Object.keys(selectedApproval.mutation_payload).length > 0 && (
+                <div className="mt-2">
+                  <p className="font-medium text-foreground/70 mb-1">Payload</p>
+                  <pre className="rounded bg-muted/30 p-2 text-[11px] overflow-auto max-h-32 whitespace-pre-wrap">{JSON.stringify(selectedApproval.mutation_payload, null, 2)}</pre>
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-2 justify-end">
+              <button
+                type="button"
+                className="rounded border border-border px-3 py-1.5 text-xs hover:bg-muted transition-colors"
+                onClick={() => { void approvalAction(selectedApproval.id, 'reject'); setSelectedApproval(null); }}
+              >
+                Reject
+              </button>
+              <button
+                type="button"
+                className="rounded bg-foreground px-3 py-1.5 text-xs text-background hover:opacity-90 transition-opacity"
+                onClick={() => { void approvalAction(selectedApproval.id, 'approve'); setSelectedApproval(null); }}
+              >
+                Approve
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
