@@ -441,6 +441,20 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                   FleetGraph alerts ({outputs.length})
                 </p>
                 <div className="flex items-center gap-2">
+                  <div
+                    className="group relative"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 text-muted hover:text-foreground transition-colors cursor-default" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 16v-4M12 8h.01" />
+                    </svg>
+                    <div className="pointer-events-none absolute bottom-full right-0 mb-2 w-64 rounded border border-border bg-background p-2.5 text-xs text-muted shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                      <p className="font-semibold text-foreground mb-1">FleetGraph alerts vs. Ship alerts</p>
+                      <p className="mb-1"><span className="font-medium text-foreground">Ship alerts</span> (red banner) — your personal workflow obligations: weekly plans, retros, and action items you need to complete.</p>
+                      <p><span className="font-medium text-foreground">FleetGraph alerts</span> — AI-detected project health signals: stale issues, blockers, orphaned work, and capacity gaps across your team.</p>
+                    </div>
+                  </div>
                   <span className="text-muted">{alertsMinimized ? '▲' : '▼'}</span>
                 </div>
               </div>
