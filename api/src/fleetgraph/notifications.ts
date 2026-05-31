@@ -69,28 +69,11 @@ function conditionMessage(c: FleetGraphCondition): string {
 }
 
 export function routeOutputs(conditions: FleetGraphCondition[]): FleetGraphOutputMessage[] {
-  const actionConditions = conditions.filter((c) => ACTION_REQUIRED.has(c.type));
-  const notificationConditions = conditions.filter((c) => !ACTION_REQUIRED.has(c.type));
-
-  const output: FleetGraphOutputMessage[] = [];
-
-  for (const c of notificationConditions) {
-    output.push({
-      kind: 'notification',
-      title: conditionTitle(c),
-      message: conditionMessage(c),
-      conditions: [c.type],
-    });
-  }
-
-  for (const c of actionConditions) {
-    output.push({
-      kind: 'action_required',
-      title: conditionTitle(c),
-      message: conditionMessage(c),
-      conditions: [c.type],
-    });
-  }
-
-  return output;
+  // Process in the same order as input so indices align with persistFleetGraphOutputs
+  return conditions.map((c) => ({
+    kind: ACTION_REQUIRED.has(c.type) ? 'action_required' : 'notification',
+    title: conditionTitle(c),
+    message: conditionMessage(c),
+    conditions: [c.type],
+  }));
 }
