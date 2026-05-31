@@ -3,7 +3,7 @@ import { loadFleetGraphConfig } from '../fleetgraph/config.js';
 
 describe('fleetgraph config', () => {
   it('loads defaults when optional values are omitted', () => {
-    const cfg = loadFleetGraphConfig({ FLEETGRAPH_ENABLED: 'true' });
+    const cfg = loadFleetGraphConfig({ FLEETGRAPH_ENABLED: 'true', FLEETGRAPH_MODEL: 'gpt-4o-mini' });
     expect(cfg.enabled).toBe(true);
     expect(cfg.provider).toBe('openai');
     expect(cfg.model).toBe('gpt-4o-mini');
@@ -21,9 +21,9 @@ describe('fleetgraph config', () => {
   });
 
   it('throws for invalid numeric env values', () => {
-    expect(() => loadFleetGraphConfig({ FLEETGRAPH_MAX_CONCURRENCY: '0' })).toThrow(/FLEETGRAPH_MAX_CONCURRENCY/);
-    expect(() => loadFleetGraphConfig({ FLEETGRAPH_QUEUE_SIZE: '-1' })).toThrow(/FLEETGRAPH_QUEUE_SIZE/);
-    expect(() => loadFleetGraphConfig({ FLEETGRAPH_POLL_INTERVAL_MS: 'abc' })).toThrow(/FLEETGRAPH_POLL_INTERVAL_MS/);
+    expect(() => loadFleetGraphConfig({ FLEETGRAPH_MODEL: 'gpt-4o-mini', FLEETGRAPH_MAX_CONCURRENCY: '0' })).toThrow(/FLEETGRAPH_MAX_CONCURRENCY/);
+    expect(() => loadFleetGraphConfig({ FLEETGRAPH_MODEL: 'gpt-4o-mini', FLEETGRAPH_QUEUE_SIZE: '-1' })).toThrow(/FLEETGRAPH_QUEUE_SIZE/);
+    expect(() => loadFleetGraphConfig({ FLEETGRAPH_MODEL: 'gpt-4o-mini', FLEETGRAPH_POLL_INTERVAL_MS: 'abc' })).toThrow(/FLEETGRAPH_POLL_INTERVAL_MS/);
   });
 
   it('requires OPENROUTER_API_KEY when openrouter provider is enabled', () => {
@@ -38,6 +38,7 @@ describe('fleetgraph config', () => {
   it('accepts openrouter config when key is provided', () => {
     const cfg = loadFleetGraphConfig({
       FLEETGRAPH_ENABLED: 'true',
+      FLEETGRAPH_MODEL: 'gpt-4o-mini',
       FLEETGRAPH_PROVIDER: 'openrouter',
       OPENROUTER_API_KEY: 'test-key',
       OPENROUTER_BASE_URL: 'https://openrouter.ai/api/v1',
