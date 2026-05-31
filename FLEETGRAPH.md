@@ -283,24 +283,24 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 ## Test Cases
 
-*Triggered via `DELETE /api/fleetgraph/test/run-case/:id` against the production Render deployment. A cleanup endpoint (`DELETE /api/fleetgraph/test/cleanup`) purges all test-tagged rows from fleetgraph_outputs, fleetgraph_approval_requests, fleetgraph_runs, and fleetgraph_state after each eval run; this step runs automatically in CI via `scripts/fleetgraph-eval-cleanup.sh` with `if: always()` in the Playwright eval job.*
+*Triggered via `POST /api/fleetgraph/test/run-case/:id` against the production Render deployment. A cleanup endpoint (`DELETE /api/fleetgraph/test/cleanup`) purges all test-tagged rows from fleetgraph_outputs, fleetgraph_approval_requests, fleetgraph_runs, and fleetgraph_state after each eval run; this step runs automatically in CI via `scripts/fleetgraph-eval-cleanup.sh` with `if: always()` in the Playwright eval job.*
 
-| # | Ship State | Expected Output |
-|---|---|---|
-| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline |
-| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions |
-| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal |
-| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no escalation until threshold is crossed again |
-| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat |
-| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation |
-| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason |
-| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context |
-| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate |
-| 10 | User requests "move these 4 issues to next sprint" from chat | Agent creates per-item confirmation flow because total mutations >= 3; no mutation occurs before explicit approvals |
-| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed |
-| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens |
-| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history |
-| 14 | Burst of document edits causes many PG notifications in short interval | Runs enter bounded FIFO queue; system processes without crash and preserves detection latency target where feasible |
+| # | Ship State | Expected Output | Trace |
+|---|---|---|---|
+| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | [trace](https://smith.langchain.com/public/95e97ba3-36bb-438e-922a-31f8b26f37ad/r) |
+| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions | [trace](https://smith.langchain.com/public/01e71924-eabf-4579-9427-e7fef797484a/r) |
+| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal | [trace](https://smith.langchain.com/public/9bfa175b-b6c1-4944-9ca8-1453fcc3688b/r) |
+| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no escalation until threshold is crossed again | [trace](https://smith.langchain.com/public/4fb4293b-c6ad-4413-b3c2-62057168d19f/r) |
+| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat | [trace](https://smith.langchain.com/public/e57c3f05-d892-4477-aa9b-dd4ee9ee531e/r) |
+| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation | [trace](https://smith.langchain.com/public/2236f277-476b-4002-a05a-b5a785f64976/r) |
+| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason | [trace](https://smith.langchain.com/public/eb022517-4045-463e-8d86-d8867481a2c4/r) |
+| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context | [trace](https://smith.langchain.com/public/86226bca-ce2c-42d0-9673-0d08a4862bfb/r) |
+| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate | [trace](https://smith.langchain.com/public/4b79f3b2-c49b-4cd6-94c6-d346a7e6da16/r) |
+| 10 | User requests "move these 4 issues to next sprint" from chat | Agent invokes real on-demand graph with `ask_permission` mode; returns `tool_confirm` with `requiresConfirm: true` — no mutation occurs before explicit approval | [trace](https://smith.langchain.com/public/f7a1bc73-0dd4-466e-83ed-2782d8d6e7f8/r) |
+| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed | [trace](https://smith.langchain.com/public/439de871-05a6-4e75-90c2-698a7aa953dd/r) |
+| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens | [trace](https://smith.langchain.com/public/e2e79f88-b8fc-406c-946a-d48a1bc89466/r) |
+| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history | [trace](https://smith.langchain.com/public/aa5207c4-1587-4233-a5c1-67c5f4895374/r) |
+| 14 | Burst of document edits causes many PG notifications in short interval | Local `FleetGraphTriggerQueue` burst test: 20 items into queue sized for 5; overflow rejected, all accepted items complete without error | [trace](https://smith.langchain.com/public/a29216a7-0eb3-40f0-bd9f-259f9ffcea47/r) |
 
 ---
 
