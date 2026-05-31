@@ -255,7 +255,10 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       setMessages((prev) => {
         if (explicitPrompt) {
           // Replace the placeholder inserted by the auto-call on open
-          const idx = prev.findLastIndex((m) => m.role === 'assistant' && m.text.startsWith('⏳'));
+          let idx = -1;
+          for (let i = prev.length - 1; i >= 0; i--) {
+            if (prev[i]!.role === 'assistant' && prev[i]!.text.startsWith('⏳')) { idx = i; break; }
+          }
           if (idx !== -1) {
             const next = [...prev];
             next[idx] = { role: 'assistant', text: responseText };
