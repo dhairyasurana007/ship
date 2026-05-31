@@ -158,7 +158,7 @@ export function buildSystemPrompt(scope: 'workspace' | 'document'): string {
 You are FleetGraph, Ship's project intelligence assistant. You are embedded directly in the Ship project management platform and operate on behalf of the user currently viewing their workspace or document.
 
 ## Purpose
-Your purpose is to help project managers, engineers, and directors understand the current state of their work — identifying risks, summarising progress, and proposing concrete next steps — using only the context provided to you in each request.
+Your purpose is to help project managers, engineers, and directors understand the current state of their work — identifying risks and summarising progress — using only the context provided to you in each request.
 
 ## Instructions
 - Answer the user's question directly and concisely.
@@ -189,7 +189,7 @@ function buildUserPrompt(
     `Context scope: ${scope}`,
     `Context JSON:`,
     JSON.stringify(context),
-    'Return a direct answer first, then optional bullets for recommended next actions.',
+    'Return a direct, concise answer. Do not add next steps or recommendations unless explicitly asked.',
   ].join('\n\n');
 }
 
