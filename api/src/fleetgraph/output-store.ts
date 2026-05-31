@@ -81,21 +81,24 @@ export async function persistFleetGraphOutputs(
 ): Promise<void> {
   if (conditions.length === 0) return;
 
-  // One alert per entity — pick the most severe condition if multiple apply
+  // One alert per entity — combine all conditions into a single title+message
   const SEVERITY_RANK: Record<string, number> = { critical: 3, warning: 2, info: 1 };
-  const byEntity = new Map<string, FleetGraphCondition>();
+  const byEntity = new Map<string, FleetGraphCondition[]>();
   for (const condition of conditions) {
-    const existing = byEntity.get(condition.entityId);
-    if (!existing || (SEVERITY_RANK[condition.severity] ?? 0) > (SEVERITY_RANK[existing.severity] ?? 0)) {
-      byEntity.set(condition.entityId, condition);
-    }
+    const bucket = byEntity.get(condition.entityId) ?? [];
+    bucket.push(condition);
+    byEntity.set(condition.entityId, bucket);
   }
 
-  for (const condition of byEntity.values()) {
-    // Derive title/message/kind directly from the condition — no array mapping
-    const title = conditionTitle(condition);
-    const message = conditionMessage(condition);
-    const kind = ACTION_REQUIRED.has(condition.type) ? 'action_required' : 'notification';
+  for (const entityConditions of byEntity.values()) {
+    // Sort so most severe condition is first (drives the title)
+    entityConditions.sort((a, b) => (SEVERITY_RANK[b.severity] ?? 0) - (SEVERITY_RANK[a.severity] ?? 0));
+    const primary = entityConditions[0]!;
+    const title = conditionTitle(primary);
+    // Combine messages from all conditions for this entity
+    const message = entityConditions.map((c) => conditionMessage(c)).join(' ');
+    const kind = entityConditions.some((c) => ACTION_REQUIRED.has(c.type)) ? 'action_required' : 'notification';
+    const condition = primary;
     const recipients = await resolveRecipients(condition);
 
     if (recipients.length === 0) {
