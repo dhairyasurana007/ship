@@ -179,13 +179,14 @@ class FleetGraphCompiledGraph {
     }
 
     // LLM-driven tool selection — falls back to regex if no LLM config.
-    // In document scope, add a hint so the LLM knows the document content is already
-    // available via respond_directly rather than needing a separate data tool fetch.
+    // For document-scope read queries (summarize, explain, describe, etc.) skip tool
+    // selection entirely — the answer comes from the document context loaded below.
     const systemPrompt = buildSystemPrompt(input.contextScope);
-    const toolSelectionPrompt = input.contextScope === 'document'
-      ? `${input.prompt}\n\n[System note: You are operating in document scope. The current document's full content and recent history will be provided to you automatically if you use respond_directly. Only call a data tool if the question requires information that cannot be answered from the document itself.]`
-      : input.prompt;
-    const llmSelection = await callLlmForToolSelection(input.config, systemPrompt, toolSelectionPrompt, input.history ?? []);
+    const isDocumentReadQuery = input.contextScope === 'document'
+      && /^(summarize|summarise|what is|what does|what'?s|explain|describe|tell me about|who |how |what are|give me|can you tell)/i.test(input.prompt.trim());
+    const llmSelection = isDocumentReadQuery
+      ? null
+      : await callLlmForToolSelection(input.config, systemPrompt, input.prompt, input.history ?? []);
     const toolCall = llmSelection?.toolCall ?? inferToolCallFromPrompt({
       prompt: input.prompt,
       contextScope: input.contextScope,
