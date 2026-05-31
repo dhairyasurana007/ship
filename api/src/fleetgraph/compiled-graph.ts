@@ -52,6 +52,7 @@ export interface OnDemandGraphInput {
   config: FleetGraphConfig;
   documentType?: string;
   documentId?: string;
+  currentPath?: string;
   parentRunId?: string;
   history?: Array<{ role: string; content: string }>;
   onEvent?: (event: { type: string; [key: string]: unknown }) => void;
@@ -258,7 +259,7 @@ class FleetGraphCompiledGraph {
     let context: Awaited<ReturnType<typeof loadWorkspaceContext>> | Awaited<ReturnType<typeof loadViewContext>>;
     try {
       context = input.contextScope === 'workspace'
-        ? await loadWorkspaceContext(input.workspaceId)
+        ? await loadWorkspaceContext(input.workspaceId, input.currentPath)
         : await loadViewContext(String(input.documentType ?? ''), String(input.documentId ?? ''));
       await finishLangSmithChildRun(input.config, loadContextRunId, { degraded: !!(context as { degraded?: unknown }).degraded }, 'completed');
     } catch (err) {

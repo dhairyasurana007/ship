@@ -188,6 +188,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
   const contextScope = req.body?.contextScope === 'workspace' ? 'workspace' : 'document';
   const documentType = String(req.body?.documentType ?? '');
   const documentId = String(req.body?.documentId ?? '');
+  const currentPath = String(req.body?.currentPath ?? '');
   const prompt = String(req.body?.prompt ?? '');
   const requiresMutationConfirm = Boolean(req.body?.requiresMutationConfirm);
   const explicitConfirm = req.body?.explicitConfirm === true;
@@ -247,6 +248,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
       config,
       documentType,
       documentId,
+      currentPath,
       history,
       onEvent: sendEvent,
     });

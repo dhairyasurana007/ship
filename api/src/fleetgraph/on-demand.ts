@@ -88,7 +88,7 @@ export async function loadViewContext(documentType: string, documentId: string):
   }
 }
 
-export async function loadWorkspaceContext(workspaceId: string): Promise<Record<string, unknown>> {
+export async function loadWorkspaceContext(workspaceId: string, currentPath?: string): Promise<Record<string, unknown>> {
   try {
     const [docsResult, openIssuesResult, activeSprintsResult, unassignedResult] = await Promise.all([
       queryWithTimeout(
@@ -154,6 +154,7 @@ export async function loadWorkspaceContext(workspaceId: string): Promise<Record<
       activeSprintCount: activeSprintsResult.rows[0]?.active_sprint_count ?? 0,
       unassignedIssues: unassignedResult.rows,
       unassignedIssueCount: unassignedResult.rows.length,
+      currentPath: currentPath ?? null,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
