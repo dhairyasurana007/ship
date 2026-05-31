@@ -7,6 +7,7 @@ SHIP_API_URL="${SHIP_API_URL:-http://localhost:3000}"
 response=$(curl -s -w "\n%{http_code}" \
   -X DELETE \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer eval-cleanup" \
   "${SHIP_API_URL}/api/fleetgraph/test/cleanup")
 
 http_code=$(echo "$response" | tail -n1)
