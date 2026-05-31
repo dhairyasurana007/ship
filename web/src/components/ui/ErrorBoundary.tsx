@@ -23,6 +23,12 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     console.error('[ErrorBoundary] Uncaught error:', error);
     console.error('[ErrorBoundary] Component stack:', errorInfo.componentStack);
+    // After a new deployment, Vite chunk hashes change. The cached index.js
+    // references old chunk URLs that no longer exist → auto-reload to pick up
+    // the fresh index.html and new chunk hashes.
+    if (error.message.includes('Failed to fetch dynamically imported module')) {
+      window.location.reload();
+    }
   }
 
   handleReset = (): void => {
