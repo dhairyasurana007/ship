@@ -15,9 +15,12 @@ import { registerSessionCallbacks } from './session-tracker.js';
 
 const LISTEN_CHANNEL = 'document_changes';
 
+const PG_EVENT_DEBOUNCE_MS = 5000;
+
 export class FleetGraphTriggerRuntime {
   private listenClient: PoolClient | null = null;
   private pollTimer: NodeJS.Timeout | null = null;
+  private readonly pgEventDebounceTimers = new Map<string, NodeJS.Timeout>();
   private readonly queue: FleetGraphTriggerQueue;
 
   constructor(private readonly config: FleetGraphConfig) {
@@ -85,6 +88,8 @@ export class FleetGraphTriggerRuntime {
       clearInterval(this.pollTimer);
       this.pollTimer = null;
     }
+    for (const timer of this.pgEventDebounceTimers.values()) clearTimeout(timer);
+    this.pgEventDebounceTimers.clear();
 
     if (this.listenClient) {
       try {
@@ -134,7 +139,14 @@ export class FleetGraphTriggerRuntime {
 
   async handleListenPayload(payload: string): Promise<void> {
     const parsed = JSON.parse(payload) as TriggerEvent;
-    await this.enqueueTrigger('pg_event', parsed);
+    const workspaceId = parsed.workspaceId ?? 'unknown';
+    const existing = this.pgEventDebounceTimers.get(workspaceId);
+    if (existing) clearTimeout(existing);
+    const timer = setTimeout(() => {
+      this.pgEventDebounceTimers.delete(workspaceId);
+      void this.enqueueTrigger('pg_event', parsed);
+    }, PG_EVENT_DEBOUNCE_MS);
+    this.pgEventDebounceTimers.set(workspaceId, timer);
   }
 
   private startPollFallback(): void {

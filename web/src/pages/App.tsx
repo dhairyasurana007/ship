@@ -227,10 +227,15 @@ export function AppLayout() {
   const fleetGraphBannerText = useMemo(() => {
     if (!fleetGraphRuntimeStatus) return null;
     const isActive = fleetGraphRuntimeStatus.runStatus === 'queued' || fleetGraphRuntimeStatus.runStatus === 'running';
-    if (!isActive) return null;
+    const isRecentlyCompleted = fleetGraphRuntimeStatus.runStatus === 'completed' &&
+      Date.now() - new Date(fleetGraphRuntimeStatus.updatedAt).getTime() < 30000;
     if (fleetGraphRuntimeStatus.triggerType === 'pg_event') {
-      return 'FleetGraph Agent detected database changes and is analyzing them.';
+      if (!isActive && !isRecentlyCompleted) return null;
+      return isActive
+        ? 'FleetGraph Agent detected database changes and is analyzing them.'
+        : 'FleetGraph Agent analyzed recent changes.';
     }
+    if (!isActive) return null;
     if (fleetGraphRuntimeStatus.triggerType === 'poll_fallback' || fleetGraphRuntimeStatus.triggerType === 'schedule') {
       return 'FleetGraph Agent is running scheduled analysis.';
     }
