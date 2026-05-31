@@ -11,6 +11,7 @@ interface FleetGraphAssistantPanelProps {
 interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
+  toolName?: string;
 }
 
 type AccessMode = 'ask_permission' | 'full_access';
@@ -18,6 +19,7 @@ type AccessMode = 'ask_permission' | 'full_access';
 interface FleetGraphChatResponse {
   response?: string;
   requiresConfirm?: boolean;
+  toolCall?: { name?: string };
   toolResult?: {
     ok?: boolean;
   };
@@ -68,9 +70,9 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
   }
 
   function startThinkingUpdates(): void {
-    setThinkingStep('Gathering context...');
-    const t1 = setTimeout(() => setThinkingStep('Reasoning over project data...'), 450);
-    const t2 = setTimeout(() => setThinkingStep('Drafting response...'), 1000);
+    setThinkingStep('Selecting tool...');
+    const t1 = setTimeout(() => setThinkingStep('Fetching data...'), 2000);
+    const t2 = setTimeout(() => setThinkingStep('Generating answer...'), 6000);
     thinkingTimersRef.current = [t1, t2];
   }
 
@@ -112,7 +114,11 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
       if (data.toolResult?.ok) {
         invalidateDocumentCaches();
       }
-      setMessages((prev) => [...prev, { role: 'assistant', text: String(data.response ?? 'No response') }]);
+      setMessages((prev) => [...prev, {
+        role: 'assistant',
+        text: String(data.response ?? 'No response'),
+        toolName: data.toolCall?.name,
+      }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: 'Request failed. Please retry.' }]);
     } finally {
@@ -141,6 +147,9 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
                   : 'max-w-[85%] rounded-lg bg-foreground px-2 py-1 text-xs text-background whitespace-pre-wrap'
               }
             >
+              {message.role === 'assistant' && message.toolName && (
+                <p className="mb-1 text-[10px] text-muted opacity-60">⚙ {message.toolName}</p>
+              )}
               {message.role === 'assistant' ? <MarkdownMessage content={message.text} /> : message.text}
             </div>
           </div>

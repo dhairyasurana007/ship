@@ -549,58 +549,31 @@ export async function executeToolCall(input: {
       LEFT JOIN documents program_doc ON program_doc.id = program_assoc.related_id
     `;
 
-    let docsStructuredRows: Array<Record<string, unknown>> = [];
-    let docsFallback: Array<Record<string, unknown>> = [];
-    if (plan.strategy === 'list') {
-      const listRes = await pool.query(
-        `${enrichedSelect}
-         WHERE d.workspace_id = $1
-           AND d.deleted_at IS NULL
-           AND (
-             cardinality($2::text[]) = 0
-             OR d.document_type::text = ANY($2::text[])
-           )
-         ORDER BY d.${orderFieldSql} ${orderDirectionSql}
-         LIMIT $3`,
-        [workspaceId, entityTypes, plan.limit]
-      );
-      docsStructuredRows = listRes.rows;
-    } else {
-      const docsStructured = await pool.query(
-        `${enrichedSelect}
-         WHERE d.workspace_id = $1
-           AND d.deleted_at IS NULL
-           AND (
-             cardinality($3::text[]) = 0
-             OR d.document_type::text = ANY($3::text[])
-           )
-           AND d.title ILIKE '%' || $2 || '%'
-         ORDER BY d.${orderFieldSql} ${orderDirectionSql}
-         LIMIT $4`,
-        [workspaceId, query, entityTypes, plan.limit]
-      );
-      docsStructuredRows = docsStructured.rows;
-      if ((docsStructured.rowCount ?? 0) < Math.ceil(plan.limit / 2)) {
-        const fallbackRes = await pool.query(
+    const needsWorkspace = entityTypes.length === 0 || entityTypes.includes('workspace');
+
+    // Docs query and workspace query run in parallel
+    const docsPromise = plan.strategy === 'list'
+      ? pool.query(
           `${enrichedSelect}
            WHERE d.workspace_id = $1
              AND d.deleted_at IS NULL
-             AND (
-               cardinality($3::text[]) = 0
-               OR d.document_type::text = ANY($3::text[])
-             )
-             AND (d.content::text ILIKE '%' || $2 || '%' OR d.properties::text ILIKE '%' || $2 || '%')
+             AND (cardinality($2::text[]) = 0 OR d.document_type::text = ANY($2::text[]))
+           ORDER BY d.${orderFieldSql} ${orderDirectionSql}
+           LIMIT $3`,
+          [workspaceId, entityTypes, plan.limit]
+        )
+      : pool.query(
+          `${enrichedSelect}
+           WHERE d.workspace_id = $1
+             AND d.deleted_at IS NULL
+             AND (cardinality($3::text[]) = 0 OR d.document_type::text = ANY($3::text[]))
+             AND d.title ILIKE '%' || $2 || '%'
            ORDER BY d.${orderFieldSql} ${orderDirectionSql}
            LIMIT $4`,
           [workspaceId, query, entityTypes, plan.limit]
         );
-        docsFallback = fallbackRes.rows;
-      }
-    }
 
-    let workspaceResults: Array<Record<string, unknown>> = [];
-    if (entityTypes.length === 0 || entityTypes.includes('workspace')) {
-      const wsResult = await pool.query(
+    const wsPromise = needsWorkspace ? pool.query(
         `SELECT
            w.id, 'workspace'::text AS type, w.name AS title, w.created_at, w.updated_at,
            json_agg(json_build_object(
@@ -619,9 +592,29 @@ export async function executeToolCall(input: {
          ORDER BY ${orderFieldSql} ${orderDirectionSql}
          LIMIT $3`,
         [userId, query, Math.min(5, plan.limit)]
+      ) : Promise.resolve(null);
+
+    // Await both in parallel
+    const [docsResult, wsResult] = await Promise.all([docsPromise, wsPromise]);
+    const docsStructuredRows = docsResult.rows;
+
+    // Content fallback only if title search returned too few (sequential by necessity)
+    let docsFallback: Array<Record<string, unknown>> = [];
+    if (plan.strategy !== 'list' && docsStructuredRows.length < Math.ceil(plan.limit / 2)) {
+      const fallbackRes = await pool.query(
+        `${enrichedSelect}
+         WHERE d.workspace_id = $1
+           AND d.deleted_at IS NULL
+           AND (cardinality($3::text[]) = 0 OR d.document_type::text = ANY($3::text[]))
+           AND (d.content::text ILIKE '%' || $2 || '%' OR d.properties::text ILIKE '%' || $2 || '%')
+         ORDER BY d.${orderFieldSql} ${orderDirectionSql}
+         LIMIT $4`,
+        [workspaceId, query, entityTypes, plan.limit]
       );
-      workspaceResults = wsResult.rows;
+      docsFallback = fallbackRes.rows;
     }
+
+    const workspaceResults = wsResult?.rows ?? [];
 
     const mergedById = new Map<string, Record<string, unknown>>();
     for (const row of [...docsStructuredRows, ...docsFallback, ...workspaceResults]) {
