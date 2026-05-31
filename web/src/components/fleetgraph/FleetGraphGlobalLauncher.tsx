@@ -195,7 +195,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     setDegradedNotice(null);
     setThinkingStep('Selecting tool...');
     try {
-      const contextScope = 'workspace';
+      const contextScope = hasDocumentContext ? 'document' : 'workspace';
       const requiresMutationConfirm = accessMode === 'ask_permission' && mayRequireMutation(promptValue);
       const res = await apiPost('/api/fleetgraph/chat', {
         accessMode,
@@ -320,7 +320,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             </div>
           </div>
           <p className="mt-2 text-xs text-muted">
-            Context scope: workspace-level.
+            Context scope: {hasDocumentContext ? 'document-level.' : 'workspace-level.'}
           </p>
           {degradedNotice && (
             <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-2 py-1 text-xs text-amber-900">
