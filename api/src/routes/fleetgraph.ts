@@ -232,6 +232,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   const sendEvent = (data: Record<string, unknown>) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+  const heartbeat = setInterval(() => res.write(': ping\n\n'), 15000);
 
   try {
     const graphResult = await graph.invoke({
@@ -336,11 +337,13 @@ router.post('/chat', authMiddleware, async (req, res) => {
       toolCall: graphResult.toolCall,
       toolResult: graphResult.toolResult,
     });
+    clearInterval(heartbeat);
     res.end();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     await finishLangSmithRun(config, runEnvelope, 'failed', errorMessage);
     sendEvent({ type: 'error', message: errorMessage });
+    clearInterval(heartbeat);
     res.end();
   }
 });

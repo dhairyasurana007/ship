@@ -210,6 +210,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       const reader = res.body?.getReader();
       const decoder = new TextDecoder();
       let data: FleetGraphChatResponse | null = null;
+      let serverError: string | null = null;
       if (reader) {
         let buf = '';
         while (true) {
@@ -219,12 +220,15 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
           const lines = buf.split('\n');
           buf = lines.pop() ?? '';
           for (const line of lines) {
+            if (line.startsWith(':')) continue; // SSE heartbeat comment, ignore
             if (!line.startsWith('data: ')) continue;
-            const event = JSON.parse(line.slice(6)) as { type: string } & FleetGraphChatResponse;
+            const event = JSON.parse(line.slice(6)) as { type: string; message?: string } & FleetGraphChatResponse;
             if (event.type === 'tool_selected') {
               setThinkingStep(`⚙ ${(event as unknown as { tool: string }).tool}`);
             } else if (event.type === 'done') {
               data = event;
+            } else if (event.type === 'error') {
+              serverError = event.message ?? 'An error occurred. Please retry.';
             }
           }
         }
@@ -235,7 +239,8 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         setPendingPrompt(null);
       }
       if (data?.toolResult?.ok) invalidateDocumentCaches();
-      setMessages((prev) => [...prev, { role: 'assistant', text: String(data?.response ?? 'No response') }]);
+      const responseText = serverError ?? String(data?.response ?? 'No response');
+      setMessages((prev) => [...prev, { role: 'assistant', text: responseText }]);
       if (data?.degraded) {
         setDegradedNotice(data.degradedReason
           ? `FleetGraph used degraded context: ${data.degradedReason}`

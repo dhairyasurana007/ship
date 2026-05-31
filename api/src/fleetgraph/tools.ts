@@ -154,7 +154,9 @@ export function inferToolCallFromPrompt(input: {
 }): FleetGraphToolCall | null {
   const prompt = input.prompt.trim();
   const lower = prompt.toLowerCase();
-  const isSearchLike = /(search|find)/.test(lower) || (/\b(show|list|get)\b/.test(lower) && /(recent|latest|newest|oldest|earliest)/.test(lower));
+  const isSearchLike = /(search|find|look up|lookup|fetch|retrieve|pull up)/.test(lower)
+    || (/\b(show|list|get)\b/.test(lower) && /(recent|latest|newest|oldest|earliest)/.test(lower))
+    || (/\b(what|which|who)\b/.test(lower) && /(issue|project|sprint|program|document|doc|team|member|assignee)/.test(lower));
   const inDocumentScope = input.contextScope === 'document' && Boolean(input.documentId);
   const hasDocNoun = /(document|doc|issue|project|program|sprint|week|standup|wiki)/.test(lower);
 

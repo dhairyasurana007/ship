@@ -4,7 +4,7 @@ import type { FleetGraphConfig } from './types.js';
 const HISTORY_WINDOW_DAYS = 30;
 const CONTEXT_QUERY_TIMEOUT_MS = Number(process.env.FLEETGRAPH_CONTEXT_QUERY_TIMEOUT_MS ?? 4000);
 const HISTORY_LIMIT = Number(process.env.FLEETGRAPH_HISTORY_LIMIT ?? 300);
-const LLM_TIMEOUT_MS = Number(process.env.FLEETGRAPH_LLM_TIMEOUT_MS ?? 12000);
+const LLM_TIMEOUT_MS = Number(process.env.FLEETGRAPH_LLM_TIMEOUT_MS ?? 25000);
 
 async function queryWithTimeout<T>(work: Promise<T>, label: string): Promise<T> {
   let timeoutId: NodeJS.Timeout | undefined;
