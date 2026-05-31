@@ -280,6 +280,7 @@ export async function callLlmWithToolResult(
   selection: LlmToolSelection,
   toolName: string,
   toolResultData: unknown,
+  systemPromptOverride?: string,
 ): Promise<string | null> {
   if (!config) return null;
   try {
@@ -298,7 +299,7 @@ export async function callLlmWithToolResult(
         model: config.model,
         temperature: 0.2,
         messages: [
-          { role: 'system', content: selection.systemPrompt },
+          { role: 'system', content: systemPromptOverride ?? selection.systemPrompt },
           ...selection.history.map((m) => ({ role: m.role, content: m.content })),
           { role: 'user', content: selection.userPrompt },
           {

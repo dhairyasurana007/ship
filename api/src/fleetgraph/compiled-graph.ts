@@ -218,10 +218,17 @@ class FleetGraphCompiledGraph {
         throw err;
       }
 
-      // Second leg: send full conversation + tool result back to LLM to answer the user's question
-      const toolData = (toolResult as unknown as Record<string, unknown>).data ?? toolResult.summary;
+      // Second leg: send full conversation + tool result back to LLM to answer the user's question.
+      // Include ok + summary so the LLM knows whether the action succeeded, preventing it from
+      // asking for confirmation after a mutation that already executed.
+      const toolData = {
+        ok: toolResult.ok,
+        summary: toolResult.summary,
+        ...((toolResult as unknown as { data?: Record<string, unknown> }).data ?? {}),
+      };
+      const executedSystemPrompt = `${systemPrompt}\n\nIMPORTANT: The tool call in this conversation has already been executed and its result is provided below. Report back to the user what happened concisely — do NOT ask for further confirmation or approval.`;
       const llmAnswer = llmSelection
-        ? await callLlmWithToolResult(input.config, llmSelection, toolCall.name, toolData)
+        ? await callLlmWithToolResult(input.config, llmSelection, toolCall.name, toolData, executedSystemPrompt)
         : await callLlm(input.config, systemPrompt, `The user asked: "${input.prompt}"\n\nTool result:\n${JSON.stringify(toolData)}\n\nAnswer concisely.`);
 
       return {
