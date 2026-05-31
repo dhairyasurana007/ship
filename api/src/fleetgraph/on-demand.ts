@@ -90,7 +90,7 @@ export async function loadViewContext(documentType: string, documentId: string):
 
 export async function loadWorkspaceContext(workspaceId: string): Promise<Record<string, unknown>> {
   try {
-    const [docsResult, openIssuesResult, activeSprintsResult] = await Promise.all([
+    const [docsResult, openIssuesResult, activeSprintsResult, unassignedResult] = await Promise.all([
       queryWithTimeout(
         pool.query(
           `SELECT id, document_type, title, updated_at
@@ -130,6 +130,21 @@ export async function loadWorkspaceContext(workspaceId: string): Promise<Record<
         ),
         'fleetgraph_workspace_active_sprints_query'
       ),
+      queryWithTimeout(
+        pool.query(
+          `SELECT id, title
+           FROM documents
+           WHERE workspace_id = $1
+             AND document_type = 'issue'
+             AND archived_at IS NULL
+             AND deleted_at IS NULL
+             AND (properties->>'assignee_id' IS NULL OR properties->>'assignee_id' = '')
+           ORDER BY updated_at DESC
+           LIMIT 20`,
+          [workspaceId]
+        ),
+        'fleetgraph_workspace_unassigned_issues_query'
+      ),
     ]);
 
     return {
@@ -137,6 +152,8 @@ export async function loadWorkspaceContext(workspaceId: string): Promise<Record<
       recentDocuments: docsResult.rows,
       openIssueCount: openIssuesResult.rows[0]?.open_issue_count ?? 0,
       activeSprintCount: activeSprintsResult.rows[0]?.active_sprint_count ?? 0,
+      unassignedIssues: unassignedResult.rows,
+      unassignedIssueCount: unassignedResult.rows.length,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
