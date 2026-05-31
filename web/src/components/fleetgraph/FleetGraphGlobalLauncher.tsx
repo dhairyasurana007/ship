@@ -114,7 +114,10 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     function handleOpen() {
       setOpen(true);
       if (messages.length === 0) {
-        setMessages([{ role: 'assistant', text: WELCOME_MESSAGE }]);
+        setMessages([
+          { role: 'assistant', text: WELCOME_MESSAGE },
+          { role: 'assistant', text: '⏳ Loading workspace context…' },
+        ]);
         void send('search_entities');
       }
       void loadOutputs();
@@ -244,7 +247,18 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       }
       if (data?.toolResult?.ok) invalidateDocumentCaches();
       const responseText = serverError ?? String(data?.response ?? 'No response');
-      setMessages((prev) => [...prev, { role: 'assistant', text: responseText }]);
+      setMessages((prev) => {
+        if (explicitPrompt) {
+          // Replace the placeholder inserted by the auto-call on open
+          const idx = prev.findLastIndex((m) => m.role === 'assistant' && m.text.startsWith('⏳'));
+          if (idx !== -1) {
+            const next = [...prev];
+            next[idx] = { role: 'assistant', text: responseText };
+            return next;
+          }
+        }
+        return [...prev, { role: 'assistant', text: responseText }];
+      });
       if (data?.degraded) {
         setDegradedNotice(data.degradedReason
           ? `FleetGraph used degraded context: ${data.degradedReason}`
@@ -433,7 +447,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               disabled={loading || !prompt.trim()}
               onClick={() => void send()}
             >
-              ?
+              ↑
             </button>
           </div>
         </div>
