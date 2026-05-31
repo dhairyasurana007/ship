@@ -216,7 +216,7 @@ class FleetGraphCompiledGraph {
       }
 
       // Second leg: send full conversation + tool result back to LLM to answer the user's question
-      const toolData = (toolResult as Record<string, unknown>).data ?? toolResult.summary;
+      const toolData = (toolResult as unknown as Record<string, unknown>).data ?? toolResult.summary;
       const llmAnswer = llmSelection
         ? await callLlmWithToolResult(input.config, llmSelection, toolCall.name, toolData)
         : await callLlm(input.config, systemPrompt, `The user asked: "${input.prompt}"\n\nTool result:\n${JSON.stringify(toolData)}\n\nAnswer concisely.`);
