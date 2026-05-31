@@ -69,6 +69,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const WELCOME_MESSAGE = 'Hello! How can I assist you today!';
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [alertsMinimized, setAlertsMinimized] = useState(false);
   const [prompt, setPrompt] = useState('');
@@ -85,6 +86,10 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
 
   const hasDocumentContext = useMemo(() => Boolean(documentId && documentType), [documentId, documentType]);
@@ -414,6 +419,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                 </div>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
           <textarea
             value={prompt}
