@@ -285,7 +285,7 @@ export async function callLlmForToolSelection(
   }
 }
 
-async function callLlm(config: FleetGraphConfig | undefined, systemPrompt: string, userPrompt: string): Promise<string | null> {
+export async function callLlm(config: FleetGraphConfig | undefined, systemPrompt: string, userPrompt: string): Promise<string | null> {
   try {
     if (!config) return null;
     const controller = new AbortController();

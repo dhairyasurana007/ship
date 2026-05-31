@@ -4,7 +4,7 @@ import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContex
 import { fetchIssues, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
 import { executeToolCall, inferToolCallFromPrompt, type FleetGraphToolCall, type FleetGraphToolResult } from './tools.js';
-import { callLlmForToolSelection, buildSystemPrompt } from './on-demand.js';
+import { callLlmForToolSelection, buildSystemPrompt, callLlm } from './on-demand.js';
 import { createLangSmithChildRun, finishLangSmithChildRun } from './langsmith.js';
 import type { FleetGraphConfig, FleetGraphCondition } from './types.js';
 
@@ -230,11 +230,16 @@ class FleetGraphCompiledGraph {
         throw err;
       }
 
+      // Let the LLM answer the user's question using the tool result data
+      const toolData = JSON.stringify((toolResult as Record<string, unknown>).data ?? toolResult.summary);
+      const answerPrompt = `The user asked: "${input.prompt}"\n\nTool result data:\n${toolData}\n\nAnswer the user's question concisely using the data above.`;
+      const llmAnswer = await callLlm(input.config, buildSystemPrompt(input.contextScope), answerPrompt);
+
       return {
         mode: 'on_demand',
         kind: 'tool_executed',
         contextScope: input.contextScope,
-        response: toolResult.summary,
+        response: llmAnswer ?? toolResult.summary,
         requiresConfirm: false,
         degraded: false,
         degradedReason: null,
