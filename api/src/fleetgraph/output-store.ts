@@ -101,60 +101,32 @@ export async function persistFleetGraphOutputs(
     const condition = primary;
     const recipients = await resolveRecipients(condition);
 
+    const insertOutput = async (recipientUserId: string | null) => {
+      const params = recipientUserId
+        ? [workspaceId, runId, condition.type, kind, condition.entityId, 'issue', recipientUserId, title, message, JSON.stringify({ severity: condition.severity, details: condition.details })]
+        : [workspaceId, runId, condition.type, kind, condition.entityId, 'issue', title, message, JSON.stringify({ severity: condition.severity, details: condition.details })];
+      const sql = recipientUserId
+        ? `INSERT INTO fleetgraph_outputs (workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata)
+           SELECT $1, $2, $3, $4, $5::uuid, $6, $7::uuid, $8, $9, $10::jsonb
+           WHERE NOT EXISTS (SELECT 1 FROM fleetgraph_outputs WHERE workspace_id = $1 AND entity_id = $5::uuid AND recipient_user_id = $7::uuid AND dismissed_at IS NULL)`
+        : `INSERT INTO fleetgraph_outputs (workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata)
+           SELECT $1, $2, $3, $4, $5::uuid, $6, NULL, $7, $8, $9::jsonb
+           WHERE NOT EXISTS (SELECT 1 FROM fleetgraph_outputs WHERE workspace_id = $1 AND entity_id = $5::uuid AND recipient_user_id IS NULL AND dismissed_at IS NULL)`;
+      try {
+        await pool.query(sql, params);
+      } catch (err: unknown) {
+        // Ignore unique constraint violations — concurrent runs may race on the same entity
+        if ((err as { code?: string }).code !== '23505') throw err;
+      }
+    };
+
     if (recipients.length === 0) {
-      await pool.query(
-        `INSERT INTO fleetgraph_outputs (
-          workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata
-        )
-        SELECT $1, $2, $3, $4, $5::uuid, $6, NULL, $7, $8, $9::jsonb
-        WHERE NOT EXISTS (
-          SELECT 1 FROM fleetgraph_outputs
-          WHERE workspace_id = $1
-            AND entity_id = $5::uuid
-            AND recipient_user_id IS NULL
-            AND dismissed_at IS NULL
-        )`,
-        [
-          workspaceId,
-          runId,
-          condition.type,
-          kind,
-          condition.entityId,
-          'issue',
-          title,
-          message,
-          JSON.stringify({ severity: condition.severity, details: condition.details }),
-        ]
-      );
+      await insertOutput(null);
       continue;
     }
 
     for (const recipientUserId of recipients) {
-      await pool.query(
-        `INSERT INTO fleetgraph_outputs (
-          workspace_id, run_id, condition_type, output_kind, entity_id, entity_type, recipient_user_id, title, message, metadata
-        )
-        SELECT $1, $2, $3, $4, $5::uuid, $6, $7::uuid, $8, $9, $10::jsonb
-        WHERE NOT EXISTS (
-          SELECT 1 FROM fleetgraph_outputs
-          WHERE workspace_id = $1
-            AND entity_id = $5::uuid
-            AND recipient_user_id = $7::uuid
-            AND dismissed_at IS NULL
-        )`,
-        [
-          workspaceId,
-          runId,
-          condition.type,
-          kind,
-          condition.entityId,
-          'issue',
-          recipientUserId,
-          title,
-          message,
-          JSON.stringify({ severity: condition.severity, details: condition.details }),
-        ]
-      );
+      await insertOutput(recipientUserId);
     }
   }
 }
