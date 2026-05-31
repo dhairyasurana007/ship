@@ -527,51 +527,70 @@ export async function executeToolCall(input: {
     const orderFieldSql = plan.timeField === 'created_at' ? 'created_at' : 'updated_at';
     const orderDirectionSql = plan.sortDirection === 'asc' ? 'ASC' : 'DESC';
 
+    // Enriched SELECT used for all document queries
+    const enrichedSelect = `
+      SELECT
+        d.id, d.document_type AS type, d.title, d.created_at, d.updated_at,
+        d.properties,
+        assignee.name AS assignee_name,
+        sprint_doc.id AS sprint_id, sprint_doc.title AS sprint_title,
+        project_doc.id AS project_id, project_doc.title AS project_title,
+        program_doc.id AS program_id, program_doc.title AS program_title
+      FROM documents d
+      LEFT JOIN users assignee ON assignee.id = (d.properties->>'assignee_id')::uuid
+      LEFT JOIN document_associations sprint_assoc
+        ON sprint_assoc.document_id = d.id AND sprint_assoc.relationship_type = 'sprint'
+      LEFT JOIN documents sprint_doc ON sprint_doc.id = sprint_assoc.related_id
+      LEFT JOIN document_associations project_assoc
+        ON project_assoc.document_id = d.id AND project_assoc.relationship_type = 'project'
+      LEFT JOIN documents project_doc ON project_doc.id = project_assoc.related_id
+      LEFT JOIN document_associations program_assoc
+        ON program_assoc.document_id = d.id AND program_assoc.relationship_type = 'program'
+      LEFT JOIN documents program_doc ON program_doc.id = program_assoc.related_id
+    `;
+
     let docsStructuredRows: Array<Record<string, unknown>> = [];
     let docsFallback: Array<Record<string, unknown>> = [];
     if (plan.strategy === 'list') {
       const listRes = await pool.query(
-        `SELECT id, document_type AS type, title, created_at, updated_at
-         FROM documents
-         WHERE workspace_id = $1
-           AND deleted_at IS NULL
+        `${enrichedSelect}
+         WHERE d.workspace_id = $1
+           AND d.deleted_at IS NULL
            AND (
              cardinality($2::text[]) = 0
-             OR document_type::text = ANY($2::text[])
+             OR d.document_type::text = ANY($2::text[])
            )
-         ORDER BY ${orderFieldSql} ${orderDirectionSql}
+         ORDER BY d.${orderFieldSql} ${orderDirectionSql}
          LIMIT $3`,
         [workspaceId, entityTypes, plan.limit]
       );
       docsStructuredRows = listRes.rows;
     } else {
       const docsStructured = await pool.query(
-        `SELECT id, document_type AS type, title, created_at, updated_at
-         FROM documents
-         WHERE workspace_id = $1
-           AND deleted_at IS NULL
+        `${enrichedSelect}
+         WHERE d.workspace_id = $1
+           AND d.deleted_at IS NULL
            AND (
              cardinality($3::text[]) = 0
-             OR document_type::text = ANY($3::text[])
+             OR d.document_type::text = ANY($3::text[])
            )
-           AND title ILIKE '%' || $2 || '%'
-         ORDER BY ${orderFieldSql} ${orderDirectionSql}
+           AND d.title ILIKE '%' || $2 || '%'
+         ORDER BY d.${orderFieldSql} ${orderDirectionSql}
          LIMIT $4`,
         [workspaceId, query, entityTypes, plan.limit]
       );
       docsStructuredRows = docsStructured.rows;
       if ((docsStructured.rowCount ?? 0) < Math.ceil(plan.limit / 2)) {
         const fallbackRes = await pool.query(
-          `SELECT id, document_type AS type, title, created_at, updated_at
-           FROM documents
-           WHERE workspace_id = $1
-             AND deleted_at IS NULL
+          `${enrichedSelect}
+           WHERE d.workspace_id = $1
+             AND d.deleted_at IS NULL
              AND (
                cardinality($3::text[]) = 0
-               OR document_type::text = ANY($3::text[])
+               OR d.document_type::text = ANY($3::text[])
              )
-             AND (content::text ILIKE '%' || $2 || '%' OR properties::text ILIKE '%' || $2 || '%')
-           ORDER BY ${orderFieldSql} ${orderDirectionSql}
+             AND (d.content::text ILIKE '%' || $2 || '%' OR d.properties::text ILIKE '%' || $2 || '%')
+           ORDER BY d.${orderFieldSql} ${orderDirectionSql}
            LIMIT $4`,
           [workspaceId, query, entityTypes, plan.limit]
         );
