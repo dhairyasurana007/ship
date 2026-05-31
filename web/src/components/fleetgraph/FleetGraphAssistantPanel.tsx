@@ -124,7 +124,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
   return (
     <div className="border-t border-border p-3 space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph</p>
-      <div className="h-52 overflow-y-auto rounded border border-border bg-muted/20 p-2 space-y-2">
+      <div className="h-52 overflow-y-auto rounded border border-border bg-background p-2 space-y-2">
         {messages.length === 0 && (
           <p className="text-xs text-muted">Start a conversation about this document.</p>
         )}
