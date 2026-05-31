@@ -288,7 +288,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
             top: windowPos.y ? `${windowPos.y}px` : undefined,
             bottom: windowPos.y ? undefined : '3rem',
           }}
-          className="w-80 rounded-lg border border-border bg-background p-3 shadow-lg"
+          className="z-50 w-80 rounded-lg border border-border bg-background p-3 shadow-lg"
         >
           <div className="flex items-center justify-between cursor-move select-none" onMouseDown={beginDrag}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph Assistant</p>
