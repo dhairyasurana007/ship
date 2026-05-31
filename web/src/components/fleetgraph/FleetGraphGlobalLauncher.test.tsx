@@ -31,7 +31,7 @@ describe('FleetGraphGlobalLauncher', () => {
   }
 
   function baseFetchMock(chatPayload: object = { response: 'ok', degraded: false }) {
-    return vi.fn(async (input: RequestInfo | URL) => {
+    return vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
       const url = String(input);
       if (url.includes('/api/csrf-token')) return makeJsonResponse({ token: 't' });
       if (url.includes('/api/fleetgraph/outputs')) return makeJsonResponse({ outputs: [] });
