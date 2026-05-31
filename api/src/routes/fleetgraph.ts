@@ -227,6 +227,12 @@ router.post('/chat', authMiddleware, async (req, res) => {
 
   await createLangSmithRun(config, runEnvelope);
 
+  // SSE setup
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  const sendEvent = (data: Record<string, unknown>) => res.write(`data: ${JSON.stringify(data)}\n\n`);
+
   try {
     const graphResult = await graph.invoke({
       mode: 'on_demand',
@@ -241,6 +247,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
       documentType,
       documentId,
       history,
+      onEvent: sendEvent,
     });
 
     if (graphResult.kind === 'tool_executed' && graphResult.toolCall && graphResult.toolResult) {
@@ -318,22 +325,23 @@ router.post('/chat', authMiddleware, async (req, res) => {
     };
     await finishLangSmithRun(config, runEnvelope, 'completed');
 
-    res.json({
+    sendEvent({
+      type: 'done',
       contextWindowDays: 30,
       contextScope: graphResult.contextScope,
       degraded: graphResult.degraded,
       degradedReason: graphResult.degradedReason,
-      context: null,
-      reasoning: graphResult.reasoning ?? { summary: graphResult.response },
       response: graphResult.response,
       requiresConfirm: graphResult.requiresConfirm,
       toolCall: graphResult.toolCall,
       toolResult: graphResult.toolResult,
     });
+    res.end();
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     await finishLangSmithRun(config, runEnvelope, 'failed', errorMessage);
-    throw error;
+    sendEvent({ type: 'error', message: errorMessage });
+    res.end();
   }
 });
 

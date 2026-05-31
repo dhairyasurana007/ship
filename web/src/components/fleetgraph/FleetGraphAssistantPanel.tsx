@@ -92,7 +92,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
       setPrompt('');
     }
     setLoading(true);
-    startThinkingUpdates();
+    setThinkingStep('Selecting tool...');
     try {
       const requiresMutationConfirm = accessMode === 'ask_permission' && mayRequireMutation(promptValue);
       const res = await apiPost('/api/fleetgraph/chat', {
@@ -105,19 +105,43 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
           explicitConfirm,
           history: messages.slice(-10).map((m) => ({ role: m.role, content: m.text })),
       });
-      const data = await res.json() as FleetGraphChatResponse;
-      if (data.requiresConfirm && !explicitConfirm) {
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+      let data: FleetGraphChatResponse | null = null;
+      let toolName: string | undefined;
+      if (reader) {
+        let buf = '';
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() ?? '';
+          for (const line of lines) {
+            if (!line.startsWith('data: ')) continue;
+            const event = JSON.parse(line.slice(6)) as { type: string } & FleetGraphChatResponse;
+            if (event.type === 'tool_selected') {
+              const tool = (event as unknown as { tool: string }).tool;
+              toolName = tool;
+              setThinkingStep(`⚙ ${tool}`);
+            } else if (event.type === 'done') {
+              data = event;
+            }
+          }
+        }
+      }
+      if (data?.requiresConfirm && !explicitConfirm) {
         setPendingPrompt(promptValue);
       } else {
         setPendingPrompt(null);
       }
-      if (data.toolResult?.ok) {
+      if (data?.toolResult?.ok) {
         invalidateDocumentCaches();
       }
       setMessages((prev) => [...prev, {
         role: 'assistant',
-        text: String(data.response ?? 'No response'),
-        toolName: data.toolCall?.name,
+        text: String(data?.response ?? 'No response'),
+        toolName,
       }]);
     } catch {
       setMessages((prev) => [...prev, { role: 'assistant', text: 'Request failed. Please retry.' }]);

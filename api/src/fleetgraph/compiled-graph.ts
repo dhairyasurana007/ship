@@ -54,6 +54,7 @@ export interface OnDemandGraphInput {
   documentId?: string;
   parentRunId?: string;
   history?: Array<{ role: string; content: string }>;
+  onEvent?: (event: { type: string; [key: string]: unknown }) => void;
 }
 
 export type FleetGraphInvokeInput = ProactiveGraphInput | OnDemandGraphInput;
@@ -205,6 +206,7 @@ class FleetGraphCompiledGraph {
         };
       }
 
+      input.onEvent?.({ type: 'tool_selected', tool: toolCall.name });
       const toolRunId = crypto.randomUUID();
       await createLangSmithChildRun(input.config, input.parentRunId ?? '', toolRunId, `tool.${toolCall.name}`, { toolCall }, 'tool');
       let toolResult: Awaited<ReturnType<typeof executeToolCall>>;
