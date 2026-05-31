@@ -43,26 +43,6 @@ function traceLinkFor(runId: string): string {
   return `https://smith.langchain.com/o/465a6828-0ed2-4081-993c-d1db4f62c9b4/projects/p/464fa2a6-c9e0-42fa-9fa5-39f82d0c8021/r/${runId}?trace_id=${runId}`;
 }
 
-router.post('/test/share-debug/:runId', authMiddleware, async (req, res) => {
-  const config = loadFleetGraphConfig();
-  const runId = String(req.params['runId'] ?? '');
-  try {
-    const controller = new AbortController();
-    setTimeout(() => controller.abort(), 10000);
-    const apiKey = config.langSmithApiKey ?? '';
-    const shareEndpoint = `https://api.smith.langchain.com/runs/${encodeURIComponent(runId)}/share`;
-    const r = await fetch(shareEndpoint, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-      body: JSON.stringify({ run_id: runId }),
-      signal: controller.signal,
-    });
-    const body = await r.text();
-    res.json({ status: r.status, body, hasKey: !!apiKey, keyPrefix: apiKey.slice(0, 8) });
-  } catch (err) {
-    res.json({ error: String(err) });
-  }
-});
 
 router.post('/approvals/request', async (req, res) => {
   const mutationType = req.body?.mutationType as FleetGraphMutationType;
