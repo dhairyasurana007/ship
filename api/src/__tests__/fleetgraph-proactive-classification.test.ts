@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { classifyConditions } from '../fleetgraph/classify-conditions.js';
+import { classifyCapacityMismatch, classifyConditions } from '../fleetgraph/classify-conditions.js';
 import type { FleetGraphIssueRecord } from '../fleetgraph/types.js';
 
 function issue(overrides: Partial<FleetGraphIssueRecord>): FleetGraphIssueRecord {
@@ -60,5 +60,34 @@ describe('fleetgraph proactive classification', () => {
     ]);
     expect(conditions.find((c) => c.type === 'sprint_scope_creep')).toBeDefined();
     vi.useRealTimers();
+  });
+
+  it('classifyCapacityMismatch detects when free members and orphaned issues coexist', () => {
+    const conditions = classifyCapacityMismatch([
+      // u1 has only a done issue — they appear as a team member but have no active assignment
+      issue({ id: 'i1', projectId: 'p1', state: 'done', assigneeId: 'u1', sprintId: null }),
+      // orphaned: non-terminal, no assignee, no sprint
+      issue({ id: 'i2', projectId: 'p1', state: 'todo', assigneeId: null, sprintId: null }),
+    ]);
+    const match = conditions.find((c) => c.type === 'capacity_mismatch');
+    expect(match).toBeDefined();
+    expect((match!.details.freeMemberCount as number) >= 1).toBe(true);
+    expect((match!.details.orphanCount as number) >= 1).toBe(true);
+  });
+
+  it('classifyCapacityMismatch returns empty when no orphaned issues', () => {
+    const conditions = classifyCapacityMismatch([
+      issue({ id: 'i1', projectId: 'p1', state: 'in_progress', assigneeId: 'u1', sprintId: 's1' }),
+      issue({ id: 'i2', projectId: 'p1', state: 'todo', assigneeId: 'u2', sprintId: 's1' }),
+    ]);
+    expect(conditions).toEqual([]);
+  });
+
+  it('classifyCapacityMismatch ignores issues with no projectId', () => {
+    const conditions = classifyCapacityMismatch([
+      issue({ id: 'i1', projectId: null, state: 'in_progress', assigneeId: 'u1' }),
+      issue({ id: 'i2', projectId: null, state: 'todo', assigneeId: null }),
+    ]);
+    expect(conditions).toEqual([]);
   });
 });

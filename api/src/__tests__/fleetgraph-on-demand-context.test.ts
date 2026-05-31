@@ -10,7 +10,7 @@ vi.mock('../db/client.js', () => ({
   },
 }));
 
-import { generateResponse, loadViewContext, reasonOnContext } from '../fleetgraph/on-demand.js';
+import { buildSystemPrompt, generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContext } from '../fleetgraph/on-demand.js';
 
 describe('fleetgraph on-demand context', () => {
   beforeEach(() => {
@@ -46,5 +46,43 @@ describe('fleetgraph on-demand context', () => {
   it('requires explicit confirm for mutation proposals', () => {
     const result = generateResponse({ summary: 'mutate' }, { requiresMutationConfirm: true, explicitConfirm: false });
     expect(result.requiresConfirm).toBe(true);
+  });
+});
+
+describe('loadWorkspaceContext', () => {
+  beforeEach(() => {
+    mockQuery.mockReset();
+  });
+
+  it('includes currentPath in returned context', async () => {
+    mockQuery.mockResolvedValue({ rows: [{ open_issue_count: 0 }], rowCount: 1 });
+    const ctx = await loadWorkspaceContext('w1', '/projects/p1');
+    expect(ctx.currentPath).toBe('/projects/p1');
+    expect(ctx.scope).toBe('workspace');
+  });
+
+  it('returns currentPath as null when not provided', async () => {
+    mockQuery.mockResolvedValue({ rows: [{ open_issue_count: 0 }], rowCount: 1 });
+    const ctx = await loadWorkspaceContext('w1');
+    expect(ctx.currentPath).toBeNull();
+  });
+
+  it('returns degraded workspace context on query failure', async () => {
+    mockQuery.mockRejectedValue(new Error('connection_timeout'));
+    const ctx = await loadWorkspaceContext('w1', '/dashboard');
+    expect(ctx.degraded).toBe(true);
+    expect(ctx.scope).toBe('workspace');
+  });
+});
+
+describe('buildSystemPrompt', () => {
+  it('workspace scope includes cross-project summary instruction', () => {
+    const prompt = buildSystemPrompt('workspace');
+    expect(prompt).toContain('workspace level');
+  });
+
+  it('document scope includes current-document-only instruction', () => {
+    const prompt = buildSystemPrompt('document');
+    expect(prompt).toContain('document level');
   });
 });
