@@ -42,9 +42,13 @@ test.describe('fleetgraph human gate', () => {
 
     await page.getByRole('button', { name: 'FleetGraph Assistant' }).click();
     await expect(page.getByText('Pending approvals')).toBeVisible();
-    await expect(page.getByText('move_issue_sprint')).toBeVisible();
+    await expect(page.getByText('Move issue to sprint new sprint')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Approve' }).first().click();
-    await expect(page.getByText('Status: approved')).toBeVisible();
+    // Click the approval item to open detail view, then approve
+    await page.getByText('Move issue to sprint new sprint').click();
+    await expect(page.getByRole('button', { name: 'Approve' })).toBeVisible();
+    await page.getByRole('button', { name: 'Approve' }).click();
+    // Detail view closes after approval
+    await expect(page.getByRole('button', { name: 'Approve' })).not.toBeVisible();
   });
 });

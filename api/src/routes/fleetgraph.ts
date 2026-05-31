@@ -382,7 +382,6 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
     createdAt: new Date().toISOString(),
   };
 
-  await createLangSmithRun(config, runEnvelope);
   try {
     if (caseId === 1) {
       await createFleetGraphOutput({
@@ -574,7 +573,9 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
       const documentId = String(req.body?.documentId ?? '');
       const documentType = String(req.body?.documentType ?? 'issue');
       const context = await loadViewContext(documentType, documentId);
-      const reasoning = await reasonOnContext(context, 'what happened 45 days ago on this issue?', config, 'document');
+      const case13Prompt = 'what happened 45 days ago on this issue?';
+      const reasoning = await reasonOnContext(context, case13Prompt, config, 'document');
+      runEnvelope.payload.prompt = case13Prompt;
       runEnvelope.payload.contextLoaded = reasoning.contextLoaded ?? false;
       runEnvelope.payload.historyCount = reasoning.historyCount ?? 0;
       runEnvelope.payload.result = reasoning.summary;
@@ -583,6 +584,7 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
       runEnvelope.payload.queue = { burstCount: 40, processed: 40, failures: 0 };
     }
 
+    await createLangSmithRun(config, runEnvelope);
     await finishLangSmithRun(config, runEnvelope, 'completed');
     res.json({
       success: true,
@@ -593,6 +595,7 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    await createLangSmithRun(config, runEnvelope);
     await finishLangSmithRun(config, runEnvelope, 'failed', message);
     res.status(500).json({ success: false, caseId, runId, traceLink: traceLinkFor(runId), error: message });
   }

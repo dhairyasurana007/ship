@@ -16,15 +16,14 @@ test.describe('fleetgraph on-demand context', () => {
 
     await page.route('**/api/fleetgraph/chat', async (route) => {
       const requestBody = route.request().postDataJSON() as { contextScope?: string };
+      const response = requestBody.contextScope === 'workspace'
+        ? 'Workspace status: 10 open issues and 1 active sprint.'
+        : 'Issue context loaded.';
+      const sseBody = `data: ${JSON.stringify({ type: 'done', response, requiresConfirm: false })}\n\n`;
       await route.fulfill({
         status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          response: requestBody.contextScope === 'workspace'
-            ? 'Workspace status: 10 open issues and 1 active sprint.'
-            : 'Issue context loaded.',
-          requiresConfirm: false,
-        }),
+        headers: { 'Content-Type': 'text/event-stream' },
+        body: sseBody,
       });
     });
     await page.route('**/api/csrf-token', async (route) => {
