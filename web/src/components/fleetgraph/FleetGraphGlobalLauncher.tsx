@@ -205,7 +205,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         prompt: promptValue,
         requiresMutationConfirm,
         explicitConfirm,
-        currentPath: window.location.pathname,
+        currentPath: window.location.pathname, // sent to API for page-awareness
         history: messages.slice(-10).map((m) => ({ role: m.role, content: m.text })),
       });
       const reader = res.body?.getReader();
