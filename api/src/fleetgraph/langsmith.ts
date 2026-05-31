@@ -142,6 +142,7 @@ export async function shareRun(config: FleetGraphConfig, runId: string): Promise
       method: 'PUT',
       headers: headers(config),
       signal: controller.signal,
+      body: JSON.stringify({ run_id: runId }),
     });
     clearTimeout(timeout);
     if (!res.ok) {
