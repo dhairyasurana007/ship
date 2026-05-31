@@ -292,14 +292,32 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         >
           <div className="flex items-center justify-between cursor-move select-none" onMouseDown={beginDrag}>
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">FleetGraph Assistant</p>
-            <button
-              type="button"
-              aria-label="Minimize FleetGraph assistant"
-              className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted hover:bg-muted"
-              onClick={() => setOpen(false)}
-            >
-              -
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                aria-label="Reset chat"
+                title="Reset chat"
+                className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted hover:bg-muted"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMessages([{ role: 'assistant', text: WELCOME_MESSAGE }]);
+                  setPrompt('');
+                  setPendingPrompt(null);
+                  setDegradedNotice(null);
+                  setThinkingStep(null);
+                }}
+              >
+                ↺
+              </button>
+              <button
+                type="button"
+                aria-label="Minimize FleetGraph assistant"
+                className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted hover:bg-muted"
+                onClick={() => setOpen(false)}
+              >
+                -
+              </button>
+            </div>
           </div>
           <p className="mt-2 text-xs text-muted">
             Context scope: workspace-level.
