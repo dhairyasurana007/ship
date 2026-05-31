@@ -33,7 +33,7 @@ export const FLEETGRAPH_TOOL_SCHEMAS = [
         type: 'object',
         properties: {
           title: { type: 'string', description: 'Title of the new document.' },
-          documentType: { type: 'string', enum: ['issue', 'wiki', 'project', 'sprint', 'program', 'standup'], description: 'Type of document to create.' },
+          documentType: { type: 'string', enum: ['wiki', 'issue', 'project', 'sprint', 'program', 'standup'], description: 'Type of document to create. Default to "wiki" unless the user explicitly asks for an issue, project, sprint, or program.' },
         },
         required: ['title', 'documentType'],
       },
