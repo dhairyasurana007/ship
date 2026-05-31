@@ -313,4 +313,18 @@ export const FLEETGRAPH_TOOL_SCHEMAS = [
       },
     },
   },
+  {
+    type: 'function',
+    function: {
+      name: 'respond_directly',
+      description: 'Use ONLY for pure small talk or greetings that require no data lookup (e.g. "hello", "thanks"). For ANY question about the workspace, issues, members, projects, sprints, or documents — use a data tool instead.',
+      parameters: {
+        type: 'object',
+        properties: {
+          response: { type: 'string', description: 'The direct response text.' },
+        },
+        required: ['response'],
+      },
+    },
+  },
 ];

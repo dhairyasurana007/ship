@@ -251,7 +251,7 @@ export async function callLlmForToolSelection(
         model: config.model,
         temperature: 0.2,
         tools: FLEETGRAPH_TOOL_SCHEMAS,
-        tool_choice: 'auto',
+        tool_choice: 'required',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt },
@@ -272,11 +272,14 @@ export async function callLlmForToolSelection(
     const toolCall = payload.choices?.[0]?.message?.tool_calls?.[0];
     if (!toolCall?.function?.name) return null;
 
-    const name = toolCall.function.name as FleetGraphToolName;
+    const name = toolCall.function.name;
+    // respond_directly = LLM wants to answer without fetching data; fall through to text reasoning
+    if (!name || name === 'respond_directly') return null;
+
     let args: Record<string, unknown> = {};
     try { args = JSON.parse(toolCall.function.arguments ?? '{}') as Record<string, unknown>; } catch { /* ignore */ }
 
-    return { name, args };
+    return { name: name as FleetGraphToolName, args };
   } catch {
     return null;
   }
