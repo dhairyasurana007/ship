@@ -236,7 +236,7 @@ export const FLEETGRAPH_TOOL_SCHEMAS = [
     type: 'function',
     function: {
       name: 'summarize_comment_thread',
-      description: 'Summarize the comment thread on a document.',
+      description: 'Summarize the user-written comment thread (replies, notes) on a document. Only for comments/replies — NOT for summarising the document body or content itself.',
       parameters: {
         type: 'object',
         properties: {
@@ -317,7 +317,7 @@ export const FLEETGRAPH_TOOL_SCHEMAS = [
     type: 'function',
     function: {
       name: 'respond_directly',
-      description: 'Use ONLY for pure small talk or greetings that require no data lookup (e.g. "hello", "thanks"). For ANY question about the workspace, issues, members, projects, sprints, or documents — use a data tool instead.',
+      description: 'Use when the answer can be derived entirely from the context already provided — e.g. "summarise this document", "what is this document about?", "what does this issue say?", greetings, or clarifications. Do NOT use for workspace-level questions about issues, members, projects, or sprints — use a data tool for those.',
       parameters: {
         type: 'object',
         properties: {
