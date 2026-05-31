@@ -319,7 +319,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
               </button>
             </div>
           </div>
-          <p className="mt-2 text-xs text-muted">
+          <p className="mt-2 text-xs text-muted" data-scope={hasDocumentContext ? 'document' : 'workspace'}>
             Context scope: {hasDocumentContext ? 'document-level.' : 'workspace-level.'}
           </p>
           {degradedNotice && (
