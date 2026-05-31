@@ -81,7 +81,17 @@ export async function persistFleetGraphOutputs(
 ): Promise<void> {
   if (conditions.length === 0) return;
 
+  // One alert per entity — pick the most severe condition if multiple apply
+  const SEVERITY_RANK: Record<string, number> = { critical: 3, warning: 2, info: 1 };
+  const byEntity = new Map<string, FleetGraphCondition>();
   for (const condition of conditions) {
+    const existing = byEntity.get(condition.entityId);
+    if (!existing || (SEVERITY_RANK[condition.severity] ?? 0) > (SEVERITY_RANK[existing.severity] ?? 0)) {
+      byEntity.set(condition.entityId, condition);
+    }
+  }
+
+  for (const condition of byEntity.values()) {
     // Derive title/message/kind directly from the condition — no array mapping
     const title = conditionTitle(condition);
     const message = conditionMessage(condition);
@@ -97,7 +107,6 @@ export async function persistFleetGraphOutputs(
         WHERE NOT EXISTS (
           SELECT 1 FROM fleetgraph_outputs
           WHERE workspace_id = $1
-            AND condition_type = $3
             AND entity_id = $5::uuid
             AND recipient_user_id IS NULL
             AND dismissed_at IS NULL
@@ -126,7 +135,6 @@ export async function persistFleetGraphOutputs(
         WHERE NOT EXISTS (
           SELECT 1 FROM fleetgraph_outputs
           WHERE workspace_id = $1
-            AND condition_type = $3
             AND entity_id = $5::uuid
             AND recipient_user_id = $7::uuid
             AND dismissed_at IS NULL
