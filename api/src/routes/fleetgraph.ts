@@ -45,13 +45,13 @@ function traceLinkFor(runId: string): string {
 
 router.post('/test/share-debug/:runId', authMiddleware, async (req, res) => {
   const config = loadFleetGraphConfig();
-  const { runId } = req.params;
+  const runId = String(req.params['runId'] ?? '');
   try {
     const controller = new AbortController();
     setTimeout(() => controller.abort(), 10000);
     const apiKey = config.langSmithApiKey ?? '';
-    const endpoint = `https://api.smith.langchain.com/runs/${encodeURIComponent(runId)}/share`;
-    const r = await fetch(endpoint, {
+    const shareEndpoint = `https://api.smith.langchain.com/runs/${encodeURIComponent(runId)}/share`;
+    const r = await fetch(shareEndpoint, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
       body: JSON.stringify({ run_id: runId }),

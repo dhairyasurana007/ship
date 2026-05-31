@@ -33,3 +33,28 @@ This matrix defines automated eval coverage for FleetGraph behavior in [`FLEETGR
    - `api/src/__tests__/fleetgraph-langsmith.test.ts`
 6. Observability trace context configuration:
    - `api/src/__tests__/fleetgraph-observability.test.ts`
+
+## New Coverage Added (Post-Initial Matrix)
+
+7. currentPath sent in chat request payload (page awareness):
+   - `web/src/components/fleetgraph/FleetGraphGlobalLauncher.test.tsx`
+8. contextScope derived as workspace when no document context:
+   - `web/src/components/fleetgraph/FleetGraphGlobalLauncher.test.tsx`
+9. loadWorkspaceContext includes currentPath in returned context:
+   - `api/src/__tests__/fleetgraph-on-demand-context.test.ts`
+10. loadWorkspaceContext degraded mode returns correct shape:
+    - `api/src/__tests__/fleetgraph-on-demand-context.test.ts`
+11. buildSystemPrompt scope distinction (workspace vs document):
+    - `api/src/__tests__/fleetgraph-on-demand-context.test.ts`
+12. Capacity mismatch detection (classifyCapacityMismatch):
+    - `api/src/__tests__/fleetgraph-proactive-classification.test.ts`
+13. Worsening: stale crosses 24-hour bucket:
+    - `api/src/__tests__/fleetgraph-dedup-worsening.test.ts`
+14. Worsening: orphan crosses 7-day bucket:
+    - `api/src/__tests__/fleetgraph-dedup-worsening.test.ts`
+15. Worsening: scope creep addition count increases:
+    - `api/src/__tests__/fleetgraph-dedup-worsening.test.ts`
+16. conditionTitle and conditionMessage output formatting:
+    - `api/src/__tests__/fleetgraph-notifications.test.ts`
+17. Notification routing: 1:1 per condition (not merged):
+    - `api/src/__tests__/fleetgraph-notifications.test.ts`

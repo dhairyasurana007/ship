@@ -1,0 +1,28 @@
+{
+  "generated": "2026-05-21T21:38:48.781Z",
+  "target": "//ship-api-prod.eba-xsaqsg9h.us-east-1.elasticbeanstalk.com",
+  "summary": {
+    "total": 0,
+    "vulnerable": 0,
+    "passed": 0,
+    "inconclusive": 0,
+    "bySeverity": {
+      "critical": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "info": 0
+    },
+    "byCategory": {
+      "auth": 0,
+      "websocket": 0,
+      "input": 0,
+      "dependency": 0,
+      "cors-csp": 0,
+      "secrets": 0,
+      "rate-limiting": 0,
+      "error-verbosity": 0
+    }
+  },
+  "findings": []
+}
