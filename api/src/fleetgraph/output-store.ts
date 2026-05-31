@@ -1,6 +1,7 @@
 import { pool } from '../db/client.js';
 import type { FleetGraphCondition } from './types.js';
 import type { FleetGraphOutputMessage } from './notifications.js';
+import { conditionTitle, conditionMessage, ACTION_REQUIRED } from './notifications.js';
 
 interface RecipientContext {
   assigneeId?: string | null;
@@ -76,17 +77,16 @@ export async function persistFleetGraphOutputs(
   runId: string,
   workspaceId: string,
   conditions: FleetGraphCondition[],
-  outputs: FleetGraphOutputMessage[]
+  _outputs: FleetGraphOutputMessage[]
 ): Promise<void> {
-  if (conditions.length === 0 || outputs.length === 0) return;
+  if (conditions.length === 0) return;
 
-  for (let i = 0; i < conditions.length; i++) {
-    const condition = conditions[i]!;
-    // Match 1-to-1 by index — routeOutputs produces one output per condition in the same order
-    const mappedOutput = outputs[i];
-    if (!mappedOutput) continue;
+  for (const condition of conditions) {
+    // Derive title/message/kind directly from the condition — no array mapping
+    const title = conditionTitle(condition);
+    const message = conditionMessage(condition);
+    const kind = ACTION_REQUIRED.has(condition.type) ? 'action_required' : 'notification';
     const recipients = await resolveRecipients(condition);
-    const message = mappedOutput.message || buildMessage(condition);
 
     if (recipients.length === 0) {
       await pool.query(
@@ -106,10 +106,10 @@ export async function persistFleetGraphOutputs(
           workspaceId,
           runId,
           condition.type,
-          mappedOutput.kind,
+          kind,
           condition.entityId,
           'issue',
-          mappedOutput.title,
+          title,
           message,
           JSON.stringify({ severity: condition.severity, details: condition.details }),
         ]
@@ -135,11 +135,11 @@ export async function persistFleetGraphOutputs(
           workspaceId,
           runId,
           condition.type,
-          mappedOutput.kind,
+          kind,
           condition.entityId,
           'issue',
           recipientUserId,
-          mappedOutput.title,
+          title,
           message,
           JSON.stringify({ severity: condition.severity, details: condition.details }),
         ]

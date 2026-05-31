@@ -7,9 +7,9 @@ export interface FleetGraphOutputMessage {
   conditions: string[];
 }
 
-const ACTION_REQUIRED = new Set(['unresolved_blocker', 'orphaned_issue']);
+export const ACTION_REQUIRED = new Set(['unresolved_blocker', 'orphaned_issue']);
 
-function conditionTitle(c: FleetGraphCondition): string {
+export function conditionTitle(c: FleetGraphCondition): string {
   const rawTitle = c.details?.issueTitle ? String(c.details.issueTitle) : null;
   const issueTitle = rawTitle && rawTitle.toLowerCase() !== 'untitled' ? rawTitle : null;
   const project = c.details?.projectTitle ? String(c.details.projectTitle) : null;
@@ -25,7 +25,7 @@ function conditionTitle(c: FleetGraphCondition): string {
   return issueTitle ?? project ?? 'Untitled';
 }
 
-function conditionMessage(c: FleetGraphCondition): string {
+export function conditionMessage(c: FleetGraphCondition): string {
   const assignee = c.details?.assigneeName ? String(c.details.assigneeName) : null;
   const project = c.details?.projectTitle ? String(c.details.projectTitle) : null;
   const sprint = c.details?.sprintTitle ? String(c.details.sprintTitle) : null;
