@@ -430,7 +430,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
 
       {/* Alerts & approvals — fixed bottom-right, independent of button position */}
       {(outputs.length > 0 || approvals.length > 0) && (
-        <div className={`fixed z-50 flex w-72 flex-col gap-2 ${open ? 'bottom-4 right-[22rem]' : 'bottom-4 right-4'} transition-all`}>
+        <div className="fixed z-50 flex w-72 flex-col gap-2 bottom-4 right-4">
           {outputs.length > 0 && (
             <div className="rounded border border-border bg-background text-xs shadow-lg">
               {/* Header — always visible, click to toggle */}
