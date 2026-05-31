@@ -343,11 +343,17 @@ export async function callLlmWithToolResult(
       signal: controller.signal,
     });
     clearTimeout(timeout);
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.error('[FleetGraph] callLlmWithToolResult HTTP error:', res.status, errText);
+      return null;
+    }
     const payload = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
     const content = payload.choices?.[0]?.message?.content;
+    console.log('[FleetGraph] callLlmWithToolResult response:', content?.slice(0, 200));
     return typeof content === 'string' && content.trim() ? content.trim() : null;
-  } catch {
+  } catch (err) {
+    console.error('[FleetGraph] callLlmWithToolResult failed:', err);
     return null;
   }
 }
