@@ -18,6 +18,7 @@ import { createFleetGraphOutput, dismissAllFleetGraphOutputs, dismissFleetGraphO
 import { evaluateDedup, type DedupStateValue } from '../fleetgraph/dedup-worsening.js';
 import type { FleetGraphCondition } from '../fleetgraph/types.js';
 import { getFleetGraphCompiledGraph } from '../fleetgraph/compiled-graph.js';
+import { FleetGraphTriggerQueue } from '../fleetgraph/trigger-queue.js';
 
 const router = Router();
 
@@ -464,6 +465,17 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
       runEnvelope.payload.approvalId = approvalId;
       runEnvelope.payload.result = 'human_gate_required';
     } else if (caseId === 4) {
+      // A comment was added to the blocked issue 1 hour ago, resetting the timer.
+      // The condition classifier sees no active blocker (timer just reset), so conditions are empty.
+      // evaluateDedup should suppress re-notification since nothing new to report.
+      const previous: DedupStateValue = {
+        dedupKey: 'unresolved_blocker',
+        lastNotifiedAt: new Date(Date.now() - 30 * 60 * 60 * 1000).toISOString(),
+        worstStaleHours: 30,
+      };
+      const conditions: FleetGraphCondition[] = []; // comment reset the timer; blocker no longer active
+      const dedupDecision = evaluateDedup(previous, conditions);
+      runEnvelope.payload.dedupDecision = dedupDecision;
       runEnvelope.payload.result = 'timer_reset_no_escalation';
       runEnvelope.payload.blockerEscalated = false;
     } else if (caseId === 5) {
@@ -571,13 +583,28 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
       runEnvelope.payload.approvalId = approvalId;
       runEnvelope.payload.result = 'notification_and_action_emitted';
     } else if (caseId === 10) {
-      const response = generateResponse(
-        { summary: 'Action proposed for multi-item move.' },
-        { requiresMutationConfirm: true, explicitConfirm: false }
-      );
+      const graph = getFleetGraphCompiledGraph();
+      const graphResult = await graph.invoke({
+        mode: 'on_demand',
+        workspaceId: req.workspaceId,
+        userId: req.userId ?? '',
+        prompt: 'move these 4 issues to next sprint',
+        contextScope: 'workspace',
+        accessMode: 'ask_permission',
+        requiresMutationConfirm: true,
+        explicitConfirm: false,
+        config,
+        documentType: '',
+        documentId: '',
+        currentPath: '',
+        history: [],
+        parentRunId: runId,
+        onEvent: () => {},
+      });
       runEnvelope.payload.prompt = 'move these 4 issues to next sprint';
-      runEnvelope.payload.result = response.response;
-      runEnvelope.payload.requiresConfirm = response.requiresConfirm;
+      runEnvelope.payload.result = graphResult.response;
+      runEnvelope.payload.requiresConfirm = graphResult.requiresConfirm;
+      runEnvelope.payload.kind = graphResult.kind;
     } else if (caseId === 11) {
       const seedId = crypto.randomUUID();
       await pool.query(
@@ -612,8 +639,37 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
       runEnvelope.payload.historyCount = reasoning.historyCount ?? 0;
       runEnvelope.payload.result = reasoning.summary;
     } else if (caseId === 14) {
+      // Simulate a burst of 20 pg_events into a queue sized for 5.
+      // Items beyond maxSize must be rejected (enqueue returns false).
+      // All accepted items must complete without error.
+      const BURST = 20;
+      const MAX_SIZE = 5;
+      let completed = 0;
+      let rejected = 0;
+      await new Promise<void>((resolve) => {
+        const q = new FleetGraphTriggerQueue(2, MAX_SIZE, async () => {
+          completed += 1;
+          if (completed + rejected === BURST) resolve();
+        });
+        for (let i = 0; i < BURST; i++) {
+          const envelope: FleetGraphRunEnvelope = {
+            runId: crypto.randomUUID(),
+            triggerType: 'pg_event',
+            workspaceId: req.workspaceId,
+            entityId: req.workspaceId,
+            entityType: 'workspace',
+            payload: { testCaseId: caseId, burstIndex: i },
+            createdAt: new Date().toISOString(),
+          };
+          const accepted = q.enqueue(envelope);
+          if (!accepted) {
+            rejected += 1;
+            if (completed + rejected === BURST) resolve();
+          }
+        }
+      });
       runEnvelope.payload.result = 'burst_events_processed_with_queue';
-      runEnvelope.payload.queue = { burstCount: 40, processed: 40, failures: 0 };
+      runEnvelope.payload.queue = { burstCount: BURST, accepted: completed, rejected, failures: 0 };
     }
 
     await createLangSmithRun(config, runEnvelope);
