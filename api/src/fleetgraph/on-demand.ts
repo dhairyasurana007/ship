@@ -229,11 +229,18 @@ import type { FleetGraphToolCall, FleetGraphToolName } from './tools.js';
  * Ask the LLM to select a tool (or respond directly).
  * Returns a FleetGraphToolCall if the LLM picked a tool, or null to fall through to text reasoning.
  */
+export interface LlmToolSelection {
+  toolCall: FleetGraphToolCall;
+  toolCallId: string;
+  systemPrompt: string;
+  userPrompt: string;
+}
+
 export async function callLlmForToolSelection(
   config: FleetGraphConfig | undefined,
   systemPrompt: string,
   userPrompt: string,
-): Promise<FleetGraphToolCall | null> {
+): Promise<LlmToolSelection | null> {
   if (!config) return null;
   try {
     const controller = new AbortController();
@@ -265,21 +272,81 @@ export async function callLlmForToolSelection(
     const payload = await res.json() as {
       choices?: Array<{
         message?: {
-          tool_calls?: Array<{ function?: { name?: string; arguments?: string } }>;
+          tool_calls?: Array<{ id?: string; function?: { name?: string; arguments?: string } }>;
         };
       }>;
     };
-    const toolCall = payload.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall?.function?.name) return null;
+    const raw = payload.choices?.[0]?.message?.tool_calls?.[0];
+    if (!raw?.function?.name) return null;
 
-    const name = toolCall.function.name;
-    // respond_directly = LLM wants to answer without fetching data; fall through to text reasoning
-    if (!name || name === 'respond_directly') return null;
+    const name = raw.function.name;
+    if (name === 'respond_directly') return null;
 
     let args: Record<string, unknown> = {};
-    try { args = JSON.parse(toolCall.function.arguments ?? '{}') as Record<string, unknown>; } catch { /* ignore */ }
+    try { args = JSON.parse(raw.function.arguments ?? '{}') as Record<string, unknown>; } catch { /* ignore */ }
 
-    return { name: name as FleetGraphToolName, args };
+    return {
+      toolCall: { name: name as FleetGraphToolName, args },
+      toolCallId: raw.id ?? 'call_0',
+      systemPrompt,
+      userPrompt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Second leg of the tool-use conversation: send the tool result back to the LLM
+ * so it can answer the user's original question using the actual data.
+ */
+export async function callLlmWithToolResult(
+  config: FleetGraphConfig | undefined,
+  selection: LlmToolSelection,
+  toolName: string,
+  toolResultData: unknown,
+): Promise<string | null> {
+  if (!config) return null;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    const endpoint = config.provider === 'openrouter'
+      ? `${config.openRouterBaseUrl.replace(/\/$/, '')}/chat/completions`
+      : 'https://api.openai.com/v1/chat/completions';
+    const apiKey = config.provider === 'openrouter' ? config.openRouterApiKey : config.openAiApiKey;
+    if (!apiKey) return null;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: config.model,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: selection.systemPrompt },
+          { role: 'user', content: selection.userPrompt },
+          {
+            role: 'assistant',
+            tool_calls: [{
+              id: selection.toolCallId,
+              type: 'function',
+              function: { name: toolName, arguments: JSON.stringify(selection.toolCall.args) },
+            }],
+          },
+          {
+            role: 'tool',
+            tool_call_id: selection.toolCallId,
+            content: JSON.stringify(toolResultData),
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const payload = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+    const content = payload.choices?.[0]?.message?.content;
+    return typeof content === 'string' && content.trim() ? content.trim() : null;
   } catch {
     return null;
   }

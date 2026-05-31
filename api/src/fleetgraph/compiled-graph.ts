@@ -4,7 +4,7 @@ import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContex
 import { fetchIssues, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
 import { executeToolCall, inferToolCallFromPrompt, type FleetGraphToolCall, type FleetGraphToolResult } from './tools.js';
-import { callLlmForToolSelection, buildSystemPrompt, callLlm } from './on-demand.js';
+import { callLlmForToolSelection, callLlmWithToolResult, buildSystemPrompt, callLlm } from './on-demand.js';
 import { createLangSmithChildRun, finishLangSmithChildRun } from './langsmith.js';
 import type { FleetGraphConfig, FleetGraphCondition } from './types.js';
 
@@ -176,10 +176,10 @@ class FleetGraphCompiledGraph {
       };
     }
 
-// LLM-driven tool selection — falls back to regex if no LLM config
+    // LLM-driven tool selection — falls back to regex if no LLM config
     const systemPrompt = buildSystemPrompt(input.contextScope);
-    const llmToolCall = await callLlmForToolSelection(input.config, systemPrompt, input.prompt);
-    const toolCall = llmToolCall ?? inferToolCallFromPrompt({
+    const llmSelection = await callLlmForToolSelection(input.config, systemPrompt, input.prompt);
+    const toolCall = llmSelection?.toolCall ?? inferToolCallFromPrompt({
       prompt: input.prompt,
       contextScope: input.contextScope,
       documentId: input.contextScope === 'document' ? input.documentId : undefined,
@@ -215,10 +215,11 @@ class FleetGraphCompiledGraph {
         throw err;
       }
 
-      // Let the LLM answer the user's question using the tool result data
-      const toolData = JSON.stringify((toolResult as Record<string, unknown>).data ?? toolResult.summary);
-      const answerPrompt = `The user asked: "${input.prompt}"\n\nTool result data:\n${toolData}\n\nAnswer the user's question concisely using the data above.`;
-      const llmAnswer = await callLlm(input.config, buildSystemPrompt(input.contextScope), answerPrompt);
+      // Second leg: send full conversation + tool result back to LLM to answer the user's question
+      const toolData = (toolResult as Record<string, unknown>).data ?? toolResult.summary;
+      const llmAnswer = llmSelection
+        ? await callLlmWithToolResult(input.config, llmSelection, toolCall.name, toolData)
+        : await callLlm(input.config, systemPrompt, `The user asked: "${input.prompt}"\n\nTool result:\n${JSON.stringify(toolData)}\n\nAnswer concisely.`);
 
       return {
         mode: 'on_demand',
