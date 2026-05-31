@@ -179,12 +179,15 @@ class FleetGraphCompiledGraph {
     }
 
     // LLM-driven tool selection — falls back to regex if no LLM config.
-    // For document-scope read queries (summarize, explain, describe, etc.) skip tool
-    // selection entirely — the answer comes from the document context loaded below.
+    // Skip tool selection when the answer comes from pre-loaded context:
+    // • Document-scope read queries (summarize, explain, describe, etc.) — document content is in context.
+    // • Workspace-scope unassigned/workload queries — unassignedIssues list is in context.
     const systemPrompt = buildSystemPrompt(input.contextScope);
     const isDocumentReadQuery = input.contextScope === 'document'
       && /^(summarize|summarise|what is|what does|what'?s|explain|describe|tell me about|who |how |what are|give me|can you tell)/i.test(input.prompt.trim());
-    const llmSelection = isDocumentReadQuery
+    const isWorkspaceContextQuery = input.contextScope === 'workspace'
+      && /unassigned|no assignee|without assignee|unowned|not assigned/i.test(input.prompt);
+    const llmSelection = (isDocumentReadQuery || isWorkspaceContextQuery)
       ? null
       : await callLlmForToolSelection(input.config, systemPrompt, input.prompt, input.history ?? []);
     const toolCall = llmSelection?.toolCall ?? inferToolCallFromPrompt({
