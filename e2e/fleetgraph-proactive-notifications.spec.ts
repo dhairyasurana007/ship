@@ -1,4 +1,6 @@
-import { test, expect } from './fixtures/isolated-env';
+import { test, expect } from '@playwright/test';
+
+test.use({ baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'https://ship-web-ak37.onrender.com' });
 
 async function login(page: import('@playwright/test').Page) {
   await page.goto('/login');
