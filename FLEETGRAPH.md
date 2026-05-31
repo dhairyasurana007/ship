@@ -294,7 +294,7 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 | # | Ship State | Expected Output | Trace Link |
 |---|---|---|---|
-| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | https://smith.langchain.com/public/b2e4ee39-a7c2-469c-b9f0-7003a79febb2/r |
+| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | https://smith.langchain.com/public/e467cd7d-2dd9-4396-a56d-3d16fa6ed500/r |
 | 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions | https://smith.langchain.com/public/c99e46a0-5e57-4418-9089-445b942a9827/r |
 | 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal | https://smith.langchain.com/public/394cb98d-2772-4d73-ac49-695766a8a05a/r |
 | 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no 48h escalation until threshold is crossed again | https://smith.langchain.com/public/8e6ed916-bf2c-462e-8fdc-86546b9f815e/r |
