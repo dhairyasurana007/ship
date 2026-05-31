@@ -582,11 +582,21 @@ export async function executeToolCall(input: {
     let workspaceResults: Array<Record<string, unknown>> = [];
     if (entityTypes.length === 0 || entityTypes.includes('workspace')) {
       const wsResult = await pool.query(
-        `SELECT w.id, 'workspace'::text AS type, w.name AS title, w.created_at, w.updated_at
+        `SELECT
+           w.id, 'workspace'::text AS type, w.name AS title, w.created_at, w.updated_at,
+           json_agg(json_build_object(
+             'user_id', u.id,
+             'name', u.name,
+             'email', u.email,
+             'role', wm2.role
+           ) ORDER BY u.name) AS members
          FROM workspaces w
          JOIN workspace_memberships wm ON wm.workspace_id = w.id
+         JOIN workspace_memberships wm2 ON wm2.workspace_id = w.id
+         JOIN users u ON u.id = wm2.user_id
          WHERE wm.user_id = $1 AND w.archived_at IS NULL
            AND ($2 = '' OR w.name ILIKE '%' || $2 || '%')
+         GROUP BY w.id, w.name, w.created_at, w.updated_at
          ORDER BY ${orderFieldSql} ${orderDirectionSql}
          LIMIT $3`,
         [userId, query, Math.min(5, plan.limit)]
