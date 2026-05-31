@@ -191,6 +191,11 @@ router.post('/chat', authMiddleware, async (req, res) => {
   const prompt = String(req.body?.prompt ?? '');
   const requiresMutationConfirm = Boolean(req.body?.requiresMutationConfirm);
   const explicitConfirm = req.body?.explicitConfirm === true;
+  const history = Array.isArray(req.body?.history)
+    ? (req.body.history as Array<{ role: string; content: string }>)
+        .filter((m) => m && typeof m.role === 'string' && typeof m.content === 'string')
+        .slice(-10)
+    : [];
 
   if (!prompt) {
     res.status(400).json({ error: 'prompt is required' });
@@ -235,6 +240,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
       config,
       documentType,
       documentId,
+      history,
     });
 
     if (graphResult.kind === 'tool_executed' && graphResult.toolCall && graphResult.toolResult) {

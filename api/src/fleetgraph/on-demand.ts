@@ -205,12 +205,14 @@ export interface LlmToolSelection {
   toolCallId: string;
   systemPrompt: string;
   userPrompt: string;
+  history: Array<{ role: string; content: string }>;
 }
 
 export async function callLlmForToolSelection(
   config: FleetGraphConfig | undefined,
   systemPrompt: string,
   userPrompt: string,
+  history: Array<{ role: string; content: string }> = [],
 ): Promise<LlmToolSelection | null> {
   if (!config) return null;
   try {
@@ -232,6 +234,7 @@ export async function callLlmForToolSelection(
         tool_choice: 'required',
         messages: [
           { role: 'system', content: systemPrompt },
+          ...history.map((m) => ({ role: m.role, content: m.content })),
           { role: 'user', content: userPrompt },
         ],
       }),
@@ -261,6 +264,7 @@ export async function callLlmForToolSelection(
       toolCallId: raw.id ?? 'call_0',
       systemPrompt,
       userPrompt,
+      history,
     };
   } catch {
     return null;
@@ -295,6 +299,7 @@ export async function callLlmWithToolResult(
         temperature: 0.2,
         messages: [
           { role: 'system', content: selection.systemPrompt },
+          ...selection.history.map((m) => ({ role: m.role, content: m.content })),
           { role: 'user', content: selection.userPrompt },
           {
             role: 'assistant',
@@ -325,6 +330,45 @@ export async function callLlmWithToolResult(
     return typeof content === 'string' && content.trim() ? content.trim() : null;
   } catch (err) {
     console.error('[FleetGraph] callLlmWithToolResult failed:', err);
+    return null;
+  }
+}
+
+async function callLlmWithHistory(
+  config: FleetGraphConfig | undefined,
+  systemPrompt: string,
+  history: Array<{ role: string; content: string }>,
+  userPrompt: string,
+): Promise<string | null> {
+  if (!config) return null;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    const endpoint = config.provider === 'openrouter'
+      ? `${config.openRouterBaseUrl.replace(/\/$/, '')}/chat/completions`
+      : 'https://api.openai.com/v1/chat/completions';
+    const apiKey = config.provider === 'openrouter' ? config.openRouterApiKey : config.openAiApiKey;
+    if (!apiKey) return null;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: config.model,
+        temperature: 0.2,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...history.map((m) => ({ role: m.role, content: m.content })),
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+    const payload = await res.json() as { choices?: Array<{ message?: { content?: string } }> };
+    const content = payload.choices?.[0]?.message?.content;
+    return typeof content === 'string' && content.trim() ? content.trim() : null;
+  } catch {
     return null;
   }
 }
@@ -370,13 +414,14 @@ export async function reasonOnContext(
   context: Record<string, unknown>,
   prompt: string,
   config?: FleetGraphConfig,
-  scope: 'workspace' | 'document' = context.scope === 'workspace' ? 'workspace' : 'document'
+  scope: 'workspace' | 'document' = context.scope === 'workspace' ? 'workspace' : 'document',
+  chatHistory: Array<{ role: string; content: string }> = []
 ): Promise<Record<string, unknown>> {
   const systemPrompt = buildSystemPrompt(scope);
   const userPrompt = buildUserPrompt(scope, prompt, context);
 
   const history = Array.isArray(context.history) ? context.history : [];
-  const llmSummary = await callLlm(config, systemPrompt, userPrompt);
+  const llmSummary = await callLlmWithHistory(config, systemPrompt, chatHistory, userPrompt);
   return {
     model: 'gpt-4o-mini',
     summary: llmSummary ?? 'FleetGraph is unavailable right now. Please check your configuration.',

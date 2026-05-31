@@ -101,6 +101,7 @@ export function FleetGraphAssistantPanel({ documentId, documentType }: FleetGrap
           prompt: promptValue,
           requiresMutationConfirm,
           explicitConfirm,
+          history: messages.slice(-10).map((m) => ({ role: m.role, content: m.text })),
       });
       const data = await res.json() as FleetGraphChatResponse;
       if (data.requiresConfirm && !explicitConfirm) {

@@ -53,6 +53,7 @@ export interface OnDemandGraphInput {
   documentType?: string;
   documentId?: string;
   parentRunId?: string;
+  history?: Array<{ role: string; content: string }>;
 }
 
 export type FleetGraphInvokeInput = ProactiveGraphInput | OnDemandGraphInput;
@@ -178,7 +179,7 @@ class FleetGraphCompiledGraph {
 
     // LLM-driven tool selection — falls back to regex if no LLM config
     const systemPrompt = buildSystemPrompt(input.contextScope);
-    const llmSelection = await callLlmForToolSelection(input.config, systemPrompt, input.prompt);
+    const llmSelection = await callLlmForToolSelection(input.config, systemPrompt, input.prompt, input.history ?? []);
     const toolCall = llmSelection?.toolCall ?? inferToolCallFromPrompt({
       prompt: input.prompt,
       contextScope: input.contextScope,
@@ -247,7 +248,7 @@ class FleetGraphCompiledGraph {
       throw err;
     }
 
-    const reasoning = await reasonOnContext(context, input.prompt, input.config, input.contextScope);
+    const reasoning = await reasonOnContext(context, input.prompt, input.config, input.contextScope, input.history ?? []);
     // When no tool was identified (we're in the LLM reasoning path), there is nothing
     // concrete to confirm — suppress the mutation-confirm flag so the LLM can respond
     // directly instead of showing a useless "Action proposed" confirm dialog.
