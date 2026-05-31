@@ -31,7 +31,7 @@ test.describe('fleetgraph proactive notifications', () => {
       });
     });
 
-    await page.getByRole('button', { name: 'Open FleetGraph assistant window' }).click();
+    await page.getByRole('button', { name: 'FleetGraph Assistant' }).click();
     await expect(page.getByText('Recent FleetGraph alerts')).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('FleetGraph: stale_issue')).toBeVisible();
   });

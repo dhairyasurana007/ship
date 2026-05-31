@@ -40,7 +40,7 @@ test.describe('fleetgraph human gate', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ token: 't' }) });
     });
 
-    await page.getByRole('button', { name: 'Open FleetGraph assistant window' }).click();
+    await page.getByRole('button', { name: 'FleetGraph Assistant' }).click();
     await expect(page.getByText('Pending approvals')).toBeVisible();
     await expect(page.getByText('move_issue_sprint')).toBeVisible();
 
