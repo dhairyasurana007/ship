@@ -55,7 +55,7 @@ Autonomous actions may create informational artifacts (`notifications`, `issue c
 |---|---|---|
 | Stale issue | Issue assignee | 3+ days without state change during active sprint, or stale threshold exceeded by remaining-sprint rule |
 | Scope creep | Project owner (document creator) | Any post-start sprint association added |
-| Unresolved blocker | Issue assignee; escalate to project document creator after 48h | 24h+ unresolved blocked issue (timer resets on state change or any comment) |
+| Unresolved blocker | Issue assignee and project document creator | 24h+ unresolved blocked issue (timer resets on state change or any comment) |
 | Orphaned issue | Project owner; fallback to all workspace admins if owner missing/inactive | 7+ days with no assignee, no sprint, no activity; terminal-state issues excluded |
 
 Deduplication: the agent deduplicates by `(entity_id, set_of_conditions)` for 48 hours, where `entity_id` is condition-specific (for example issue ID for stale/blocker/orphaned, sprint ID for scope creep). If the condition set changes (for example `{stale}` -> `{stale, blocker}`), it is treated as a new alert and bypasses dedup.
@@ -103,6 +103,7 @@ FleetGraph currently supports the following on-demand tools (`api/src/fleetgraph
 | `validate_workspace_rules` | Compute workspace hygiene checks (untitled docs, orphan issues, stale docs) | Read | Executes without approval | Workspace member |
 | `generate_sprint_review` | Generate sprint summary metrics from current data | Read | Executes without approval | Workspace member |
 | `generate_project_health_report` | Generate project health metrics from current data | Read | Executes without approval | Workspace member |
+| `respond_directly` | Return a plain-text answer without invoking a data tool — used for greetings, clarifications, and questions answerable from already-loaded context | Read | Executes without approval | Workspace member |
 
 Approval gate implementation detail: in `ask_permission` mode, only mutation tools require explicit approve/reject; read tools execute immediately.
 
@@ -241,23 +242,15 @@ A dedicated `pg.Client` in the FleetGraph service holds an open connection and i
 LISTEN document_changes;
 ```
 
-A trigger on the `documents` and `document_associations` tables fires `pg_notify('document_changes', payload)` on every INSERT and UPDATE. The payload carries `{ document_id, document_type, change_type }`. The FleetGraph service receives this notification in milliseconds and initiates a graph run for every document change (no relevance pre-filter in MVP).
+A trigger on the `documents`, `document_associations`, and `comments` tables fires `pg_notify('document_changes', payload)` on every INSERT and UPDATE. The payload carries `{ workspaceId, entityId, entityType, updatedAt }`. The FleetGraph service receives this notification in milliseconds.
 
-Operational note: because every document change can trigger a run, FleetGraph uses a bounded worker queue with explicit max concurrency to avoid unbounded run storms; runs are processed FIFO once accepted into the queue.
+To avoid a run per keystroke (TipTap syncs continuously with no explicit save), incoming pg_events are debounced per workspace for 5 seconds — only the last event in a burst is enqueued. Runs are processed FIFO via a bounded worker queue with explicit max concurrency to avoid unbounded run storms.
 
 ### Fallback - 5-minute scheduled poll
 
-A poll runs every 5 minutes (configurable via `FLEETGRAPH_POLL_INTERVAL_MS`, default `300000`):
+A poll runs every 5 minutes (configurable via `FLEETGRAPH_POLL_INTERVAL_MS`, default `300000`). It enqueues one proactive run per active workspace as a heartbeat, ensuring conditions are checked even when no PG notifications arrive (bulk migrations, direct DB writes, edge cases in test environments).
 
-```sql
-SELECT id, document_type, updated_at
-FROM documents
-WHERE updated_at > $last_checked_at
-ORDER BY updated_at DESC
-LIMIT 200;
-```
-
-This catches changes that bypass the PG trigger (bulk migrations, direct DB writes, edge cases in test environments).
+The poll is session-gated: it activates when the first user logs in and deactivates when the last active session ends, keeping idle costs near zero outside business hours.
 
 ### Tradeoff comparison
 
@@ -290,24 +283,24 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 
 ## Test Cases
 
-*Due: Early Submission (Thursday, 11:59 PM). All 14 trace links captured May 31, 2026 via `/api/fleetgraph/test/run-case/:id` against the production Render deployment (`https://ship-api-ysxi.onrender.com`). All links are publicly accessible without login.*
+*Triggered via `DELETE /api/fleetgraph/test/run-case/:id` against the production Render deployment. A cleanup endpoint (`DELETE /api/fleetgraph/test/cleanup`) purges all test-tagged rows from fleetgraph_outputs, fleetgraph_approval_requests, fleetgraph_runs, and fleetgraph_state after each eval run; this step runs automatically in CI via `scripts/fleetgraph-eval-cleanup.sh` with `if: always()` in the Playwright eval job.*
 
-| # | Ship State | Expected Output | Trace Link |
-|---|---|---|---|
-| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline | https://smith.langchain.com/public/e467cd7d-2dd9-4396-a56d-3d16fa6ed500/r |
-| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions | https://smith.langchain.com/public/c99e46a0-5e57-4418-9089-445b942a9827/r |
-| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal | https://smith.langchain.com/public/394cb98d-2772-4d73-ac49-695766a8a05a/r |
-| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no 48h escalation until threshold is crossed again | https://smith.langchain.com/public/8e6ed916-bf2c-462e-8fdc-86546b9f815e/r |
-| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat | https://smith.langchain.com/public/24f085de-c362-4ddf-ad20-05c7feb208b7/r |
-| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation | https://smith.langchain.com/public/d02e6f93-6e3c-40e7-b52d-9f393d2feb6b/r |
-| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason | https://smith.langchain.com/public/60d009d4-770b-4d21-981c-9fc742f8d7b1/r |
-| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context | https://smith.langchain.com/public/79a181f5-1edd-4dc1-90a9-28fc495a08a7/r |
-| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate | https://smith.langchain.com/public/4af10a73-3806-4890-ac25-fcab227f656d/r |
-| 10 | User requests "move these 4 issues to next sprint" from chat | Agent creates per-item confirmation flow because total mutations >= 3; no mutation occurs before explicit approvals | https://smith.langchain.com/public/70f473be-5097-4494-ad40-3dd44202b0ae/r |
-| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed | https://smith.langchain.com/public/23dbb468-f822-4975-a695-95cd32c0a82d/r |
-| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens | https://smith.langchain.com/public/e0f3acbb-11bd-4ca8-ae44-4d5909e3e4bc/r |
-| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history | https://smith.langchain.com/public/8753931a-f141-4d8e-86bb-949c70d99acc/r |
-| 14 | Burst of document edits causes many PG notifications in short interval | Runs enter bounded FIFO queue; system processes without crash and preserves detection latency target where feasible | https://smith.langchain.com/public/2fa9b0cb-3ef7-4333-ab5a-57d306ecad3b/r |
+| # | Ship State | Expected Output |
+|---|---|---|
+| 1 | Issue with `started_at` set 4 days ago, `state = 'in_progress'`, sprint is active with `end_date` 2 days away | Agent detects stale issue (4 days stale > 2 days remaining sprint time), posts in-app notification to assignee with days-stale count and sprint deadline |
+| 2 | Sprint with `start_date` = 3 days ago; new `document_association` with `relationship_type='sprint'` created today | Agent detects scope creep, calculates % growth, notifies project owner with list of post-start additions |
+| 3 | Issue text says "waiting on auth team response", model confidence = 0.72 | Agent notifies assignee with explicit uncertainty ("possible blocker"), includes confidence, and requires human confirmation before any mutation proposal |
+| 4 | Issue content contains "blocked by AUTH-42", state unchanged for 30 hours, then a new comment is added | Agent resets blocker timer on comment; no escalation until threshold is crossed again |
+| 5 | User opens chat on a sprint page mid-sprint and asks "what's at risk?" | Agent loads sprint + associated issues + last 30 days of history, identifies at-risk issues, returns health summary in chat |
+| 6 | Three issues with no `assignee_id`, no sprint association, `updated_at` 10+ days ago; one is `closed` | Agent excludes closed issue, groups remaining orphans, suggests dispositions, and presents actions for explicit confirmation |
+| 7 | Same issue triggers stale detection twice within 48 hours with no worsening signal | Second run is deduplicated (no re-notification) and run log shows dedup reason |
+| 8 | Same issue first triggers `{stale}`, then later triggers `{stale, blocker}` within 48 hours | Condition-set change bypasses dedup; new notification is sent with merged condition context |
+| 9 | One issue triggers both notification-only condition and action-required condition in same proactive run | Notification is emitted immediately; action proposal is emitted separately behind human gate |
+| 10 | User requests "move these 4 issues to next sprint" from chat | Agent creates per-item confirmation flow because total mutations >= 3; no mutation occurs before explicit approvals |
+| 11 | User approval card for proposed reassignment sits for >24h without response | Approval expires, requester receives expiry notification, and action is not executed |
+| 12 | User rejects a proposed action, then no material state change occurs for the issue | Agent forgets rejected proposal state and does not re-propose until a qualifying material state change happens |
+| 13 | On-demand query asks about issue history where relevant event is 45 days old | Agent limits context to last 30 days, states findings based on in-window data only, and does not fetch older history |
+| 14 | Burst of document edits causes many PG notifications in short interval | Runs enter bounded FIFO queue; system processes without crash and preserves detection latency target where feasible |
 
 ---
 
@@ -328,6 +321,7 @@ Because PG LISTEN only triggers graph runs on actual changes, the meaningful run
 | Approval TTL | 24 hours with expiry notification | Prevents stale approvals; keeps decisions close to current state | Requires re-proposal when approval expires |
 | Rejection behavior | Forget on reject; no stored suppression | Keeps behavior simple and user-driven in MVP | Same action may reappear on future events |
 | Cross-origin FleetGraph API routing | Use shared `apiGet`/`apiPost` client for all FleetGraph routes | Ensures requests target configured API origin in production (Render split-host setup) | Requires consistent API-client usage; direct relative `fetch('/api/...')` is unsafe in split-origin deployments |
+| pg_event debounce | 5-second per-workspace debounce on incoming PG notifications | TipTap syncs document state continuously with no explicit save; without debouncing, every keystroke would enqueue a graph run | A burst of rapid edits from multiple workspaces could still queue quickly; the bounded queue provides the second layer of protection |
 
 ---
 
