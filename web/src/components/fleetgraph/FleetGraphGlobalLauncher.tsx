@@ -113,7 +113,10 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   useEffect(() => {
     function handleOpen() {
       setOpen(true);
-      setMessages((prev) => prev.length === 0 ? [{ role: 'assistant', text: WELCOME_MESSAGE }] : prev);
+      if (messages.length === 0) {
+        setMessages([{ role: 'assistant', text: WELCOME_MESSAGE }]);
+        void send('search_entities');
+      }
       void loadOutputs();
       void loadApprovals();
     }
