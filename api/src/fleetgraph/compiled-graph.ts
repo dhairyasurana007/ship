@@ -4,6 +4,7 @@ import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContex
 import { fetchIssues, loadProjectContext } from './proactive-context.js';
 import { routeOutputs } from './notifications.js';
 import { executeToolCall, inferToolCallFromPrompt, type FleetGraphToolCall, type FleetGraphToolResult } from './tools.js';
+import { callLlmForToolSelection, buildSystemPrompt } from './on-demand.js';
 import { createLangSmithChildRun, finishLangSmithChildRun } from './langsmith.js';
 import type { FleetGraphConfig, FleetGraphCondition } from './types.js';
 
@@ -190,7 +191,10 @@ class FleetGraphCompiledGraph {
       };
     }
 
-    const toolCall = inferToolCallFromPrompt({
+    // LLM-driven tool selection — falls back to regex if no LLM config
+    const systemPrompt = buildSystemPrompt(input.contextScope);
+    const llmToolCall = await callLlmForToolSelection(input.config, systemPrompt, input.prompt);
+    const toolCall = llmToolCall ?? inferToolCallFromPrompt({
       prompt: input.prompt,
       contextScope: input.contextScope,
       documentId: input.contextScope === 'document' ? input.documentId : undefined,

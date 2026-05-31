@@ -152,7 +152,7 @@ export async function loadWorkspaceContext(workspaceId: string): Promise<Record<
   }
 }
 
-function buildSystemPrompt(scope: 'workspace' | 'document'): string {
+export function buildSystemPrompt(scope: 'workspace' | 'document'): string {
   const base = `
 ## Role
 You are FleetGraph, Ship's project intelligence assistant. You are embedded directly in the Ship project management platform and operate on behalf of the user currently viewing their workspace or document.
@@ -220,6 +220,66 @@ function buildUserPrompt(
     JSON.stringify(context),
     'Return a direct answer first, then optional bullets for recommended next actions.',
   ].join('\n\n');
+}
+
+import { FLEETGRAPH_TOOL_SCHEMAS } from './tool-schemas.js';
+import type { FleetGraphToolCall, FleetGraphToolName } from './tools.js';
+
+/**
+ * Ask the LLM to select a tool (or respond directly).
+ * Returns a FleetGraphToolCall if the LLM picked a tool, or null to fall through to text reasoning.
+ */
+export async function callLlmForToolSelection(
+  config: FleetGraphConfig | undefined,
+  systemPrompt: string,
+  userPrompt: string,
+): Promise<FleetGraphToolCall | null> {
+  if (!config) return null;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+    const endpoint = config.provider === 'openrouter'
+      ? `${config.openRouterBaseUrl.replace(/\/$/, '')}/chat/completions`
+      : 'https://api.openai.com/v1/chat/completions';
+    const apiKey = config.provider === 'openrouter' ? config.openRouterApiKey : config.openAiApiKey;
+    if (!apiKey) return null;
+
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: config.model,
+        temperature: 0.2,
+        tools: FLEETGRAPH_TOOL_SCHEMAS,
+        tool_choice: 'auto',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) return null;
+
+    const payload = await res.json() as {
+      choices?: Array<{
+        message?: {
+          tool_calls?: Array<{ function?: { name?: string; arguments?: string } }>;
+        };
+      }>;
+    };
+    const toolCall = payload.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.name) return null;
+
+    const name = toolCall.function.name as FleetGraphToolName;
+    let args: Record<string, unknown> = {};
+    try { args = JSON.parse(toolCall.function.arguments ?? '{}') as Record<string, unknown>; } catch { /* ignore */ }
+
+    return { name, args };
+  } catch {
+    return null;
+  }
 }
 
 async function callLlm(config: FleetGraphConfig | undefined, systemPrompt: string, userPrompt: string): Promise<string | null> {
