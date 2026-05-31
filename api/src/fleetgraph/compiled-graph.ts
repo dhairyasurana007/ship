@@ -116,8 +116,6 @@ export function looksLikeGibberish(prompt: string): boolean {
   return false;
 }
 
-const GIBBERISH_RESPONSE =
-  "I'm sorry, I don't understand what you're talking about, can you please try again?";
 
 function buildConfirmMessage(toolCall: FleetGraphToolCall): string {
   const name = toolCall.name;
@@ -178,20 +176,7 @@ class FleetGraphCompiledGraph {
       };
     }
 
-    // Reject gibberish before doing any tool inference or LLM work
-    if (looksLikeGibberish(input.prompt)) {
-      return {
-        mode: 'on_demand',
-        kind: 'reasoned',
-        contextScope: input.contextScope,
-        response: GIBBERISH_RESPONSE,
-        requiresConfirm: false,
-        degraded: false,
-        degradedReason: null,
-      };
-    }
-
-    // LLM-driven tool selection — falls back to regex if no LLM config
+// LLM-driven tool selection — falls back to regex if no LLM config
     const systemPrompt = buildSystemPrompt(input.contextScope);
     const llmToolCall = await callLlmForToolSelection(input.config, systemPrompt, input.prompt);
     const toolCall = llmToolCall ?? inferToolCallFromPrompt({

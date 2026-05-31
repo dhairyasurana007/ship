@@ -331,78 +331,18 @@ export async function reasonOnContext(
   const systemPrompt = buildSystemPrompt(scope);
   const userPrompt = buildUserPrompt(scope, prompt, context);
 
-  if (context.scope === 'workspace') {
-    const promptLower = prompt.toLowerCase();
-    const openIssueCount = Number(context.openIssueCount ?? 0);
-    const activeSprintCount = Number(context.activeSprintCount ?? 0);
-    const recentDocuments = Array.isArray(context.recentDocuments) ? context.recentDocuments : [];
-    const recentTitles = recentDocuments
-      .slice(0, 3)
-      .map((doc) => (doc as { title?: string }).title)
-      .filter(Boolean) as string[];
-    const sampleTitles = recentTitles.join(', ');
-
-    let summary = '';
-    if (/(how many|count|open issues|issue count)/.test(promptLower)) {
-      summary = `There are currently ${openIssueCount} open issues in this workspace.`;
-    } else if (/(active sprint|sprint count|how many sprints|current sprint)/.test(promptLower)) {
-      summary = `There are currently ${activeSprintCount} active sprints in this workspace.`;
-    } else if (/(recent|latest|updated|what docs|documents)/.test(promptLower)) {
-      summary = recentTitles.length > 0
-        ? `Recent documents: ${sampleTitles}.`
-        : 'No recent documents were found in this workspace.';
-    } else if (/(what is this about|summary|overview|status)/.test(promptLower)) {
-      summary =
-        `Workspace status: ${openIssueCount} open issues and ${activeSprintCount} active sprints. ` +
-        `${sampleTitles ? `Recent docs include: ${sampleTitles}.` : 'No recent documents were found.'}`;
-    } else {
-      summary =
-        `I used workspace-level context for your request. Current status: ${openIssueCount} open issues, ` +
-        `${activeSprintCount} active sprints${sampleTitles ? `, and recent docs: ${sampleTitles}` : ''}. ` +
-        `If you want a specific slice, ask for counts, recent documents, or sprint status.`;
-    }
-
-    const fallbackSummary = summary;
-    const llmSummary = await callLlm(config, systemPrompt, userPrompt);
-    const llmUsed = Boolean(llmSummary);
-    return {
-      model: 'gpt-4o-mini',
-      summary: llmSummary ?? fallbackSummary,
-      llmUsed,
-      llmSummary: llmSummary ?? null,
-      provider: config?.provider ?? null,
-      systemPrompt,
-      userPrompt,
-      prompt,
-      contextLoaded: true,
-      historyCount: 0,
-    };
-  }
-
-  const doc = (context.document ?? null) as
-    | { title?: string; document_type?: string; updated_at?: string | Date | null }
-    | null;
   const history = Array.isArray(context.history) ? context.history : [];
-  const docType = doc?.document_type ? String(doc.document_type) : 'document';
-  const docTitle = doc?.title ? String(doc.title) : 'Untitled';
-  const updatedAtText = doc?.updated_at ? new Date(doc.updated_at).toLocaleString('en-US', { timeZone: 'UTC', timeZoneName: 'short' }) : null;
-
-  const summary = doc
-    ? `This ${docType} appears to be "${docTitle}"${updatedAtText ? ` (last updated ${updatedAtText})` : ''}. I found ${history.length} history changes in the last ${HISTORY_WINDOW_DAYS} days.`
-    : 'I could not load the current document context. Please verify the document exists and try again.';
-
   const llmSummary = await callLlm(config, systemPrompt, userPrompt);
-  const llmUsed = Boolean(llmSummary);
   return {
     model: 'gpt-4o-mini',
-    summary: llmSummary ?? summary,
-    llmUsed,
+    summary: llmSummary ?? 'FleetGraph is unavailable right now. Please check your configuration.',
+    llmUsed: Boolean(llmSummary),
     llmSummary: llmSummary ?? null,
     provider: config?.provider ?? null,
     systemPrompt,
     userPrompt,
     prompt,
-    contextLoaded: Boolean(context.document),
+    contextLoaded: Boolean(context.document ?? context.openIssueCount !== undefined),
     historyCount: history.length,
   };
 }
