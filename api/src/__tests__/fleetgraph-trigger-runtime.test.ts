@@ -32,6 +32,7 @@ describe('fleetgraph trigger runtime', () => {
   });
 
   it('enqueues run from LISTEN payload', async () => {
+    vi.useFakeTimers();
     const runtime = new FleetGraphTriggerRuntime({
       enabled: true,
       provider: 'openai',
@@ -56,6 +57,10 @@ describe('fleetgraph trigger runtime', () => {
         entityType: 'issue',
       })
     );
+
+    // Advance past PG_EVENT_DEBOUNCE_MS (5000ms) so the debounce timer fires
+    await vi.runAllTimersAsync();
+    vi.useRealTimers();
 
     expect(mockInsert).toHaveBeenCalledTimes(1);
     expect(mockInsert.mock.calls[0]?.[0]?.triggerType).toBe('pg_event');
