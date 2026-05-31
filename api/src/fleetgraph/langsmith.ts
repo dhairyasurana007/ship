@@ -133,6 +133,30 @@ export async function finishLangSmithChildRun(
   }
 }
 
+export async function shareRun(config: FleetGraphConfig, runId: string): Promise<string | null> {
+  if (!config.langSmithTracing || !config.langSmithApiKey) return null;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), LANGSMITH_HTTP_TIMEOUT_MS);
+    const res = await fetch(endpoint(config, `/runs/${encodeURIComponent(runId)}/share`), {
+      method: 'PUT',
+      headers: headers(config),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+    if (!res.ok) {
+      const body = await res.text();
+      logFleetGraphError('LangSmith share run failed.', { status: res.status, runId, body });
+      return null;
+    }
+    const data = await res.json() as { share_token?: string };
+    return data.share_token ?? null;
+  } catch (error) {
+    logFleetGraphError('LangSmith share run request error.', { runId, error });
+    return null;
+  }
+}
+
 export async function finishLangSmithRun(
   config: FleetGraphConfig,
   envelope: FleetGraphRunEnvelope,

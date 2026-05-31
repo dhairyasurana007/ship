@@ -12,7 +12,7 @@ import {
 } from '../fleetgraph/human-gate.js';
 import { generateResponse, loadViewContext, loadWorkspaceContext, reasonOnContext } from '../fleetgraph/on-demand.js';
 import { loadFleetGraphConfig } from '../fleetgraph/config.js';
-import { createLangSmithChildRun, createLangSmithRun, finishLangSmithRun } from '../fleetgraph/langsmith.js';
+import { createLangSmithChildRun, createLangSmithRun, finishLangSmithRun, shareRun } from '../fleetgraph/langsmith.js';
 import type { FleetGraphRunEnvelope } from '../fleetgraph/types.js';
 import { createFleetGraphOutput, dismissAllFleetGraphOutputs, dismissFleetGraphOutput, listFleetGraphOutputsForWorkspace } from '../fleetgraph/output-store.js';
 import { evaluateDedup, type DedupStateValue } from '../fleetgraph/dedup-worsening.js';
@@ -586,11 +586,15 @@ router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
 
     await createLangSmithRun(config, runEnvelope);
     await finishLangSmithRun(config, runEnvelope, 'completed');
+    const shareToken = await shareRun(config, runId);
+    const traceLink = shareToken
+      ? `https://smith.langchain.com/public/${shareToken}/r`
+      : traceLinkFor(runId);
     res.json({
       success: true,
       caseId,
       runId,
-      traceLink: traceLinkFor(runId),
+      traceLink,
       payload: runEnvelope.payload,
     });
   } catch (error) {
