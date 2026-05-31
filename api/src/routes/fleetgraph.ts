@@ -351,6 +351,37 @@ router.post('/chat', authMiddleware, async (req, res) => {
   }
 });
 
+router.delete('/test/cleanup', async (_req, res) => {
+  try {
+    const [outputsResult, approvalsResult, runsResult, stateResult] = await Promise.all([
+      pool.query(
+        `DELETE FROM fleetgraph_outputs WHERE metadata->>'testCaseId' IS NOT NULL RETURNING id`
+      ),
+      pool.query(
+        `DELETE FROM fleetgraph_approval_requests WHERE mutation_payload->>'testCaseId' IS NOT NULL RETURNING id`
+      ),
+      pool.query(
+        `DELETE FROM fleetgraph_runs WHERE payload->>'testCaseId' IS NOT NULL RETURNING id`
+      ),
+      pool.query(
+        `DELETE FROM fleetgraph_state WHERE key LIKE 'dedup:%' RETURNING id`
+      ),
+    ]);
+
+    res.json({
+      deleted: {
+        outputs: outputsResult.rowCount ?? 0,
+        approval_requests: approvalsResult.rowCount ?? 0,
+        runs: runsResult.rowCount ?? 0,
+        state: stateResult.rowCount ?? 0,
+      },
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    res.status(500).json({ error: 'cleanup_failed', message: errorMessage });
+  }
+});
+
 router.post('/test/run-case/:id', authMiddleware, async (req, res) => {
   if (!req.workspaceId || !req.userId) {
     res.status(401).json({ error: 'unauthorized' });

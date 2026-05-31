@@ -136,3 +136,10 @@ jobs:
           e2e/fleetgraph-proactive-notifications.spec.ts
           e2e/fleetgraph-human-gate.spec.ts
           e2e/fleetgraph-ondemand-context.spec.ts
+      # Playwright evals hit the live Render deployment and leave test-tagged rows
+      # behind. This step removes them so repeated runs start from a clean state.
+      - name: Cleanup eval test data
+        if: always()
+        env:
+          SHIP_API_URL: https://ship-api-ysxi.onrender.com
+        run: bash scripts/fleetgraph-eval-cleanup.sh
