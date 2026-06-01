@@ -16,19 +16,20 @@ v1Router.get('/openapi.json', (_req, res) => {
   res.json(generateOpenApiSpec());
 });
 
-// Health
+// Health — no auth
 v1Router.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Apps registration — no bearer auth required (pre-auth)
+// Apps registration — no bearer auth required
 v1Router.use('/apps', appsRouter);
 
 // All routes below require bearer auth
 v1Router.use(bearerAuth);
 
-v1Router.use('/docs', documentsRouter);
-v1Router.use('/me', meRouter);
+// Mount at root so registerRoute paths (/docs, /docs/:id, /me) are full paths
+v1Router.use(documentsRouter);
+v1Router.use(meRouter);
 
 v1Router.use(platformErrorHandler);
 

@@ -14,7 +14,7 @@ const createDocSchema = z.object({
   properties: z.record(z.unknown()).optional(),
 });
 
-registerRoute(router, 'get', '/', {
+registerRoute(router, 'get', '/docs', {
   operationId: 'listDocuments',
   summary: 'List documents',
   scope: 'documents:read',
@@ -37,7 +37,7 @@ registerRoute(router, 'get', '/', {
   } catch (err) { next(err); }
 });
 
-registerRoute(router, 'get', '/:id', {
+registerRoute(router, 'get', '/docs/:id', {
   operationId: 'getDocument',
   summary: 'Get document by ID',
   scope: 'documents:read',
@@ -53,7 +53,7 @@ registerRoute(router, 'get', '/:id', {
   } catch (err) { next(err); }
 });
 
-registerRoute(router, 'post', '/', {
+registerRoute(router, 'post', '/docs', {
   operationId: 'createDocument',
   summary: 'Create document',
   scope: 'documents:write',

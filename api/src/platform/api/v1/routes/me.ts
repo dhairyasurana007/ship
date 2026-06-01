@@ -5,7 +5,7 @@ import { pool } from '../../../../db/client.js';
 
 const router = Router();
 
-registerRoute(router, 'get', '/', {
+registerRoute(router, 'get', '/me', {
   operationId: 'getMe',
   summary: 'Get current authenticated user',
 }, async (req, res, next) => {
