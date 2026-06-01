@@ -37,6 +37,7 @@ import { documentCommentsRouter, commentsRouter } from './routes/comments.js';
 import queryAuditRoutes from './routes/query-audit.js';
 import fleetGraphRoutes from './routes/fleetgraph.js';
 import { setupSwagger } from './swagger.js';
+import { v1Router } from './platform/api/v1/router.js';
 import { initializeCAIA } from './services/caia.js';
 import { initializeQueryAudit, queryAuditMiddleware } from './observability/query-audit.js';
 import { sessionCookieProxy, sessionCookieSameSite, sessionCookieSecure } from './config/session-cookie.js';
@@ -199,6 +200,9 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
       },
     });
   });
+
+  // Public API v1 — mounted before internal routes and CSRF
+  app.use('/api/v1', v1Router);
 
   // API documentation (no auth needed)
   setupSwagger(app);

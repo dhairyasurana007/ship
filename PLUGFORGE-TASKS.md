@@ -6,6 +6,8 @@
 > Workflow for every task: **implement → verify locally → push → CI gates → if red, fix and repeat**
 >
 > Never push a failing local test. Never skip the fitness test. Never hand-write the OpenAPI spec.
+>
+> **Test environment:** `https://ship-web-ak37.onrender.com` — credentials: `dev@ship.local` / `admin123`
 
 ---
 
@@ -13,10 +15,9 @@
 
 ```
 1. Implement the task (files listed under each task)
-2. Run the local verification commands
-3. All green? → git push → open PR
-4. CI red? → read the failing step output → fix → re-run locally → push again
-5. PR merged? → check the box in this doc and move to the next task
+2. Run the verification commands (tests + curl assertions listed under each task)
+3. Any test failing or curl assertion not matching? → fix → re-run until all pass
+4. All passing? → git push directly to branch → check the box and move to the next task
 ```
 
 ---
@@ -42,27 +43,29 @@ pnpm db:migrate
 pnpm test --reporter=verbose api/src/platform/apps
 
 # Create app:
-curl -X POST http://localhost:3000/api/v1/apps \
+curl -X POST https://ship-web-ak37.onrender.com/api/v1/apps \
   -H "Content-Type: application/json" \
   -d '{"name":"test-app","redirect_uris":["http://localhost:9999/cb"],"scopes":["documents:read"]}'
 # Assert: response contains client_id and client_secret (64-char hex string)
 
 # Fetch app — secret must NOT appear:
-curl http://localhost:3000/api/v1/apps/<id>
+curl https://ship-web-ak37.onrender.com/api/v1/apps/<id>
 # Assert: client_secret absent from response
 
 # Rotate secret:
-curl -X POST http://localhost:3000/api/v1/apps/<id>/rotate
+curl -X POST https://ship-web-ak37.onrender.com/api/v1/apps/<id>/rotate
 # Assert: new client_secret returned once
 ```
 
-**CI gate (`.github/workflows/ci.yml`):**
+**CI gate (`.github/workflows/plugforge.yml`):**
 ```yaml
 - name: Unit tests
   run: pnpm test --run
 - name: Migration check
   run: pnpm db:migrate && echo "migrations OK"
 ```
+
+**Update the workflow:** Add (or update) a job named `m1-oauth-app-registration` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432) so the DB-dependent steps can run. Add the two steps above. If the job already exists, replace its `steps` block with the current definition above.
 
 **Push when:** `POST /api/v1/apps` returns `client_secret` once, `GET /api/v1/apps/:id` does not.
 
@@ -108,10 +111,10 @@ pnpm lint
 # Assert: exits non-zero with "no-restricted-imports" error
 # Revert the bad import
 
-curl http://localhost:3000/api/v1/health
+curl https://ship-web-ak37.onrender.com/api/v1/health
 # Assert: 200 { status: 'ok' }
 
-curl http://localhost:3000/api/documents
+curl https://ship-web-ak37.onrender.com/api/documents
 # Assert: still works (internal route unaffected)
 ```
 
@@ -120,6 +123,8 @@ curl http://localhost:3000/api/documents
 - name: Lint (boundary enforcement)
   run: pnpm lint
 ```
+
+**Update the workflow:** Add (or update) a job named `m2-api-boundary-lint` in `.github/workflows/plugforge.yml`. No DB service needed — lint is pure static analysis. Add the single lint step above.
 
 **Push when:** `pnpm lint` exits 0 and a deliberate cross-boundary import causes it to exit non-zero.
 
@@ -137,15 +142,15 @@ curl http://localhost:3000/api/documents
 ```bash
 pnpm test --run api/src/platform/__tests__/api-contract.fitness.test.ts
 
-curl http://localhost:3000/api/v1/docs
+curl https://ship-web-ak37.onrender.com/api/v1/docs
 # Assert: { "code": "unauthorized", "message": "...", "request_id": "<uuid>" }
 
-curl http://localhost:3000/api/v1/docs -H "Authorization: Bearer invalid"
+curl https://ship-web-ak37.onrender.com/api/v1/docs -H "Authorization: Bearer invalid"
 # Assert: same shape, code: "unauthorized"
 
 # Assert request_id is unique per request:
-R1=$(curl -s http://localhost:3000/api/v1/docs | jq -r '.request_id')
-R2=$(curl -s http://localhost:3000/api/v1/docs | jq -r '.request_id')
+R1=$(curl -s https://ship-web-ak37.onrender.com/api/v1/docs | jq -r '.request_id')
+R2=$(curl -s https://ship-web-ak37.onrender.com/api/v1/docs | jq -r '.request_id')
 [ "$R1" != "$R2" ] && echo "PASS" || echo "FAIL"
 ```
 
@@ -154,6 +159,8 @@ R2=$(curl -s http://localhost:3000/api/v1/docs | jq -r '.request_id')
 - name: Fitness test — ApiError shape
   run: pnpm test --run api/src/platform/__tests__/api-contract.fitness.test.ts
 ```
+
+**Update the workflow:** Add (or update) a job named `m3-api-error-fitness` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (migrations must have already run). Add the fitness test step above. Set `needs: [m1-oauth-app-registration]` so migrations run first.
 
 **Push when:** fitness test passes with 0 routes missing the ApiError shape on failure paths.
 
@@ -172,15 +179,15 @@ R2=$(curl -s http://localhost:3000/api/v1/docs | jq -r '.request_id')
 pnpm test --run api/src/platform/middleware
 
 # No token:
-curl http://localhost:3000/api/v1/docs
+curl https://ship-web-ak37.onrender.com/api/v1/docs
 # Assert: 401, code: "unauthorized"
 
 # Expired token:
-curl http://localhost:3000/api/v1/docs -H "Authorization: Bearer <expired>"
+curl https://ship-web-ak37.onrender.com/api/v1/docs -H "Authorization: Bearer <expired>"
 # Assert: 401, details.reason: "token_expired"
 
 # Wrong scope (documents:read token hitting write route):
-curl -X POST http://localhost:3000/api/v1/docs \
+curl -X POST https://ship-web-ak37.onrender.com/api/v1/docs \
   -H "Authorization: Bearer <read-only-token>"
 # Assert: 403, details.required: "documents:write"
 
@@ -194,6 +201,8 @@ node -e "import('./api/src/platform/scopes/ScopeRegistry.js').then(m => console.
 - name: Unit tests — middleware
   run: pnpm test --run api/src/platform/middleware
 ```
+
+**Update the workflow:** Add (or update) a job named `m4-bearer-auth-middleware` in `.github/workflows/plugforge.yml`. Requires a `postgres` service. Add the middleware test step above. Set `needs: [m3-api-error-fitness]`.
 
 **Push when:** all 401/403 variants confirmed, ScopeRegistry returns exactly 7 scopes.
 
@@ -213,21 +222,21 @@ node -e "import('./api/src/platform/scopes/ScopeRegistry.js').then(m => console.
 ```bash
 pnpm test --run api/src/platform/api/v1/routes/documents
 
-curl http://localhost:3000/api/v1/docs \
+curl https://ship-web-ak37.onrender.com/api/v1/docs \
   -H "Authorization: Bearer <documents:read token>"
 # Assert: { data: [...], next_cursor: null }
 
-curl http://localhost:3000/api/v1/docs/fake-id \
+curl https://ship-web-ak37.onrender.com/api/v1/docs/fake-id \
   -H "Authorization: Bearer <token>"
 # Assert: 404, code: "not_found"
 
-curl -X POST http://localhost:3000/api/v1/docs \
+curl -X POST https://ship-web-ak37.onrender.com/api/v1/docs \
   -H "Authorization: Bearer <documents:write token>" \
   -H "Content-Type: application/json" \
   -d '{"title":"hello"}'
 # Assert: 201, body contains id
 
-curl -X POST http://localhost:3000/api/v1/docs \
+curl -X POST https://ship-web-ak37.onrender.com/api/v1/docs \
   -H "Authorization: Bearer <token>" -H "Content-Type: application/json" -d '{}'
 # Assert: 400, code: "validation_failed"
 ```
@@ -239,6 +248,8 @@ curl -X POST http://localhost:3000/api/v1/docs \
 - name: Fitness test
   run: pnpm test --run api/src/platform/__tests__/api-contract.fitness.test.ts
 ```
+
+**Update the workflow:** Add (or update) a job named `m5-documents-resource` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [m4-bearer-auth-middleware]` so prior tasks run first.
 
 **Push when:** all 3 routes covered by unit tests, fitness test still passes.
 
@@ -256,10 +267,10 @@ curl -X POST http://localhost:3000/api/v1/docs \
 pnpm test --run api/src/platform/__tests__/openapi.test.ts
 # Assert: 0 AJV errors
 
-curl http://localhost:3000/api/v1/openapi.json | jq '.openapi'
+curl https://ship-web-ak37.onrender.com/api/v1/openapi.json | jq '.openapi'
 # Assert: "3.1.0"
 
-curl http://localhost:3000/api/v1/openapi.json | jq '.paths | keys'
+curl https://ship-web-ak37.onrender.com/api/v1/openapi.json | jq '.paths | keys'
 # Assert: contains "/api/v1/docs" and "/api/v1/docs/{id}"
 
 # Drift check — add a route without registerRoute(), run fitness test:
@@ -275,6 +286,8 @@ pnpm test --run api/src/platform/__tests__/api-contract.fitness.test.ts
 - name: Fitness test — spec parity
   run: pnpm test --run api/src/platform/__tests__/api-contract.fitness.test.ts
 ```
+
+**Update the workflow:** Add (or update) a job named `m6-openapi-spec` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [m5-documents-resource]` so prior tasks run first.
 
 **Push when:** AJV 0 errors, spec parity passes, drift check confirmed.
 
@@ -315,6 +328,8 @@ new ShipClient({ token: 'bad' }).me().catch(e => console.log(e.kind));
   run: pnpm type-check
 ```
 
+**Update the workflow:** Add (or update) a job named `m7-sdk-skeleton` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432) (integration test starts the server). Add the steps above. Set `needs: [m6-openapi-spec]` so prior tasks run first.
+
 **Push when:** `.me()` resolves to a typed user, invalid token throws `ShipError { kind: 'auth' }`.
 
 ---
@@ -339,7 +354,7 @@ pnpm db:seed:grader
 # Assert: prints client_id and token
 
 TOKEN=<printed token>
-curl http://localhost:3000/api/v1/docs -H "Authorization: Bearer $TOKEN"
+curl https://ship-web-ak37.onrender.com/api/v1/docs -H "Authorization: Bearer $TOKEN"
 # Assert: 200 { data, next_cursor }
 ```
 
@@ -365,6 +380,8 @@ curl https://<prod>/api/v1/openapi.json | jq '.openapi'
   run: pnpm test:perf
 ```
 
+**Update the workflow:** Add (or update) a job named `m8-regression-gate` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Requires Playwright browsers (`pnpm exec playwright install --with-deps chromium`) before the E2E step. Add the steps above. Set `needs: [m7-sdk-skeleton]` so prior tasks run first.
+
 **Push when:** E2E green, perf within budget, grader token confirmed on prod.
 
 ---
@@ -389,12 +406,12 @@ pnpm test:e2e --grep "PKCE"
 # Assert: both happy path and wrong-verifier cases pass
 
 # Manual wrong-verifier check (MANDATORY):
-curl -X POST http://localhost:3000/oauth/token \
+curl -X POST https://ship-web-ak37.onrender.com/oauth/token \
   -d "grant_type=authorization_code&code=<code>&code_verifier=wrong"
 # Assert: 400, error: "invalid_grant"
 
 # Timing:
-time curl -X POST http://localhost:3000/oauth/token ...
+time curl -X POST https://ship-web-ak37.onrender.com/oauth/token ...
 # Assert: < 3s
 ```
 
@@ -403,6 +420,8 @@ time curl -X POST http://localhost:3000/oauth/token ...
 - name: OAuth PKCE E2E (happy path + negative case)
   run: pnpm test:e2e --grep "PKCE"
 ```
+
+**Update the workflow:** Add (or update) a job named `f1-oauth-pkce` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Requires Playwright browsers (`pnpm exec playwright install --with-deps chromium`) before the E2E step. Add the steps above. Set `needs: [m8-regression-gate]` so prior tasks run first.
 
 **Push when:** Playwright test green — both happy path and wrong-verifier pass.
 
@@ -418,11 +437,11 @@ time curl -X POST http://localhost:3000/oauth/token ...
 
 **Verify locally:**
 ```bash
-curl -X POST http://localhost:3000/oauth/device/code \
+curl -X POST https://ship-web-ak37.onrender.com/oauth/device/code \
   -d "client_id=<id>&scope=documents:read"
 # Assert: user_code, device_code, verification_uri, interval: 5
 
-curl -X POST http://localhost:3000/oauth/token \
+curl -X POST https://ship-web-ak37.onrender.com/oauth/token \
   -d "grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=<code>"
 # Assert: { error: "authorization_pending" }
 
@@ -430,7 +449,7 @@ curl -X POST http://localhost:3000/oauth/token \
 # Assert second: { error: "slow_down" }
 
 # After browser approval + final poll:
-curl http://localhost:3000/api/v1/me -H "Authorization: Bearer <access_token>"
+curl https://ship-web-ak37.onrender.com/api/v1/me -H "Authorization: Bearer <access_token>"
 # Assert: 200 { id, name, email }
 
 pnpm test:e2e --grep "device flow"
@@ -441,6 +460,8 @@ pnpm test:e2e --grep "device flow"
 - name: Device Authorization Grant E2E
   run: pnpm test:e2e --grep "device flow"
 ```
+
+**Update the workflow:** Add (or update) a job named `f2-device-grant` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Requires Playwright browsers (`pnpm exec playwright install --with-deps chromium`) before the E2E step. Add the steps above. Set `needs: [f1-oauth-pkce]` so prior tasks run first.
 
 **Push when:** full polling loop works, slow_down honored, token passes `/api/v1/me`.
 
@@ -459,12 +480,12 @@ pnpm test --run api/src/platform/oauth/refresh.test.ts
 
 # Exchange refresh token → get new pair
 # Reuse OLD refresh token:
-curl -X POST http://localhost:3000/oauth/token \
+curl -X POST https://ship-web-ak37.onrender.com/oauth/token \
   -d "grant_type=refresh_token&refresh_token=<old_token>"
 # Assert: 400, error: "invalid_grant"
 
 # New access token must now be rejected (family killed):
-curl http://localhost:3000/api/v1/me \
+curl https://ship-web-ak37.onrender.com/api/v1/me \
   -H "Authorization: Bearer <new_access_token>"
 # Assert: 401
 ```
@@ -474,6 +495,8 @@ curl http://localhost:3000/api/v1/me \
 - name: Refresh token rotation unit tests
   run: pnpm test --run api/src/platform/oauth/refresh.test.ts
 ```
+
+**Update the workflow:** Add (or update) a job named `f3-refresh-token-rotation` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [f2-device-grant]` so prior tasks run first.
 
 **Push when:** family revocation confirmed — new access token rejected after reuse of old refresh token.
 
@@ -507,6 +530,8 @@ pnpm test --run api/src/platform/webhooks
   run: pnpm test:e2e --grep "webhook delivery"
 ```
 
+**Update the workflow:** Add (or update) a job named `f4-webhook-pipeline` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Requires Playwright browsers (`pnpm exec playwright install --with-deps chromium`) for the E2E step. Add the steps above. Set `needs: [f3-refresh-token-rotation]` so prior tasks run first.
+
 **Push when:** signed delivery within 2s confirmed, tampered body rejected.
 
 ---
@@ -526,7 +551,7 @@ pnpm test --run api/src/platform/webhooks/retry.test.ts
 # Assert: runs in < 1s (FakeClock)
 
 # Check delivery log after 3 failures + 1 success:
-curl http://localhost:3000/api/v1/webhooks/deliveries \
+curl https://ship-web-ak37.onrender.com/api/v1/webhooks/deliveries \
   -H "Authorization: Bearer <token>" | jq '.data | length'
 # Assert: 4 rows, statuses 500 500 500 200
 
@@ -541,6 +566,8 @@ curl http://localhost:3000/api/v1/webhooks/deliveries \
 - name: Delivery log + replay E2E
   run: pnpm test:e2e --grep "retry|dead.letter|replay"
 ```
+
+**Update the workflow:** Add (or update) a job named `f5-retry-dlq-replay` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Requires Playwright browsers (`pnpm exec playwright install --with-deps chromium`) for the E2E step. Add the steps above. Set `needs: [f4-webhook-pipeline]` so prior tasks run first.
 
 **Push when:** retry test < 1s, DLQ confirmed, replay preserves idempotency key.
 
@@ -558,7 +585,7 @@ curl http://localhost:3000/api/v1/webhooks/deliveries \
 ```bash
 pnpm test --run api/src/platform/ratelimit api/src/platform/audit
 
-curl -i http://localhost:3000/api/v1/docs -H "Authorization: Bearer <token>" | grep -i "x-ratelimit"
+curl -i https://ship-web-ak37.onrender.com/api/v1/docs -H "Authorization: Bearer <token>" | grep -i "x-ratelimit"
 # Assert: all 3 headers present
 
 # Trigger 429 (set limit to 5 in test env, fire 6 requests)
@@ -575,6 +602,8 @@ psql $DATABASE_URL -c "SELECT route, scope_used, http_status FROM public_api_aud
 - name: Fitness test — headers on 100% of routes
   run: pnpm test --run api/src/platform/__tests__/api-contract.fitness.test.ts
 ```
+
+**Update the workflow:** Add (or update) a job named `f6-ratelimit-audit` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [f5-retry-dlq-replay]` so prior tasks run first.
 
 **Push when:** all 3 rate-limit headers on every response, audit row confirmed.
 
@@ -620,6 +649,8 @@ pnpm size-limit
 - name: SDK size limit
   run: pnpm size-limit
 ```
+
+**Update the workflow:** Add (or update) a job named `f7-sdk-full` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [f6-ratelimit-audit]` so prior tasks run first.
 
 **Push when:** parity 0 drift, `verifyWebhook` < 1ms, size < 250KB.
 
@@ -669,6 +700,8 @@ pnpm lint integrations/cli
   run: pnpm test --run integrations/cli/tests
 ```
 
+**Update the workflow:** Add (or update) a job named `f8-cli` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [f7-sdk-full]` so prior tasks run first.
+
 **Push when:** login → docs create → webhooks tail full loop confirmed.
 
 ---
@@ -703,6 +736,8 @@ for i in $(seq 1 5); do pnpm drill ttfe || echo "FAILED run $i"; done
     [ "$TOTAL" -lt 60000 ] || (echo "TTFE exceeded 60s: ${TOTAL}ms" && exit 1)
 ```
 
+**Update the workflow:** Add (or update) a job named `f9-ttfe-drill` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Pass `SHIP_DEVICE_CODE: ${{ secrets.SHIP_DEVICE_CODE }}` as an env var on the drill step for CI auto-approval. Add the steps above. Set `needs: [f8-cli]` so prior tasks run first.
+
 **Push when:** 5 consecutive local passes, < 60s, lower-bound check present.
 
 ---
@@ -728,6 +763,8 @@ pnpm test:e2e --grep "developer portal"
 - name: Developer portal E2E
   run: pnpm test:e2e --grep "developer portal"
 ```
+
+**Update the workflow:** Add (or update) a job named `f10-developer-portal` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Requires Playwright browsers (`pnpm exec playwright install --with-deps chromium`) before the E2E step. Add the steps above. Set `needs: [f9-ttfe-drill]` so prior tasks run first.
 
 **Push when:** register → rotate → delivery log → DLQ → replay all pass E2E.
 
@@ -766,6 +803,8 @@ psql $DATABASE_URL -c "
 - name: Audit trail proof
   run: pnpm test --run api/src/__tests__/agent-audit-proof.test.ts
 ```
+
+**Update the workflow:** Add (or update) a job named `f11-agent-rewire` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [f10-developer-portal]` so prior tasks run first.
 
 **Push when:** both flag states pass, audit rows confirm FleetGraph client_id with non-null user_id.
 
@@ -806,6 +845,8 @@ pnpm test --run integrations/slack/tests
   run: pnpm test --run integrations/slack/tests
 ```
 
+**Update the workflow:** Add (or update) a job named `f12-reference-integrations` in `.github/workflows/plugforge.yml`. Requires a `postgres` service (image `postgres:16`, port 5432). Add the steps above. Set `needs: [f11-agent-rewire]` so prior tasks run first.
+
 ---
 
 ### F13 — Architecture Document
@@ -831,6 +872,8 @@ grep "api/src/platform" docs/architecture.md | wc -l
     [ "$COUNT" -ge 9 ] || (echo "only $COUNT sections" && exit 1)
 ```
 
+**Update the workflow:** Add (or update) a job named `f13-architecture-doc` in `.github/workflows/plugforge.yml`. No DB service needed. Add the steps above. Set `needs: []` — this job depends only on checkout and can run standalone.
+
 ---
 
 ### F14 — Final Submission Checklist
@@ -849,7 +892,7 @@ curl https://<prod>/api/v1/docs -H "Authorization: Bearer <grader_token>"
 # Assert: 200 { data, next_cursor }
 
 # TTFE passing in CI:
-gh run list --workflow=ci.yml --limit=1 --json conclusion | jq '.[0].conclusion'
+gh run list --workflow=plugforge.yml --limit=1 --json conclusion | jq '.[0].conclusion'
 # Assert: "success"
 
 # Required docs committed:
