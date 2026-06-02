@@ -1,0 +1,25 @@
+{
+  "name": "@ship/sdk",
+  "version": "0.1.0",
+  "private": false,
+  "description": "TypeScript SDK for the Ship platform public API",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.16"
+  }
+}
