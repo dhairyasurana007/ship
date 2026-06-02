@@ -1,9 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { authMiddleware, superAdminMiddleware } from '../../middleware/auth.js';
 import { oAuthAppService } from './OAuthAppService.js';
 import { ApiError } from '../errors/ApiError.js';
 
 const router = Router();
+
+router.use(authMiddleware, superAdminMiddleware);
 
 const createAppSchema = z.object({
   name: z.string().min(1).max(255),
