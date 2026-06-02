@@ -31,7 +31,7 @@ program
       tokenStore,
     });
 
-    const user = await client.me.me();
+    const user = await client.me();
     console.log(`Logged in as ${user.name}`);
   });
 

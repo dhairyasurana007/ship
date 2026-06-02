@@ -1,6 +1,7 @@
 import { deviceLoginFlow, type DeviceLoginOptions } from './auth/DeviceFlow.js';
 import { DocumentsClient } from './resources/DocumentsClient.js';
 import { MeClient } from './resources/MeClient.js';
+import type { User } from './types.js';
 
 export interface ShipClientOptions {
   token: string;
@@ -12,14 +13,18 @@ const DEFAULT_BASE_URL = 'https://ship-api-ysxi.onrender.com';
 export class ShipClient {
   private readonly baseUrl: string;
   private readonly token: string;
-  readonly me: MeClient;
+  readonly meClient: MeClient;
   readonly documents: DocumentsClient;
 
   constructor(opts: ShipClientOptions) {
     this.token = opts.token;
     this.baseUrl = opts.baseUrl ?? DEFAULT_BASE_URL;
-    this.me = new MeClient(this.baseUrl, this.token);
+    this.meClient = new MeClient(this.baseUrl, this.token);
     this.documents = new DocumentsClient(this.baseUrl, this.token);
+  }
+
+  async me(): Promise<User> {
+    return this.meClient.me();
   }
 
   static async deviceLogin(opts: DeviceLoginOptions): Promise<ShipClient> {
