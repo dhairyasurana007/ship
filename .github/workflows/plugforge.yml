@@ -1,0 +1,36 @@
+name: PlugForge Minimal CLI
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - mvp
+    paths:
+      - ".github/workflows/plugforge.yml"
+      - "integrations/cli/**"
+      - "sdk/**"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - "pnpm-lock.yaml"
+
+jobs:
+  f2-minimal-cli:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Build CLI
+        run: corepack pnpm build:cli
+      - name: CLI lint (no api/src imports)
+        run: corepack pnpm lint integrations/cli

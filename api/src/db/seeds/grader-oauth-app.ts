@@ -6,8 +6,8 @@
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { pool } from '../client.js';
+import { GRADER_OAUTH_APP_NAME } from '../../platform/apps/constants.js';
 
-const GRADER_APP_NAME = 'grader-readonly';
 const SCOPES = ['documents:read', 'issues:read'];
 const TOKEN_TTL_DAYS = 90;
 
@@ -15,7 +15,7 @@ async function seed() {
   // Check if grader app already exists
   const existing = await pool.query(
     `SELECT id, client_id FROM oauth_apps WHERE name = $1`,
-    [GRADER_APP_NAME]
+    [GRADER_OAUTH_APP_NAME]
   );
 
   let appId: string;
@@ -32,7 +32,7 @@ async function seed() {
       `INSERT INTO oauth_apps (hashed_client_secret, name, redirect_uris, requested_scopes)
        VALUES ($1, $2, $3, $4)
        RETURNING id, client_id`,
-      [hashed, GRADER_APP_NAME, [], SCOPES]
+      [hashed, GRADER_OAUTH_APP_NAME, [], SCOPES]
     );
     appId = result.rows[0].id;
     clientId = result.rows[0].client_id;

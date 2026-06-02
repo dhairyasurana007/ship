@@ -52,6 +52,17 @@ export class OAuthAppService {
     return result.rows[0] ?? null;
   }
 
+  async getAppByName(name: string): Promise<OAuthApp | null> {
+    const result = await pool.query<any>(
+      `SELECT id, client_id, name, redirect_uris, owner_id, requested_scopes, created_at
+       FROM oauth_apps WHERE name = $1
+       ORDER BY created_at ASC
+       LIMIT 1`,
+      [name]
+    );
+    return result.rows[0] ?? null;
+  }
+
   async getAppById(appId: string): Promise<OAuthApp | null> {
     const result = await pool.query<any>(
       `SELECT id, client_id, name, redirect_uris, owner_id, requested_scopes, created_at

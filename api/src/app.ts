@@ -26,6 +26,7 @@ import caiaAuthRoutes from './routes/caia-auth.js';
 import apiTokensRoutes from './routes/api-tokens.js';
 import adminCredentialsRoutes from './routes/admin-credentials.js';
 import internalProbeRoutes from './routes/internal-probe.js';
+import shipDiscoveryRoutes from './routes/ship-discovery.js';
 import claudeRoutes from './routes/claude.js';
 import activityRoutes from './routes/activity.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -183,6 +184,9 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
   app.get('/health', (_req, res) => {
     res.json({ status: 'ok' });
   });
+
+  // Public discovery document for the Ship CLI
+  app.use('/.well-known', shipDiscoveryRoutes);
 
   // Temporary CORS diagnostics endpoint (no auth needed)
   app.get('/api/cors-debug', (req, res) => {

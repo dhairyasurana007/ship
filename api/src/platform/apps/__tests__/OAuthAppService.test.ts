@@ -25,6 +25,13 @@ describe('OAuthAppService', () => {
     expect((app as any).hashed_client_secret).toBeUndefined();
   });
 
+  it('getAppByName returns the created app', async () => {
+    const app = await svc.getAppByName('test-app');
+    expect(app).toBeTruthy();
+    expect(app?.client_id).toBeTruthy();
+    expect(app?.name).toBe('test-app');
+  });
+
   it('rotateSecret returns new 64-char secret', async () => {
     const result = await svc.rotateSecret(appId);
     expect(result.client_secret).toHaveLength(64);
