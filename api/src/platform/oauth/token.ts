@@ -78,22 +78,22 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: 'invalid_request', error_description: 'Missing device_code or client_id' }); return;
     }
 
-    const entry = deviceStore.getByDeviceCode(device_code);
+    const entry = await deviceStore.getByDeviceCode(device_code);
     if (!entry) { res.status(400).json({ error: 'expired_token', error_description: 'device_code not found or expired' }); return; }
     if (entry.clientId !== client_id) { res.status(400).json({ error: 'invalid_client' }); return; }
     if (new Date() > entry.expiresAt) {
-      deviceStore.delete(device_code);
+      await deviceStore.delete(device_code);
       res.status(400).json({ error: 'expired_token' }); return;
     }
 
     // Slow down check — if polled within 4s of last poll
     const now = new Date();
     if (entry.lastPolledAt && (now.getTime() - entry.lastPolledAt.getTime()) < 4000) {
-      deviceStore.updateLastPolled(device_code);
+      await deviceStore.updateLastPolled(device_code);
       res.status(400).json({ error: 'slow_down', interval: 10 }); return;
     }
 
-    deviceStore.updateLastPolled(device_code);
+    await deviceStore.updateLastPolled(device_code);
 
     if (!entry.approved) {
       res.status(400).json({ error: 'authorization_pending' }); return;
@@ -106,7 +106,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     const scopes = entry.scope.split(' ').filter(Boolean);
     const tokens = await issueTokenPair(appId, entry.userId, scopes);
 
-    deviceStore.delete(device_code);
+    await deviceStore.delete(device_code);
     res.json({ ...tokens, token_type: 'Bearer', expires_in: 900, scope: entry.scope });
     return;
   }

@@ -41,7 +41,7 @@ router.post('/code', async (req: Request, res: Response): Promise<void> => {
   const userCode = generateUserCode();
   const expiresAt = new Date(Date.now() + DEVICE_CODE_TTL_SECONDS * 1000);
 
-  deviceStore.set(deviceCode, {
+  await deviceStore.set(deviceCode, {
     deviceCode,
     userCode,
     clientId: client_id,
@@ -89,7 +89,7 @@ router.post('/verify', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const entry = deviceStore.getByUserCode(user_code.toUpperCase().replace(/[^A-Z]/g, '').replace(/(.{4})(.{4})/, '$1-$2'));
+  const entry = await deviceStore.getByUserCode(user_code);
   if (!entry) {
     res.status(400).send('Invalid or expired code. <a href="/oauth/device">Try again</a>');
     return;
@@ -107,7 +107,7 @@ router.post('/verify', async (req: Request, res: Response): Promise<void> => {
   }
 
   const userId = (userResult.rows[0] as { id: string }).id;
-  deviceStore.approve(entry.deviceCode, userId);
+  await deviceStore.approve(entry.deviceCode, userId);
 
   res.send(`<!DOCTYPE html>
 <html>
