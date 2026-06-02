@@ -49,7 +49,7 @@ During login:
 
 1. The CLI discovers the OAuth client id from the live API.
 2. The CLI prints a user code and verification URL.
-3. You complete approval in the browser.
+3. You open the verification URL, sign in on the API-hosted device approval page, and approve the device code.
 4. The CLI stores the access token locally.
 
 ## Use the CLI
@@ -87,10 +87,11 @@ This means the CLI tried to read the discovery endpoint and received HTML instea
 ```
 
 If that endpoint returns `404` or HTML, `ship login` cannot start the device flow.
+Use the exact verification URL the CLI prints; the device approval page is served by the API host.
 
 ### Login never finishes
 
-- Make sure you approved the device code in the browser.
+- Make sure you approved the device code on the API-hosted device approval page.
 - Make sure the live API is reachable.
 - Retry `ship login` if the device code expired.
 
@@ -103,4 +104,3 @@ pnpm build:cli
 ship login
 ship docs ls
 ```
-
