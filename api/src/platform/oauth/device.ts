@@ -55,7 +55,7 @@ router.post('/code', async (req: Request, res: Response): Promise<void> => {
   res.json({
     device_code: deviceCode,
     user_code: userCode,
-    verification_uri: `${process.env['CORS_ORIGIN'] ?? 'https://ship-web-ak37.onrender.com'}/oauth/device`,
+    verification_uri: `${process.env['APP_BASE_URL'] ?? 'https://ship-api-ysxi.onrender.com'}/oauth/device`,
     expires_in: DEVICE_CODE_TTL_SECONDS,
     interval: POLLING_INTERVAL,
   });
