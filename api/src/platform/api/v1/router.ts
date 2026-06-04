@@ -10,6 +10,8 @@ import webhooksRouter from '../../webhooks/webhooksRouter.js';
 import deliveriesRouter from '../../webhooks/deliveriesRouter.js';
 import { eventBus } from '../../events/InMemoryEventBus.js';
 import { webhookDeliverer } from '../../webhooks/InMemoryWebhookDeliverer.js';
+import { rateLimit } from '../../middleware/rateLimit.js';
+import { auditLog } from '../../audit/auditLog.js';
 
 // Wire event delivery once at module load
 eventBus.subscribe(webhookDeliverer.deliver.bind(webhookDeliverer));
@@ -31,8 +33,12 @@ v1Router.get('/health', (_req, res) => {
 // Apps registration — no bearer auth required
 v1Router.use('/apps', appsRouter);
 
+// Audit all /api/v1/* responses including 401/403
+v1Router.use(auditLog);
+
 // All routes below require bearer auth
 v1Router.use(bearerAuth);
+v1Router.use(rateLimit);
 
 // Mount at root so registerRoute paths (/docs, /docs/:id, /me, /webhooks) are full paths
 v1Router.use(documentsRouter);
