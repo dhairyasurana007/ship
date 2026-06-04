@@ -6,6 +6,12 @@ import { generateOpenApiSpec } from '../../openapi/generator.js';
 import documentsRouter from './routes/documents.js';
 import meRouter from './routes/me.js';
 import appsRouter from '../../../platform/apps/appsRouter.js';
+import webhooksRouter from '../../webhooks/webhooksRouter.js';
+import { eventBus } from '../../events/InMemoryEventBus.js';
+import { webhookDeliverer } from '../../webhooks/InMemoryWebhookDeliverer.js';
+
+// Wire event delivery once at module load
+eventBus.subscribe(webhookDeliverer.deliver.bind(webhookDeliverer));
 
 const v1Router = Router();
 
@@ -27,9 +33,10 @@ v1Router.use('/apps', appsRouter);
 // All routes below require bearer auth
 v1Router.use(bearerAuth);
 
-// Mount at root so registerRoute paths (/docs, /docs/:id, /me) are full paths
+// Mount at root so registerRoute paths (/docs, /docs/:id, /me, /webhooks) are full paths
 v1Router.use(documentsRouter);
 v1Router.use(meRouter);
+v1Router.use(webhooksRouter);
 
 v1Router.use(platformErrorHandler);
 
