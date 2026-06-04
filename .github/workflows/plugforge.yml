@@ -131,6 +131,28 @@ jobs:
       - name: Webhook pipeline unit tests
         run: pnpm -C api exec vitest run src/platform/webhooks/__tests__/HmacSigner.test.ts
 
+  f10-developer-portal:
+    runs-on: ubuntu-latest
+    needs: [f9-ttfe-drill]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared + web type check
+        run: pnpm build:shared && pnpm --filter @ship/web exec tsc --noEmit
+
   f9-ttfe-drill:
     runs-on: ubuntu-latest
     needs: [f8-cli]
