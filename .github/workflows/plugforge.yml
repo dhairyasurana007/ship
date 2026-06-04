@@ -131,6 +131,39 @@ jobs:
       - name: Webhook pipeline unit tests
         run: pnpm -C api exec vitest run src/platform/webhooks/__tests__/HmacSigner.test.ts
 
+  f9-ttfe-drill:
+    runs-on: ubuntu-latest
+    needs: [f8-cli]
+    env:
+      NODE_ENV: test
+      CI: true
+      API_URL: https://ship-api-ysxi.onrender.com
+      SHIP_GRADER_TOKEN: ${{ secrets.SHIP_GRADER_TOKEN }}
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK + CLI
+        run: pnpm build:sdk && pnpm build:cli
+      - name: TTFE drill
+        run: pnpm --filter @ship/cli exec vitest run tests/ttfe.drill.ts
+        timeout-minutes: 2
+      - name: TTFE elapsed check
+        run: |
+          if [ -f test-results/ttfe-timing.json ]; then
+            TOTAL=$(node -e "const d=require('./test-results/ttfe-timing.json');console.log(d.reduce((a,x)=>a+x.elapsedMs,0))")
+            [ "$TOTAL" -lt 60000 ] || (echo "TTFE exceeded 60s: ${TOTAL}ms" && exit 1)
+          fi
+
   f8-cli:
     runs-on: ubuntu-latest
     needs: [f7-sdk-full]
