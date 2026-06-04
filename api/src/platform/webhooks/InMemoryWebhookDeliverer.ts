@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { pool } from '../../db/client.js';
 import type { ShipEvent } from '../events/IEventBus.js';
 import { HmacSigner } from './HmacSigner.js';
@@ -20,27 +21,41 @@ export class InMemoryWebhookDeliverer {
     );
 
     const rawBody = JSON.stringify(event);
-    await Promise.all(
-      result.rows.map((sub) => this.send(sub, rawBody, event))
-    );
+    await Promise.all(result.rows.map((sub) => this.send(sub, rawBody, event)));
   }
 
   private async send(sub: WebhookSubscription, rawBody: string, event: ShipEvent): Promise<void> {
+    const idempotencyKey = crypto.randomUUID();
     const signature = HmacSigner.sign(rawBody, sub.signing_secret);
+    const start = Date.now();
+    let status: number | null = null;
+
     try {
-      await fetch(sub.target_url, {
+      const res = await fetch(sub.target_url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Ship-Signature': signature,
           'Ship-Event-Type': event.type,
+          'Idempotency-Key': idempotencyKey,
         },
         body: rawBody,
         signal: AbortSignal.timeout(10_000),
       });
+      status = res.status;
     } catch {
-      // Delivery failures are silenced here; retry handled by F5
+      status = null;
     }
+
+    const latencyMs = Date.now() - start;
+
+    // Record delivery attempt in webhook_deliveries
+    await pool.query(
+      `INSERT INTO webhook_deliveries
+         (subscription_id, event_type, payload, idempotency_key, attempt_number, response_status, latency_ms, next_attempt_at)
+       VALUES ($1, $2, $3, $4, 1, $5, $6, NULL)`,
+      [sub.id, event.type, rawBody, idempotencyKey, status, latencyMs]
+    ).catch(console.error);
   }
 }
 
