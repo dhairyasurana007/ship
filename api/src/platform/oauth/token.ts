@@ -111,6 +111,79 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
+  // ── Refresh Token Grant ────────────────────────────────────────────────────
+  if (grant_type === 'refresh_token') {
+    const { refresh_token } = body;
+    if (!refresh_token) {
+      res.status(400).json({ error: 'invalid_request', error_description: 'Missing refresh_token' }); return;
+    }
+
+    const rtResult = await pool.query(
+      `SELECT rt.* FROM oauth_refresh_tokens rt WHERE rt.token = $1`,
+      [refresh_token]
+    );
+
+    if (rtResult.rows.length === 0) {
+      res.status(400).json({ error: 'invalid_grant', error_description: 'Refresh token not found' }); return;
+    }
+
+    const rt = rtResult.rows[0] as Record<string, unknown>;
+
+    // Reuse detection — token already used: revoke entire family
+    if (rt['used_at']) {
+      await pool.query(
+        `UPDATE oauth_refresh_tokens SET revoked_at = NOW() WHERE family_id = $1`,
+        [rt['family_id']]
+      );
+      await pool.query(
+        `UPDATE oauth_access_tokens SET revoked_at = NOW()
+         WHERE id IN (
+           SELECT access_token_id FROM oauth_refresh_tokens WHERE family_id = $1
+         )`,
+        [rt['family_id']]
+      );
+      res.status(400).json({ error: 'invalid_grant', error_description: 'Refresh token already used — family revoked' }); return;
+    }
+
+    if (rt['revoked_at']) {
+      res.status(400).json({ error: 'invalid_grant', error_description: 'Refresh token revoked' }); return;
+    }
+
+    if (new Date(rt['expires_at'] as string) < new Date()) {
+      res.status(400).json({ error: 'invalid_grant', error_description: 'Refresh token expired' }); return;
+    }
+
+    // Mark old token as used
+    await pool.query(`UPDATE oauth_refresh_tokens SET used_at = NOW() WHERE token = $1`, [refresh_token]);
+
+    // Issue new pair, preserving family_id
+    const accessToken = crypto.randomBytes(32).toString('hex');
+    const newRefreshToken = crypto.randomBytes(32).toString('hex');
+
+    const newAtResult = await pool.query(
+      `INSERT INTO oauth_access_tokens (token, app_id, user_id, scopes, expires_at)
+       VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [accessToken, rt['app_id'], rt['user_id'], rt['scopes'], new Date(Date.now() + 15 * 60 * 1000)]
+    );
+
+    await pool.query(
+      `INSERT INTO oauth_refresh_tokens (token, access_token_id, app_id, user_id, scopes, expires_at, family_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+      [newRefreshToken, (newAtResult.rows[0] as { id: string }).id,
+       rt['app_id'], rt['user_id'], rt['scopes'],
+       new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), rt['family_id']]
+    );
+
+    res.json({
+      access_token: accessToken,
+      refresh_token: newRefreshToken,
+      token_type: 'Bearer',
+      expires_in: 900,
+      scope: (rt['scopes'] as string[]).join(' '),
+    });
+    return;
+  }
+
   res.status(400).json({ error: 'unsupported_grant_type' });
 });
 
