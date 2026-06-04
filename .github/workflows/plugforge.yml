@@ -131,6 +131,55 @@ jobs:
       - name: Webhook pipeline unit tests
         run: pnpm -C api exec vitest run src/platform/webhooks/__tests__/HmacSigner.test.ts
 
+  f13-architecture-doc:
+    runs-on: ubuntu-latest
+    needs: []
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Architecture doc check
+        run: |
+          [ -f docs/architecture.md ] || (echo "missing docs/architecture.md" && exit 1)
+          COUNT=$(grep -c "^##" docs/architecture.md)
+          [ "$COUNT" -ge 9 ] || (echo "only $COUNT sections, need >= 9" && exit 1)
+          echo "Architecture doc OK: $COUNT sections"
+
+  f12-reference-integrations:
+    runs-on: ubuntu-latest
+    needs: [f11-agent-rewire]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Slack integration tests
+        run: pnpm --filter @ship/slack-integration test
+
+  f11-agent-rewire:
+    runs-on: ubuntu-latest
+    needs: [f10-developer-portal]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify agent rewire migration exists
+        run: test -f api/src/db/migrations/063_agent_oauth_app_seed.sql
+
   f10-developer-portal:
     runs-on: ubuntu-latest
     needs: [f9-ttfe-drill]

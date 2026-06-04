@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Ship Browser SDK Demo (PKCE)</title>
+</head>
+<body>
+  <h1>Ship Browser Demo</h1>
+  <div id="status">Not logged in</div>
+  <button id="loginBtn">Login with Ship (PKCE)</button>
+  <ul id="docs"></ul>
+
+  <script type="module">
+    const BASE = 'https://ship-api-ysxi.onrender.com';
+    const CLIENT_ID = new URLSearchParams(location.search).get('client_id') ?? '';
+    const REDIRECT_URI = location.origin + location.pathname;
+
+    function base64url(buf) {
+      return btoa(String.fromCharCode(...new Uint8Array(buf)))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+    }
+
+    async function generatePkce() {
+      const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
+      const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier));
+      return { verifier, challenge: base64url(hash) };
+    }
+
+    document.getElementById('loginBtn').addEventListener('click', async () => {
+      const { verifier, challenge } = await generatePkce();
+      sessionStorage.setItem('pkce_verifier', verifier);
+      const url = new URL('/oauth/authorize', BASE);
+      url.searchParams.set('response_type', 'code');
+      url.searchParams.set('client_id', CLIENT_ID);
+      url.searchParams.set('redirect_uri', REDIRECT_URI);
+      url.searchParams.set('scope', 'documents:read');
+      url.searchParams.set('code_challenge', challenge);
+      url.searchParams.set('code_challenge_method', 'S256');
+      location.href = url.toString();
+    });
+
+    async function handleCallback() {
+      const code = new URLSearchParams(location.search).get('code');
+      if (!code) return;
+      const verifier = sessionStorage.getItem('pkce_verifier');
+      const res = await fetch(`${BASE}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ grant_type: 'authorization_code', code, code_verifier: verifier, redirect_uri: REDIRECT_URI, client_id: CLIENT_ID }),
+      });
+      const data = await res.json();
+      localStorage.setItem('ship_token', data.access_token);
+      history.replaceState({}, '', location.pathname);
+      await loadDocs(data.access_token);
+    }
+
+    async function loadDocs(token) {
+      document.getElementById('status').textContent = 'Logged in';
+      const res = await fetch(`${BASE}/api/v1/docs`, { headers: { Authorization: `Bearer ${token}` } });
+      const body = await res.json();
+      const ul = document.getElementById('docs');
+      ul.innerHTML = (body.data ?? []).map(d => `<li>${d.title}</li>`).join('');
+    }
+
+    const stored = localStorage.getItem('ship_token');
+    if (stored) loadDocs(stored);
+    else handleCallback();
+  </script>
+</body>
+</html>
