@@ -1,5 +1,6 @@
 export type ApiErrorCode =
   | 'unauthorized'
+  | 'token_expired'
   | 'forbidden'
   | 'not_found'
   | 'validation_failed'

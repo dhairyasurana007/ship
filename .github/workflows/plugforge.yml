@@ -76,6 +76,8 @@ jobs:
         run: corepack pnpm -C api db:migrate
       - name: Seed baseline data
         run: corepack pnpm db:seed
+      - name: Lint — API boundary enforcement
+        run: pnpm lint
       - name: API quality suites
         run: >
           corepack pnpm -C api exec vitest run

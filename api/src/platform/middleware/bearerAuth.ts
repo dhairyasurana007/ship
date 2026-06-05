@@ -36,11 +36,7 @@ export async function bearerAuth(req: Request, _res: Response, next: NextFunctio
       return next(new ApiError('unauthorized', 'Token has been revoked'));
     }
     if (new Date(row.expires_at) < new Date()) {
-      return next(
-        Object.assign(new ApiError('unauthorized', 'Token expired'), {
-          details: { reason: 'token_expired' },
-        })
-      );
+      return next(new ApiError('token_expired', 'Token has expired'));
     }
     req.auth = { appId: row.app_id, userId: row.user_id, scopes: row.scopes };
     next();
