@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/cn';
@@ -349,6 +350,16 @@ export function LoginPage() {
             </p>
           </div>
         )}
+
+        {/* SDK link */}
+        <div className="mt-8 text-center">
+          <Link
+            to="/sdk"
+            className="text-xs text-muted hover:text-foreground transition-colors"
+          >
+            Developer?
+          </Link>
+        </div>
 
       </div>
     </div>

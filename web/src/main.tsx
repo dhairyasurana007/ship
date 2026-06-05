@@ -17,6 +17,7 @@ import { ArchivedPersonsProvider } from '@/contexts/ArchivedPersonsContext';
 import { CurrentDocumentProvider } from '@/contexts/CurrentDocumentContext';
 import { UploadProvider } from '@/contexts/UploadContext';
 import { LoginPage } from '@/pages/Login';
+import { SdkPage } from '@/pages/SdkPage';
 import { AppLayout } from '@/pages/App';
 import { ReviewQueueProvider } from '@/contexts/ReviewQueueContext';
 import { InviteAcceptPage } from '@/pages/InviteAccept';
@@ -217,6 +218,7 @@ function App() {
   return (
     <Routes>
       {/* Truly public routes - no AuthProvider wrapper */}
+      <Route path="/sdk" element={<SdkPage />} />
       <Route
         path="/feedback/:programId"
         element={<Suspense fallback={null}><PublicFeedbackPage /></Suspense>}
