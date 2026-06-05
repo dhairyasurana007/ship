@@ -5,6 +5,7 @@ import { requireScope } from '../../../middleware/requireScope.js';
 import { ApiError } from '../../../errors/ApiError.js';
 import { registerRoute } from '../../../openapi/registerRoute.js';
 import { pool } from '../../../../db/client.js';
+import { encodeCursor, decodeCursor } from '../../../pagination/cursor.js';
 
 const router = Router();
 
@@ -21,27 +22,48 @@ registerRoute(router, 'get', '/docs', {
   scope: 'documents:read',
 }, requireScope('documents:read'), async (req, res, next) => {
   try {
-    const cursor = req.query.cursor as string | undefined;
+    const rawCursor = req.query.cursor as string | undefined;
     const limit = 50;
+
+    // Decode opaque keyset cursor → { id, created_at }
+    const after = rawCursor ? decodeCursor(rawCursor) : null;
+    if (rawCursor && !after) {
+      throw new ApiError('validation_failed', 'Invalid cursor');
+    }
+
     // Resolve workspace for this token's user
     const wsResult = await pool.query(
       `SELECT workspace_id FROM workspace_memberships WHERE user_id = $1 LIMIT 1`,
       [req.auth?.userId ?? null]
     );
-    if (wsResult.rows.length === 0) throw new ApiError('forbidden', 'No workspace membership found for this token');
+    if (wsResult.rows.length === 0) {
+      throw new ApiError('forbidden', 'No workspace membership found for this token');
+    }
     const workspaceId = (wsResult.rows[0] as { workspace_id: string }).workspace_id;
+
+    // Keyset pagination: (created_at, id) ensures stable ordering under concurrent inserts
     const result = await pool.query(
       `SELECT id, title, document_type, created_at, updated_at
        FROM documents
-       WHERE workspace_id = $2 AND deleted_at IS NULL
-       ${cursor ? 'AND id > $3' : ''}
-       ORDER BY id ASC LIMIT $1`,
-      cursor ? [limit + 1, workspaceId, cursor] : [limit + 1, workspaceId]
+       WHERE workspace_id = $2
+         AND deleted_at IS NULL
+         ${after ? 'AND (created_at, id) > ($3, $4)' : ''}
+       ORDER BY created_at ASC, id ASC
+       LIMIT $1`,
+      after
+        ? [limit + 1, workspaceId, after.created_at, after.id]
+        : [limit + 1, workspaceId]
     );
-    const rows = result.rows;
+
+    const rows = result.rows as Array<{ id: string; created_at: string; [k: string]: unknown }>;
     const hasMore = rows.length > limit;
     const data = hasMore ? rows.slice(0, limit) : rows;
-    res.json({ data, next_cursor: hasMore ? data[data.length - 1].id : null });
+    const last = data[data.length - 1];
+    const next_cursor = hasMore && last
+      ? encodeCursor({ id: last.id, created_at: last.created_at })
+      : null;
+
+    res.json({ data, next_cursor });
   } catch (err) { next(err); }
 });
 
