@@ -46,7 +46,7 @@ interface ParsedResponse<T> {
 }
 
 const DEFAULT_BASE_URL = 'https://ship-api-ysxi.onrender.com';
-const DEFAULT_SCOPE = 'documents:read';
+const DEFAULT_SCOPE = 'documents:read documents:write issues:read issues:write sprints:read sprints:write webhooks:manage';
 const DEVICE_GRANT_TYPE = 'urn:ietf:params:oauth:grant-type:device_code';
 const POLL_RETRY_DELAY_MS = 5000;
 
