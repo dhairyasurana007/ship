@@ -48,12 +48,7 @@ export function SdkPage() {
             The <code className="rounded bg-border/50 px-1 py-0.5 text-xs font-mono text-foreground">ship</code> CLI
             is included and authenticates via a device-flow OAuth handshake — no passwords or API keys to manage.
           </p>
-          <CodeBlock>{`# Install from the repository root
-pnpm install
-
-# Build the SDK and CLI
-pnpm build:sdk
-pnpm build:cli`}</CodeBlock>
+          <CodeBlock>{`npm install @ship/sdk`}</CodeBlock>
         </Section>
 
         {/* Authentication */}
@@ -108,9 +103,7 @@ console.log(data.map(d => d.title));`}</CodeBlock>
 
         {/* Minimal flow */}
         <Section title="Minimal end-to-end flow">
-          <CodeBlock>{`pnpm install
-pnpm build:sdk
-pnpm build:cli
+          <CodeBlock>{`npm install @ship/sdk
 ship login
 ship docs ls`}</CodeBlock>
         </Section>
