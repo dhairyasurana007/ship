@@ -77,6 +77,53 @@ The goal isn't to check boxes. It's to capture what your team learned so you can
 
 ---
 
+## Grader Credentials (PlugForge Submission)
+
+**Deployed API:** `https://ship-api-ysxi.onrender.com`
+**Deployed Web:** `https://ship-web-ak37.onrender.com`
+**OpenAPI Spec:** `https://ship-api-ysxi.onrender.com/api/v1/openapi.json`
+
+### Pre-registered Read-Only OAuth App
+
+| Field | Value |
+|---|---|
+| `client_id` | `1b47bd45-2611-42aa-b02b-4d5a5c5b61c4` |
+| `client_secret` | `a75874b5b73aefa512ce186c045a9f27e5af69f12e583b9a53bb5d08958c9a26` |
+| Scopes | `documents:read`, `issues:read` |
+
+### Quick Start (CLI)
+
+```bash
+npm install -g @ship/sdk   # or: pnpm install @ship/sdk
+ship login                 # Device flow — prints a code, open the URL, enter the code
+ship docs ls               # List documents
+ship docs create --title "hello"
+ship webhooks tail         # Stream signed webhook deliveries
+```
+
+### Verify via curl
+
+```bash
+# 1. Start device flow
+curl -X POST https://ship-api-ysxi.onrender.com/oauth/device/code \
+  -d "client_id=1b47bd45-2611-42aa-b02b-4d5a5c5b61c4&scope=documents:read%20issues:read"
+# → prints user_code + verification_uri
+
+# 2. POST to approve (using dev credentials):
+curl -X POST https://ship-api-ysxi.onrender.com/oauth/device/verify \
+  -d "user_code=<user_code>&email=dev@ship.local"
+
+# 3. Poll for token
+curl -X POST https://ship-api-ysxi.onrender.com/oauth/token \
+  -d "grant_type=urn:ietf:params:oauth:grant-type:device_code&device_code=<device_code>&client_id=1b47bd45-2611-42aa-b02b-4d5a5c5b61c4"
+
+# 4. Use token
+curl https://ship-api-ysxi.onrender.com/api/v1/docs \
+  -H "Authorization: Bearer <access_token>"
+```
+
+---
+
 ## Getting Started
 
 ### Prerequisites
