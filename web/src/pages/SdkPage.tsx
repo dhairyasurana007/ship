@@ -48,7 +48,7 @@ export function SdkPage() {
             The <code className="rounded bg-border/50 px-1 py-0.5 text-xs font-mono text-foreground">ship</code> CLI
             is included and authenticates via a device-flow OAuth handshake — no passwords or API keys to manage.
           </p>
-          <CodeBlock>{`npm install @ship/sdk`}</CodeBlock>
+          <CodeBlock>{`npm install @ship-dhairya/sdk`}</CodeBlock>
         </Section>
 
         {/* Authentication */}
@@ -80,7 +80,7 @@ ship docs ls <cursor>`}</CodeBlock>
 
         {/* SDK usage */}
         <Section title="SDK usage (TypeScript)">
-          <CodeBlock>{`import { ShipClient } from '@ship/sdk';
+          <CodeBlock>{`import { ShipClient } from '@ship-dhairya/sdk';
 
 const client = new ShipClient({ baseUrl: 'https://ship.example.gov' });
 
@@ -103,7 +103,7 @@ console.log(data.map(d => d.title));`}</CodeBlock>
 
         {/* Minimal flow */}
         <Section title="Minimal end-to-end flow">
-          <CodeBlock>{`npm install @ship/sdk
+          <CodeBlock>{`npm install @ship-dhairya/sdk
 ship login
 ship docs ls`}</CodeBlock>
         </Section>
