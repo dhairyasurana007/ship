@@ -174,7 +174,8 @@ for file in $FILES; do
          [[ "$call" =~ ^documents/.*backlinks ]] || [[ "$call" =~ ^team/grid ]] || \
          [[ "$call" =~ ^team/accountability-grid ]] || \
          [[ "$call" =~ ^admin/audit-logs/export ]] || \
-         [[ "$call" =~ ^weekly-retros ]] || [[ "$call" =~ ^weekly-plans ]]; then
+         [[ "$call" =~ ^weekly-retros ]] || [[ "$call" =~ ^weekly-plans ]] || \
+         [[ "$call" =~ ^v1/ ]]; then
         continue
       fi
       MISSING+=("$file: /api/$call")

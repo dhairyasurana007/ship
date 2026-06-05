@@ -38,6 +38,7 @@ const AdminDashboardPage = lazy(() => import('@/pages/AdminDashboard').then(m =>
 const AdminWorkspaceDetailPage = lazy(() => import('@/pages/AdminWorkspaceDetail').then(m => ({ default: m.AdminWorkspaceDetailPage })));
 const WorkspaceSettingsPage = lazy(() => import('@/pages/WorkspaceSettings').then(m => ({ default: m.WorkspaceSettingsPage })));
 const ConvertedDocumentsPage = lazy(() => import('@/pages/ConvertedDocuments').then(m => ({ default: m.ConvertedDocumentsPage })));
+const DeveloperPortal = lazy(() => import('@/pages/developer/index.js').then(m => ({ default: m.DeveloperPortal })));
 const UnifiedDocumentPage = lazy(() => import('@/pages/UnifiedDocumentPage').then(m => ({ default: m.UnifiedDocumentPage })));
 const StatusOverviewPage = lazy(() => import('@/pages/StatusOverviewPage').then(m => ({ default: m.StatusOverviewPage })));
 const ReviewsPage = lazy(() => import('@/pages/ReviewsPage').then(m => ({ default: m.ReviewsPage })));
@@ -327,6 +328,7 @@ function AppRoutes() {
         <Route path="feedback/:id" element={<EB><FeedbackEditorPage /></EB>} />
         <Route path="settings" element={<EB><WorkspaceSettingsPage /></EB>} />
         <Route path="settings/conversions" element={<EB><ConvertedDocumentsPage /></EB>} />
+        <Route path="developer/*" element={<EB><DeveloperPortal /></EB>} />
       </Route>
     </Routes>
     </Suspense>
