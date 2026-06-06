@@ -1,24 +1,32 @@
 import { expect, test, type Page } from '@playwright/test';
 
 const WEB_BASE_URL = process.env['SHIP_WEB_URL'] ?? 'https://ship-web-ak37.onrender.com';
+const API_BASE_URL = process.env['SHIP_API_URL'] ?? 'https://ship-api-ysxi.onrender.com';
 
 async function login(page: Page): Promise<void> {
+  const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: 'dev@ship.local', password: 'admin123' }),
+  });
+  if (!response.ok) {
+    throw new Error(`API login failed: ${response.status}`);
+  }
+  const body = await response.json() as {
+    success: boolean;
+    data?: { sessionToken?: string };
+  };
+  const sessionToken = body.data?.sessionToken;
+  if (!sessionToken) {
+    throw new Error('API login did not return a session token');
+  }
+
   await page.addInitScript(() => {
     localStorage.setItem('ship:disableActionItemsModal', 'true');
   });
-  await page.goto(`${WEB_BASE_URL}/login`);
-  await page.getByLabel('Email address').fill('dev@ship.local');
-  await page.getByLabel('Password').fill('admin123');
-  await page.getByRole('button', { name: /sign in/i }).click();
-  await page.waitForLoadState('networkidle');
-  await page.evaluate(async () => {
-    const response = await fetch('/api/accountability/action-items', { credentials: 'include' });
-    if (!response.ok) return;
-    const body = await response.json() as { items?: Array<{ id: string }> };
-    const seenIds = (body.items ?? []).map((item) => item.id);
-    localStorage.setItem('ship:seenActionItemIds', JSON.stringify(seenIds));
-    localStorage.setItem('ship:disableActionItemsModal', 'true');
-  });
+  await page.addInitScript((token) => {
+    sessionStorage.setItem('ship:session', token);
+  }, sessionToken);
 }
 
 test('developer portal register rotate replay flow', async ({ page }) => {
