@@ -86,6 +86,7 @@ jobs:
           src/platform/middleware/__tests__/bearerAuth.test.ts
           src/platform/middleware/__tests__/requireScope.test.ts
           src/platform/__tests__/api-contract.fitness.test.ts
+          src/platform/__tests__/openapi-parity.test.ts
           src/platform/__tests__/openapi.test.ts
           src/routes/auth.test.ts
           src/routes/documents.test.ts
