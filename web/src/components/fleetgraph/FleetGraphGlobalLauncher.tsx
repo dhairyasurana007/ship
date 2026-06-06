@@ -86,6 +86,8 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Debounce ref so rapid DB mutations don't spam search_entities
+  const dbUpdateDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -100,6 +102,14 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     void queryClient.invalidateQueries({ queryKey: ['issues'], refetchType: 'active' });
     void queryClient.invalidateQueries({ queryKey: ['projects'], refetchType: 'active' });
     void queryClient.invalidateQueries({ queryKey: ['programs'], refetchType: 'active' });
+    // Refresh workspace context if FleetGraph is open — data just changed
+    if (open) {
+      if (dbUpdateDebounceRef.current) clearTimeout(dbUpdateDebounceRef.current);
+      dbUpdateDebounceRef.current = setTimeout(() => {
+        setMessages((prev) => [...prev, { role: 'assistant', text: '🔄 Data was updated — calling search_entities to refresh workspace context…' }]);
+        void send('search_entities');
+      }, 1000);
+    }
   }
 
   function mayRequireMutation(promptText: string): boolean {
@@ -118,13 +128,11 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   useEffect(() => {
     function handleOpen() {
       setOpen(true);
-      if (messages.length === 0) {
-        setMessages([
-          { role: 'assistant', text: WELCOME_MESSAGE },
-          { role: 'assistant', text: '⏳ Loading workspace context…' },
-        ]);
-        void send('search_entities');
-      }
+      setMessages([
+        { role: 'assistant', text: WELCOME_MESSAGE },
+        { role: 'assistant', text: '⏳ Calling search_entities to load workspace context… (session start)' },
+      ]);
+      void send('search_entities');
       void loadOutputs();
       void loadApprovals();
     }
@@ -199,6 +207,8 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     const promptValue = (explicitPrompt ?? prompt).trim();
     if (!promptValue) return;
     if (!explicitPrompt) {
+      // Real user message — mark session as active
+      userHasSentRef.current = true;
       setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
       setPrompt('');
     }
@@ -326,11 +336,15 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                 className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted hover:bg-muted"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setMessages([{ role: 'assistant', text: WELCOME_MESSAGE }]);
+                  setMessages([
+                    { role: 'assistant', text: WELCOME_MESSAGE },
+                    { role: 'assistant', text: '⏳ Calling search_entities to refresh workspace context… (session reset)' },
+                  ]);
                   setPrompt('');
                   setPendingPrompt(null);
                   setDegradedNotice(null);
                   setThinkingStep(null);
+                  void send('search_entities');
                 }}
               >
                 ↺
