@@ -515,6 +515,7 @@ jobs:
         run: >
           corepack pnpm -C sdk exec vitest run
           src/auth/__tests__/DeviceFlow.test.ts
+          src/__tests__/authorizationCodeFlow.test.ts
           src/resources/__tests__/DocumentsClient.test.ts
           src/__tests__/ShipClient.integration.test.ts
 

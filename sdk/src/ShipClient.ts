@@ -1,4 +1,8 @@
 import { deviceLoginFlow, type DeviceLoginOptions } from "./auth/DeviceFlow.js";
+import {
+  AuthorizationCodeFlow,
+  type AuthCodeFlowOptions,
+} from "./auth/AuthorizationCodeFlow.js";
 import { DocumentsClient } from "./resources/DocumentsClient.js";
 import { IssuesClient } from "./resources/IssuesClient.js";
 import { SprintsClient } from "./resources/SprintsClient.js";
@@ -40,5 +44,9 @@ export class ShipClient {
   static async deviceLogin(opts: DeviceLoginOptions): Promise<ShipClient> {
     const accessToken = await deviceLoginFlow(opts);
     return new ShipClient({ token: accessToken, baseUrl: opts.baseUrl });
+  }
+
+  static authorizationCodeFlow(opts: AuthCodeFlowOptions): AuthorizationCodeFlow {
+    return new AuthorizationCodeFlow(opts);
   }
 }
