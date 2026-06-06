@@ -207,8 +207,6 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     const promptValue = (explicitPrompt ?? prompt).trim();
     if (!promptValue) return;
     if (!explicitPrompt) {
-      // Real user message — mark session as active
-      userHasSentRef.current = true;
       setMessages((prev) => [...prev, { role: 'user', text: promptValue }]);
       setPrompt('');
     }
