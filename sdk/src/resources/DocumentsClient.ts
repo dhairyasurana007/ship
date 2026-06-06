@@ -86,4 +86,22 @@ export class DocumentsClient {
 
     return body as DocumentsListResult;
   }
+
+  async *iterate(): AsyncGenerator<Document, void, void> {
+    let cursor: string | undefined;
+
+    while (true) {
+      const page = await this.list(cursor);
+
+      for (const document of page.data) {
+        yield document;
+      }
+
+      if (!page.next_cursor) {
+        return;
+      }
+
+      cursor = page.next_cursor;
+    }
+  }
 }
