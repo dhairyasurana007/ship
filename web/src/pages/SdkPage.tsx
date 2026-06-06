@@ -19,7 +19,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export function SdkPage() {
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
+    <div className="h-screen overflow-y-auto bg-background px-4 py-12">
       <div className="mx-auto max-w-2xl space-y-10">
         {/* Header */}
         <div>
