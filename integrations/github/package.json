@@ -1,0 +1,14 @@
+{
+  "name": "@ship/github-integration",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.3",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.16"
+  }
+}

@@ -1,5 +1,5 @@
-import { ShipError } from '../errors.js';
-import type { Document } from '../types.js';
+import { ShipError } from "../errors.js";
+import type { Document } from "../types.js";
 
 export interface DocumentsListResult {
   data: Document[];
@@ -12,29 +12,60 @@ export class DocumentsClient {
     private readonly token: string,
   ) {}
 
-  async create(body: { title: string; document_type?: string }): Promise<Document> {
-    const url = new URL('/api/v1/docs', this.baseUrl);
+  async create(body: {
+    title: string;
+    document_type?: string;
+  }): Promise<Document> {
+    const url = new URL("/api/v1/docs", this.baseUrl);
     const response = await fetch(url, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${this.token}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(body),
     });
 
-    const data = await response.json() as any;
+    const data = (await response.json()) as any;
     if (!response.ok) {
-      throw ShipError.fromResponse(data.code, data.message, data.details, data.request_id);
+      throw ShipError.fromResponse(
+        data.code,
+        data.message,
+        data.details,
+        data.request_id,
+      );
     }
 
     return data as Document;
   }
 
+  async get(documentId: string): Promise<Document> {
+    const response = await fetch(
+      new URL(`/api/v1/docs/${documentId}`, this.baseUrl),
+      {
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+        },
+      },
+    );
+
+    const body = (await response.json()) as any;
+    if (!response.ok) {
+      throw ShipError.fromResponse(
+        body.code,
+        body.message,
+        body.details,
+        body.request_id,
+      );
+    }
+
+    return body as Document;
+  }
+
   async list(cursor?: string): Promise<DocumentsListResult> {
-    const url = new URL('/api/v1/docs', this.baseUrl);
+    const url = new URL("/api/v1/docs", this.baseUrl);
     if (cursor) {
-      url.searchParams.set('cursor', cursor);
+      url.searchParams.set("cursor", cursor);
     }
 
     const response = await fetch(url, {
@@ -43,9 +74,14 @@ export class DocumentsClient {
       },
     });
 
-    const body = await response.json() as any;
+    const body = (await response.json()) as any;
     if (!response.ok) {
-      throw ShipError.fromResponse(body.code, body.message, body.details, body.request_id);
+      throw ShipError.fromResponse(
+        body.code,
+        body.message,
+        body.details,
+        body.request_id,
+      );
     }
 
     return body as DocumentsListResult;

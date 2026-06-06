@@ -1,17 +1,18 @@
-import { deviceLoginFlow, type DeviceLoginOptions } from './auth/DeviceFlow.js';
-import { DocumentsClient } from './resources/DocumentsClient.js';
-import { IssuesClient } from './resources/IssuesClient.js';
-import { SprintsClient } from './resources/SprintsClient.js';
-import { WebhooksClient } from './resources/WebhooksClient.js';
-import { MeClient } from './resources/MeClient.js';
-import type { User } from './types.js';
+import { deviceLoginFlow, type DeviceLoginOptions } from "./auth/DeviceFlow.js";
+import { DocumentsClient } from "./resources/DocumentsClient.js";
+import { IssuesClient } from "./resources/IssuesClient.js";
+import { SprintsClient } from "./resources/SprintsClient.js";
+import { WebhooksClient } from "./resources/WebhooksClient.js";
+import { MeClient } from "./resources/MeClient.js";
+import type { User } from "./types.js";
 
 export interface ShipClientOptions {
   token: string;
   baseUrl?: string;
 }
 
-const DEFAULT_BASE_URL = 'https://ship-api-ysxi.onrender.com';
+const DEFAULT_BASE_URL =
+  process.env["SHIP_API_BASE_URL"] ?? "https://ship-api-ysxi.onrender.com";
 
 export class ShipClient {
   private readonly baseUrl: string;

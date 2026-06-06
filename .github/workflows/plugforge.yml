@@ -111,6 +111,29 @@ jobs:
       - name: Refresh token rotation unit tests
         run: pnpm -C api exec vitest run src/platform/oauth/refresh.test.ts
 
+  f3b-stolen-token-drill:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+      API_URL: https://ship-api-ysxi.onrender.com
+      TEST_REFRESH_TOKEN: ${{ secrets.TEST_REFRESH_TOKEN }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Stolen token drill
+        run: pnpm --filter @ship/cli exec vitest run tests/stolen-token.drill.ts
+
   f4-webhook-pipeline:
     runs-on: ubuntu-latest
     needs: [f3-refresh-token-rotation]
@@ -168,6 +191,142 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Slack integration tests
         run: pnpm --filter @ship/slack-integration test
+      - name: GitHub integration tests
+        run: pnpm --filter @ship/github-integration test
+      - name: Plugin runtime tests
+        run: pnpm --filter @ship/plugin-runtime test
+
+  f12b-idempotency-drill:
+    runs-on: ubuntu-latest
+    needs: [f12-reference-integrations]
+    env:
+      NODE_ENV: test
+      CI: true
+      API_URL: https://ship-api-ysxi.onrender.com
+      SHIP_GRADER_TOKEN: ${{ secrets.SHIP_GRADER_TOKEN }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Idempotency drill
+        run: pnpm --filter @ship/cli exec vitest run tests/idempotency.drill.ts
+
+  f12c-browser-demo:
+    runs-on: ubuntu-latest
+    needs: [f12b-idempotency-drill]
+    env:
+      CI: true
+      PLAYWRIGHT_WORKERS: 1
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run browser demo smoke
+        run: pnpm exec playwright test e2e/browser-demo.spec.ts
+
+  f12d-cli-smoke:
+    runs-on: ubuntu-latest
+    needs: [f12c-browser-demo]
+    env:
+      NODE_ENV: test
+      CI: true
+      SHIP_API_BASE_URL: http://127.0.0.1:3999
+      HOME: ${{ github.workspace }}/.ship-home
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK + CLI
+        run: pnpm build:sdk && pnpm build:cli
+      - name: Start mock API
+        run: |
+          cat > mock-api.mjs <<'NODE'
+          import http from 'node:http';
+          import fs from 'node:fs';
+
+          const server = http.createServer((req, res) => {
+            const url = new URL(req.url ?? '/', 'http://127.0.0.1:3999');
+            if (req.method === 'GET' && url.pathname === '/api/v1/docs/doc-1') {
+              res.writeHead(200, { 'content-type': 'application/json' });
+              res.end(JSON.stringify({ id: 'doc-1', title: 'Doc One', document_type: 'wiki' }));
+              return;
+            }
+            if (req.method === 'GET' && url.pathname === '/api/v1/webhooks/deliveries') {
+              res.writeHead(200, { 'content-type': 'application/json' });
+              res.end(JSON.stringify({ data: [{ id: 'delivery-1', event_type: 'document.created', attempt_number: 1, response_status: 200, latency_ms: 12, idempotency_key: 'key-1', dead_lettered_at: null, created_at: new Date().toISOString() }], next_cursor: null }));
+              return;
+            }
+            res.writeHead(404, { 'content-type': 'application/json' });
+            res.end(JSON.stringify({ code: 'not_found', message: 'not found' }));
+          });
+
+          server.listen(3999, '127.0.0.1', () => {
+            fs.writeFileSync('mock-api.ready', 'ready');
+          });
+
+          process.on('SIGTERM', () => server.close(() => process.exit(0)));
+          NODE
+          node mock-api.mjs &
+          echo $! > mock-api.pid
+          for _ in $(seq 1 20); do
+            if [ -f mock-api.ready ]; then
+              break
+            fi
+            sleep 1
+          done
+      - name: Seed token
+        run: |
+          mkdir -p "$HOME/.ship"
+          cat > "$HOME/.ship/token.json" <<'JSON'
+          { "token": "mock-token" }
+          JSON
+      - name: Docs get smoke
+        run: |
+          node integrations/cli/dist/index.js docs get doc-1 > /tmp/ship-doc-get.out
+          grep -q 'Doc One' /tmp/ship-doc-get.out
+      - name: Webhooks tail smoke
+        run: |
+          node integrations/cli/dist/index.js webhooks tail --poll-interval 250 > /tmp/ship-webhooks-tail.out 2>&1 &
+          pid=$!
+          sleep 2
+          kill $pid || true
+          wait $pid || true
+          grep -q '\[verified\] document.created' /tmp/ship-webhooks-tail.out
+      - name: Stop mock API
+        if: always()
+        run: |
+          if [ -f mock-api.pid ]; then
+            kill "$(cat mock-api.pid)" || true
+          fi
 
   f11-agent-rewire:
     runs-on: ubuntu-latest

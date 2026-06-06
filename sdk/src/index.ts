@@ -12,6 +12,7 @@ export type { ShipClientOptions } from './ShipClient.js';
 export type { DeviceCodeResponse, DeviceLoginOptions, TokenStore } from './auth/DeviceFlow.js';
 export type { AuthCodeFlowOptions } from './auth/AuthorizationCodeFlow.js';
 export type { DocumentsListResult } from './resources/DocumentsClient.js';
+export type { Document as ShipDocument } from './types.js';
 export type { IssuesListResult, Issue } from './resources/IssuesClient.js';
 export type { SprintsListResult, Sprint } from './resources/SprintsClient.js';
 export type { WebhookSubscription, WebhookDelivery } from './resources/WebhooksClient.js';
