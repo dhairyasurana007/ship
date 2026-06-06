@@ -347,6 +347,7 @@ jobs:
     env:
       NODE_ENV: test
       CI: true
+      WEB_URL: https://ship-web-ak37.onrender.com
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -360,8 +361,10 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Build shared + web type check
-        run: pnpm build:shared && pnpm --filter @ship/web exec tsc --noEmit
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Developer portal live E2E
+        run: pnpm exec playwright test --config api-playwright-test/playwright.config.ts api-playwright-test/developer-portal-live.spec.ts --workers=1
 
   f9-ttfe-drill:
     runs-on: ubuntu-latest

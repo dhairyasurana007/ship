@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiGet } from '@/lib/api';
 
 interface AuditEntry {
   client_id: string | null;
@@ -11,24 +12,18 @@ interface AuditEntry {
   created_at: string;
 }
 
-interface Props {
-  token: string;
-}
-
-export function AuditTrailPage({ token }: Props) {
+export function AuditTrailPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
 
   const load = async () => {
-    const res = await fetch('/api/v1/audit', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiGet('/api/v1/audit');
     if (res.ok) {
       const body = await res.json() as { data: AuditEntry[] };
       setEntries(body.data);
     }
   };
 
-  useEffect(() => { void load(); }, [token]);
+  useEffect(() => { void load(); }, []);
 
   return (
     <div style={{ padding: 24 }}>

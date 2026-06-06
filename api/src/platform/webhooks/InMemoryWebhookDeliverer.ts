@@ -48,13 +48,14 @@ export class InMemoryWebhookDeliverer {
     }
 
     const latencyMs = Date.now() - start;
+    const deadLetteredAt = status !== null && status >= 400 && status < 500 && status !== 429 ? new Date() : null;
 
     // Record delivery attempt in webhook_deliveries
     await pool.query(
       `INSERT INTO webhook_deliveries
-         (subscription_id, event_type, payload, idempotency_key, attempt_number, response_status, latency_ms, next_attempt_at)
-       VALUES ($1, $2, $3, $4, 1, $5, $6, NULL)`,
-      [sub.id, event.type, rawBody, idempotencyKey, status, latencyMs]
+         (subscription_id, event_type, payload, idempotency_key, attempt_number, response_status, latency_ms, dead_lettered_at, next_attempt_at)
+       VALUES ($1, $2, $3, $4, 1, $5, $6, $7, NULL)`,
+      [sub.id, event.type, rawBody, idempotencyKey, status, latencyMs, deadLetteredAt]
     ).catch(console.error);
   }
 }

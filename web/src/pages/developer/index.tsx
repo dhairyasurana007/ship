@@ -8,7 +8,6 @@ type Tab = 'apps' | 'subscriptions' | 'deliveries' | 'audit';
 
 export function DeveloperPortal() {
   const [tab, setTab] = useState<Tab>('apps');
-  const token = localStorage.getItem('ship_token') ?? '';
 
   return (
     <div>
@@ -20,9 +19,9 @@ export function DeveloperPortal() {
         <button onClick={() => setTab('audit')} style={{ fontWeight: tab === 'audit' ? 'bold' : 'normal' }}>Audit Trail</button>
       </nav>
       {tab === 'apps' && <AppsPage />}
-      {tab === 'subscriptions' && <SubscriptionsPage token={token} />}
-      {tab === 'deliveries' && <DeliveryLogPage token={token} />}
-      {tab === 'audit' && <AuditTrailPage token={token} />}
+      {tab === 'subscriptions' && <SubscriptionsPage />}
+      {tab === 'deliveries' && <DeliveryLogPage />}
+      {tab === 'audit' && <AuditTrailPage />}
     </div>
   );
 }

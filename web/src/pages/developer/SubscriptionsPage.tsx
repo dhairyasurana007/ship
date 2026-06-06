@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { apiGet, apiPost } from '@/lib/api';
 
 interface Subscription {
   id: string;
@@ -8,37 +9,24 @@ interface Subscription {
   created_at: string;
 }
 
-interface Props {
-  token: string;
-}
-
-export function SubscriptionsPage({ token }: Props) {
+export function SubscriptionsPage() {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [targetUrl, setTargetUrl] = useState('');
   const [error, setError] = useState('');
 
   const load = async () => {
-    const res = await fetch('/api/v1/webhooks', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiGet('/api/v1/webhooks');
     if (res.ok) {
       const body = await res.json() as { data: Subscription[] };
       setSubscriptions(body.data);
     }
   };
 
-  useEffect(() => { void load(); }, [token]);
+  useEffect(() => { void load(); }, []);
 
   const createSubscription = async () => {
     if (!targetUrl.trim()) return;
-    const res = await fetch('/api/v1/webhooks', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ target_url: targetUrl, event_types: ['document.created'] }),
-    });
+    const res = await apiPost('/api/v1/webhooks', { target_url: targetUrl, event_types: ['document.created'] });
     if (!res.ok) {
       setError('Failed to create subscription');
       return;

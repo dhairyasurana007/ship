@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiGet, apiPost } from '@/lib/api';
 
 interface Delivery {
   id: string; event_type: string; attempt_number: number;
@@ -6,28 +7,22 @@ interface Delivery {
   dead_lettered_at: string | null; created_at: string;
 }
 
-interface Props { token: string; }
-
-export function DeliveryLogPage({ token }: Props) {
+export function DeliveryLogPage() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [tab, setTab] = useState<'all' | 'dlq'>('all');
 
   const load = async () => {
-    const res = await fetch('/api/v1/webhooks/deliveries', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await apiGet('/api/v1/webhooks/deliveries');
     if (res.ok) {
       const body = await res.json() as { data: Delivery[] };
       setDeliveries(body.data);
     }
   };
 
-  useEffect(() => { void load(); }, [token]);
+  useEffect(() => { void load(); }, []);
 
   const replay = async (id: string) => {
-    await fetch(`/api/v1/webhooks/deliveries/${id}/replay`, {
-      method: 'POST', headers: { Authorization: `Bearer ${token}` },
-    });
+    await apiPost(`/api/v1/webhooks/deliveries/${id}/replay`);
     void load();
   };
 

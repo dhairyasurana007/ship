@@ -43,6 +43,7 @@ registerRoute(router, 'post', '/webhooks/deliveries/:id/replay', {
 
 router.post('/webhooks/deliveries/:id/replay', requireScope('webhooks:manage'), async (req, res): Promise<void> => {
   await retryScheduler.replay(req.params['id'] as string);
+  await retryScheduler.processDue();
   res.json({ queued: true });
 });
 

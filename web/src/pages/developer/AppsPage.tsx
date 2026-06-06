@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { apiGet, apiPost } from '@/lib/api';
 
 interface App { id: string; name: string; client_id: string; created_at: string; }
 
@@ -10,19 +11,18 @@ export function AppsPage() {
   const [error, setError] = useState('');
 
   const load = async () => {
-    const res = await fetch('/api/v1/apps');
-    if (res.ok) setApps(await res.json() as App[]);
+    const res = await apiGet('/api/v1/apps');
+    if (res.ok) {
+      setApps(await res.json() as App[]);
+    }
   };
 
   useEffect(() => { void load(); }, []);
 
   const createApp = async () => {
     if (!name.trim()) return;
-    const res = await fetch('/api/v1/apps', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, redirect_uris: [], scopes: ['documents:read'] }),
-    });
+    const redirectUri = `${window.location.origin}/oauth/callback`;
+    const res = await apiPost('/api/v1/apps', { name, redirect_uris: [redirectUri], scopes: ['documents:read'] });
     if (!res.ok) { setError('Failed to create app'); return; }
     const data = await res.json() as { id: string; client_secret: string };
     setSecret({ id: data.id, value: data.client_secret });
@@ -32,7 +32,7 @@ export function AppsPage() {
   };
 
   const rotateSecret = async (id: string) => {
-    const res = await fetch(`/api/v1/apps/${id}/rotate`, { method: 'POST' });
+    const res = await apiPost(`/api/v1/apps/${id}/rotate`);
     if (!res.ok) return;
     const data = await res.json() as { client_secret: string };
     setSecret({ id, value: data.client_secret });
