@@ -86,7 +86,6 @@ jobs:
           src/platform/middleware/__tests__/bearerAuth.test.ts
           src/platform/middleware/__tests__/requireScope.test.ts
           src/platform/__tests__/api-contract.fitness.test.ts
-          src/platform/__tests__/openapi-parity.test.ts
           src/platform/__tests__/openapi.test.ts
           src/routes/auth.test.ts
           src/routes/documents.test.ts
@@ -516,6 +515,7 @@ jobs:
         run: >
           corepack pnpm -C sdk exec vitest run
           src/auth/__tests__/DeviceFlow.test.ts
+          tests/openapi-parity.test.ts
           src/__tests__/authorizationCodeFlow.test.ts
           src/resources/__tests__/DocumentsClient.test.ts
           src/__tests__/ShipClient.integration.test.ts

@@ -12,6 +12,7 @@ import { eventBus } from '../../events/InMemoryEventBus.js';
 import { webhookDeliverer } from '../../webhooks/InMemoryWebhookDeliverer.js';
 import { rateLimit } from '../../middleware/rateLimit.js';
 import { auditLog } from '../../audit/auditLog.js';
+import { registerRoute } from '../../openapi/registerRoute.js';
 
 // Wire event delivery once at module load
 eventBus.subscribe(webhookDeliverer.deliver.bind(webhookDeliverer));
@@ -21,11 +22,19 @@ const v1Router = Router();
 v1Router.use(requestId);
 
 // OpenAPI spec — no auth
+registerRoute(v1Router, 'get', '/openapi.json', {
+  operationId: 'getOpenApiSpec',
+  summary: 'Get the public OpenAPI document',
+});
 v1Router.get('/openapi.json', (_req, res) => {
   res.json(generateOpenApiSpec());
 });
 
 // Health — no auth
+registerRoute(v1Router, 'get', '/health', {
+  operationId: 'getPublicHealth',
+  summary: 'Get public API health',
+});
 v1Router.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });

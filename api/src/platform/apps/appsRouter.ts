@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authMiddleware, superAdminMiddleware } from '../../middleware/auth.js';
 import { oAuthAppService } from './OAuthAppService.js';
 import { ApiError } from '../errors/ApiError.js';
+import { registerRoute } from '../openapi/registerRoute.js';
 
 const router = Router();
 
@@ -15,6 +16,11 @@ const createAppSchema = z.object({
 });
 
 // POST /api/v1/apps — create OAuth app, returns secret once
+registerRoute(router, 'post', '/apps', {
+  operationId: 'createOAuthApp',
+  summary: 'Create an OAuth application',
+});
+
 router.post('/', async (req, res, next) => {
   try {
     const body = createAppSchema.safeParse(req.body);
@@ -33,6 +39,11 @@ router.post('/', async (req, res, next) => {
 });
 
 // GET /api/v1/apps/:id — fetch app, no secret
+registerRoute(router, 'get', '/apps/:id', {
+  operationId: 'getOAuthApp',
+  summary: 'Get an OAuth application',
+});
+
 router.get('/:id', async (req, res, next) => {
   try {
     const app = await oAuthAppService.getAppById(req.params.id);
@@ -44,6 +55,11 @@ router.get('/:id', async (req, res, next) => {
 });
 
 // POST /api/v1/apps/:id/rotate — rotate secret, returns new secret once
+registerRoute(router, 'post', '/apps/:id/rotate', {
+  operationId: 'rotateOAuthAppSecret',
+  summary: 'Rotate an OAuth app secret',
+});
+
 router.post('/:id/rotate', async (req, res, next) => {
   try {
     const result = await oAuthAppService.rotateSecret(req.params.id);

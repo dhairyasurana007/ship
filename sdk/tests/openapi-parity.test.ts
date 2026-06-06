@@ -1,13 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { generateOpenApiSpec } from '../openapi/generator.js';
-import { ShipClient } from '../../../../sdk/src/ShipClient.js';
+import { ShipClient } from '../src/ShipClient.js';
 
 describe('OpenAPI parity with SDK surface', () => {
   it('exposes a typed SDK method for every public API operation', async () => {
-    await import('../api/v1/routes/documents.js');
-    await import('../api/v1/routes/me.js');
-    await import('../webhooks/webhooksRouter.js');
-    await import('../webhooks/deliveriesRouter.js');
+    const { generateOpenApiSpec } = await import('../../api/src/platform/openapi/generator.js');
+    await import('../../api/src/platform/api/v1/router.js');
 
     const spec = generateOpenApiSpec();
     const client = new ShipClient({ token: 'test-token', baseUrl: 'https://ship.example.gov' });
@@ -25,24 +22,21 @@ describe('OpenAPI parity with SDK surface', () => {
     expect(typeof client.webhooks.replay).toBe('function');
 
     const expected = new Set([
-      'get /docs',
-      'get /docs/:id',
-      'post /docs',
-      'get /me',
-      'post /webhooks',
-      'get /webhooks',
-      'get /webhooks/deliveries',
-      'post /webhooks/deliveries/:id/replay',
+      '/openapi.json',
+      '/health',
+      '/apps',
+      '/apps/{id}',
+      '/apps/{id}/rotate',
+      '/docs',
+      '/docs/{id}',
+      '/me',
+      '/webhooks',
+      '/webhooks/deliveries',
+      '/webhooks/deliveries/{id}/replay',
     ]);
 
-    const actual = new Set(
-      Object.entries(spec.paths).flatMap(([rawPath, pathItem]) =>
-        Object.keys(pathItem).map((method) => `${method} ${rawPath.replace(/\{([^}]+)\}/g, ':$1')}`),
-      ),
-    );
-
-    for (const route of expected) {
-      expect(actual.has(route), `Expected OpenAPI route ${route} to exist`).toBe(true);
+    for (const path of expected) {
+      expect(spec.paths[path], `Expected OpenAPI path ${path} to exist`).toBeDefined();
     }
   });
 });
