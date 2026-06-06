@@ -478,19 +478,13 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         type="button"
         className={`relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${open ? 'bg-border text-foreground' : 'text-muted hover:bg-border/50 hover:text-foreground'}`}
         onClick={() => {
-          setOpen((v) => {
-            const next = !v;
-            if (next) {
-              setMessages((prev) => (
-                prev.length === 0
-                  ? [{ role: 'assistant', text: WELCOME_MESSAGE }]
-                  : prev
-              ));
-              void loadOutputs();
-              void loadApprovals();
-            }
-            return next;
-          });
+          if (open) {
+            // Closing — just hide the panel
+            setOpen(false);
+          } else {
+            // Opening — dispatch the event so handleOpen runs search_entities
+            window.dispatchEvent(new Event('fleetgraph:open'));
+          }
         }}
         aria-label="FleetGraph Assistant"
         title="FleetGraph Assistant"
