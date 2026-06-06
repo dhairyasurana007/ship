@@ -3,7 +3,6 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const API = process.env['API_URL'] ?? 'https://ship-api-ysxi.onrender.com';
-const CLIENT_ID = '8abf229f-efa6-4c19-bce9-7b245488396c';
 const EMAIL = 'dev@ship.local';
 const PASSWORD = 'admin123';
 
@@ -15,11 +14,25 @@ async function measure<T>(stage: string, fn: () => Promise<T>): Promise<{ result
   return { result, entry: { stage, elapsedMs: Date.now() - start } };
 }
 
+async function discoverClientId(): Promise<string> {
+  const discovery = await fetch(`${API}/.well-known/ship.json`);
+  if (!discovery.ok) {
+    throw new Error(`Discovery failed: ${discovery.status} ${discovery.statusText}`);
+  }
+  const body = await discovery.json() as { oauth_client_id?: string; client_id?: string };
+  const clientId = body.oauth_client_id ?? body.client_id;
+  if (!clientId) {
+    throw new Error('Discovery document did not include oauth_client_id');
+  }
+  return clientId;
+}
+
 async function getToken(scope = 'documents:read documents:write webhooks:manage'): Promise<string> {
+  const clientId = await discoverClientId();
   const dc = await fetch(`${API}/oauth/device/code`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({ client_id: CLIENT_ID, scope }),
+    body: new URLSearchParams({ client_id: clientId, scope }),
   }).then(r => r.json()) as { device_code: string; user_code: string; verification_uri: string };
 
   // Auto-approve via server-side verify endpoint (no browser needed)
@@ -38,7 +51,7 @@ async function getToken(scope = 'documents:read documents:write webhooks:manage'
       body: new URLSearchParams({
         grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
         device_code: dc.device_code,
-        client_id: CLIENT_ID,
+        client_id: clientId,
       }),
     }).then(r => r.json()) as { access_token?: string };
     if (t.access_token) return t.access_token;
