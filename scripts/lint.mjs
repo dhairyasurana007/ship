@@ -18,19 +18,30 @@ const quote = (value) => {
   return value;
 };
 
-const child = spawn(
-  process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'pnpm',
-  process.platform === 'win32'
-    ? ['/d', '/s', '/c', ['pnpm', ...args].map(quote).join(' ')]
-    : args,
-  { stdio: 'inherit' },
-);
+const run = (command, commandArgs) =>
+  new Promise((resolve, reject) => {
+    const child = spawn(command, commandArgs, { stdio: 'inherit' });
+    child.on('exit', (code, signal) => {
+      if (signal) {
+        process.kill(process.pid, signal);
+        return;
+      }
+      if ((code ?? 1) !== 0) {
+        reject(new Error(`Command failed: ${command} ${commandArgs.join(' ')}`));
+        return;
+      }
+      resolve();
+    });
+  });
 
-child.on('exit', (code, signal) => {
-  if (signal) {
-    process.kill(process.pid, signal);
-    return;
-  }
+const pnpmCommand = process.platform === 'win32' ? (process.env.ComSpec ?? 'cmd.exe') : 'pnpm';
+const pnpmArgs = process.platform === 'win32'
+  ? ['/d', '/s', '/c', ['pnpm', ...args].map(quote).join(' ')]
+  : args;
 
-  process.exit(code ?? 1);
-});
+try {
+  await run(pnpmCommand, pnpmArgs);
+  await run('node', ['scripts/check-boundaries.mjs']);
+} catch (error) {
+  process.exitCode = 1;
+}
