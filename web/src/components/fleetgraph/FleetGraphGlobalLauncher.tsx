@@ -86,8 +86,6 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   const [windowPos, setWindowPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const thinkingTimersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
-  // Debounce ref so rapid DB mutations don't spam search_entities
-  const dbUpdateDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -102,14 +100,6 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
     void queryClient.invalidateQueries({ queryKey: ['issues'], refetchType: 'active' });
     void queryClient.invalidateQueries({ queryKey: ['projects'], refetchType: 'active' });
     void queryClient.invalidateQueries({ queryKey: ['programs'], refetchType: 'active' });
-    // Refresh workspace context if FleetGraph is open — data just changed
-    if (open) {
-      if (dbUpdateDebounceRef.current) clearTimeout(dbUpdateDebounceRef.current);
-      dbUpdateDebounceRef.current = setTimeout(() => {
-        setMessages((prev) => [...prev, { role: 'assistant', text: '🔄 Data was updated — calling search_entities to refresh workspace context…' }]);
-        void send('search_entities');
-      }, 1000);
-    }
   }
 
   function mayRequireMutation(promptText: string): boolean {
@@ -258,8 +248,7 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       } else {
         setPendingPrompt(null);
       }
-      // Only invalidate caches for real mutations, not internal search_entities calls
-      if (data?.toolResult?.ok && explicitPrompt !== 'search_entities') invalidateDocumentCaches();
+      if (data?.toolResult?.ok) invalidateDocumentCaches();
       const responseText = serverError ?? String(data?.response ?? 'No response');
       setMessages((prev) => {
         if (explicitPrompt) {
