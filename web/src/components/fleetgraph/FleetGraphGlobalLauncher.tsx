@@ -258,7 +258,8 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
       } else {
         setPendingPrompt(null);
       }
-      if (data?.toolResult?.ok) invalidateDocumentCaches();
+      // Only invalidate caches for real mutations, not internal search_entities calls
+      if (data?.toolResult?.ok && explicitPrompt !== 'search_entities') invalidateDocumentCaches();
       const responseText = serverError ?? String(data?.response ?? 'No response');
       setMessages((prev) => {
         if (explicitPrompt) {
