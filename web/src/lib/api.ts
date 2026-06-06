@@ -90,6 +90,7 @@ async function ensureCsrfToken(): Promise<string> {
   if (!csrfToken) {
     const response = await fetch(`${API_URL}/api/csrf-token`, {
       credentials: 'include',
+      headers: sessionHeaders(),
     });
     if (!response.ok || !isJsonResponse(response)) {
       // Session likely expired - redirect to login
