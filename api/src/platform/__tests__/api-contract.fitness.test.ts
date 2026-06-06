@@ -32,6 +32,7 @@ const PUBLIC_ROUTE_PATHS = [
   '/webhooks',
   '/webhooks/deliveries',
   '/webhooks/deliveries/{id}/replay',
+  '/audit',
 ];
 
 const LEGACY_ROUTES = [
@@ -50,6 +51,7 @@ const API_ERROR_ROUTES = [
   { method: 'get', path: '/api/v1/webhooks' },
   { method: 'get', path: '/api/v1/webhooks/deliveries' },
   { method: 'post', path: '/api/v1/webhooks/deliveries/fake-id/replay' },
+  { method: 'get', path: '/api/v1/audit' },
 ];
 
 describe('API contract fitness - route inventory and error shape', () => {

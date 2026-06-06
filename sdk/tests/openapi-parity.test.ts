@@ -33,6 +33,7 @@ describe('OpenAPI parity with SDK surface', () => {
       '/webhooks',
       '/webhooks/deliveries',
       '/webhooks/deliveries/{id}/replay',
+      '/audit',
     ]);
 
     for (const path of expected) {

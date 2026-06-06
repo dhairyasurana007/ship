@@ -1,6 +1,7 @@
 export { ShipClient } from './ShipClient.js';
 export { ShipError } from './errors.js';
 export { DocumentsClient } from './resources/DocumentsClient.js';
+export { AuditClient } from './resources/AuditClient.js';
 export { IssuesClient } from './resources/IssuesClient.js';
 export { SprintsClient } from './resources/SprintsClient.js';
 export { WebhooksClient } from './resources/WebhooksClient.js';
@@ -12,6 +13,7 @@ export type { ShipClientOptions } from './ShipClient.js';
 export type { DeviceCodeResponse, DeviceLoginOptions, TokenStore } from './auth/DeviceFlow.js';
 export type { AuthCodeFlowOptions } from './auth/AuthorizationCodeFlow.js';
 export type { DocumentsListResult } from './resources/DocumentsClient.js';
+export type { AuditTrailEntry, AuditTrailListResult } from './resources/AuditClient.js';
 export type { Document as ShipDocument } from './types.js';
 export type { IssuesListResult, Issue } from './resources/IssuesClient.js';
 export type { SprintsListResult, Sprint } from './resources/SprintsClient.js';

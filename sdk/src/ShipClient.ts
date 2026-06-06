@@ -4,6 +4,7 @@ import {
   type AuthCodeFlowOptions,
 } from "./auth/AuthorizationCodeFlow.js";
 import { DocumentsClient } from "./resources/DocumentsClient.js";
+import { AuditClient } from "./resources/AuditClient.js";
 import { IssuesClient } from "./resources/IssuesClient.js";
 import { SprintsClient } from "./resources/SprintsClient.js";
 import { WebhooksClient } from "./resources/WebhooksClient.js";
@@ -22,6 +23,7 @@ export class ShipClient {
   private readonly baseUrl: string;
   private readonly token: string;
   readonly meClient: MeClient;
+  readonly audit: AuditClient;
   readonly documents: DocumentsClient;
   readonly issues: IssuesClient;
   readonly sprints: SprintsClient;
@@ -31,6 +33,7 @@ export class ShipClient {
     this.token = opts.token;
     this.baseUrl = opts.baseUrl ?? DEFAULT_BASE_URL;
     this.meClient = new MeClient(this.baseUrl, this.token);
+    this.audit = new AuditClient(this.baseUrl, this.token);
     this.documents = new DocumentsClient(this.baseUrl, this.token);
     this.issues = new IssuesClient(this.baseUrl, this.token);
     this.sprints = new SprintsClient(this.baseUrl, this.token);

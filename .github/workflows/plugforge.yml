@@ -517,6 +517,7 @@ jobs:
           src/auth/__tests__/DeviceFlow.test.ts
           tests/openapi-parity.test.ts
           src/__tests__/authorizationCodeFlow.test.ts
+          src/resources/__tests__/AuditClient.test.ts
           src/resources/__tests__/DocumentsClient.test.ts
           src/__tests__/ShipClient.integration.test.ts
 

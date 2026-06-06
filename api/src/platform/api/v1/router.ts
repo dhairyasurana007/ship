@@ -8,6 +8,7 @@ import meRouter from './routes/me.js';
 import appsRouter from '../../../platform/apps/appsRouter.js';
 import webhooksRouter from '../../webhooks/webhooksRouter.js';
 import deliveriesRouter from '../../webhooks/deliveriesRouter.js';
+import auditRouter from '../../audit/auditRouter.js';
 import { eventBus } from '../../events/InMemoryEventBus.js';
 import { webhookDeliverer } from '../../webhooks/InMemoryWebhookDeliverer.js';
 import { rateLimit } from '../../middleware/rateLimit.js';
@@ -54,6 +55,7 @@ v1Router.use(documentsRouter);
 v1Router.use(meRouter);
 v1Router.use(webhooksRouter);
 v1Router.use(deliveriesRouter);
+v1Router.use(auditRouter);
 
 v1Router.use(platformErrorHandler);
 
