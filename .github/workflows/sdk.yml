@@ -384,7 +384,7 @@ jobs:
 
   ttfe-drill:
     runs-on: ubuntu-latest
-    needs: [cli]
+    needs: [cli-build-lint]
     env:
       NODE_ENV: test
       CI: true
