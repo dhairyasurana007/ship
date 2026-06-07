@@ -521,21 +521,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
           cache: "pnpm"
-      - name: Setup pnpm
-        run: corepack prepare pnpm@10.27.0 --activate
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build shared package
-        run: corepack pnpm build:shared
+        run: pnpm build:shared
       - name: Build SDK
-        run: corepack pnpm build:sdk
+        run: pnpm build:sdk
       - name: Device flow
-        run: corepack pnpm -C sdk exec vitest run src/auth/__tests__/DeviceFlow.test.ts
+        run: pnpm -C sdk exec vitest run src/auth/__tests__/DeviceFlow.test.ts
 
   sdk-openapi-parity:
     runs-on: ubuntu-latest
