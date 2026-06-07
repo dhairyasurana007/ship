@@ -108,6 +108,7 @@ jobs:
       SESSION_SECRET: test-session-secret
       DATABASE_URL: postgres://ship:ship_dev_password@127.0.0.1:5432/ship_dev
       CORS_ORIGIN: http://127.0.0.1:4173
+      FLEETGRAPH_MODEL: gpt-4o-mini
       PLAYWRIGHT_WORKERS: 1
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
     steps:
