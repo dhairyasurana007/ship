@@ -11,6 +11,13 @@ BEGIN
     JOIN pg_type t ON t.oid = e.enumtypid
     WHERE t.typname = 'document_type'
       AND e.enumlabel = 'sprint_plan'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'document_type'
+      AND e.enumlabel = 'weekly_plan'
   ) THEN
     ALTER TYPE document_type RENAME VALUE 'sprint_plan' TO 'weekly_plan';
   END IF;
@@ -25,6 +32,13 @@ BEGIN
     JOIN pg_type t ON t.oid = e.enumtypid
     WHERE t.typname = 'document_type'
       AND e.enumlabel = 'sprint_retro'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'document_type'
+      AND e.enumlabel = 'weekly_retro'
   ) THEN
     ALTER TYPE document_type RENAME VALUE 'sprint_retro' TO 'weekly_retro';
   END IF;
@@ -39,6 +53,13 @@ BEGIN
     JOIN pg_type t ON t.oid = e.enumtypid
     WHERE t.typname = 'document_type'
       AND e.enumlabel = 'sprint_review'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'document_type'
+      AND e.enumlabel = 'weekly_review'
   ) THEN
     ALTER TYPE document_type RENAME VALUE 'sprint_review' TO 'weekly_review';
   END IF;
