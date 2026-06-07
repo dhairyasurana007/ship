@@ -47,6 +47,32 @@ export async function bearerAuth(req: Request, _res: Response, next: NextFunctio
     };
     next();
   } catch (err) {
+    const error = err as { code?: string; column?: string };
+    if (error.code === '42703' && error.column === 'token_kind') {
+      const fallbackResult = await pool.query(
+        `SELECT id, app_id, user_id, scopes, expires_at, revoked_at
+         FROM oauth_access_tokens WHERE token = $1`,
+        [token]
+      );
+      if (fallbackResult.rows.length === 0) {
+        return next(new ApiError('unauthorized', 'Invalid token'));
+      }
+      const row = fallbackResult.rows[0];
+      if (row.revoked_at) {
+        return next(new ApiError('unauthorized', 'Token has been revoked'));
+      }
+      if (new Date(row.expires_at) < new Date()) {
+        return next(new ApiError('token_expired', 'Token has expired'));
+      }
+      req.auth = {
+        appId: row.app_id,
+        userId: row.user_id,
+        scopes: row.scopes,
+        isMachine: false,
+      };
+      next();
+      return;
+    }
     next(err);
   }
 }

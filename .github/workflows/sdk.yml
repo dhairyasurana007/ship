@@ -525,6 +525,8 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
       - name: Build SDK
         run: corepack pnpm build:sdk
       - name: Build CLI
