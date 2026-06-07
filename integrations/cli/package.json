@@ -1,0 +1,24 @@
+{
+  "name": "@ship/cli",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ship CLI",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "ship": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ship/sdk": "workspace:*",
+    "commander": "7.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.3",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.16"
+  }
+}

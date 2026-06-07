@@ -2,3 +2,5 @@ packages:
   - 'api'
   - 'web'
   - 'shared'
+  - 'sdk'
+  - 'integrations/*'

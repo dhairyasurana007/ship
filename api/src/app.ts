@@ -26,6 +26,7 @@ import caiaAuthRoutes from './routes/caia-auth.js';
 import apiTokensRoutes from './routes/api-tokens.js';
 import adminCredentialsRoutes from './routes/admin-credentials.js';
 import internalProbeRoutes from './routes/internal-probe.js';
+import shipDiscoveryRoutes from './routes/ship-discovery.js';
 import claudeRoutes from './routes/claude.js';
 import activityRoutes from './routes/activity.js';
 import dashboardRoutes from './routes/dashboard.js';
@@ -37,6 +38,10 @@ import { documentCommentsRouter, commentsRouter } from './routes/comments.js';
 import queryAuditRoutes from './routes/query-audit.js';
 import fleetGraphRoutes from './routes/fleetgraph.js';
 import { setupSwagger } from './swagger.js';
+import { v1Router } from './platform/api/v1/router.js';
+import oauthAuthorizeRouter from './platform/oauth/authorize.js';
+import oauthTokenRouter from './platform/oauth/token.js';
+import oauthDeviceRouter from './platform/oauth/device.js';
 import { initializeCAIA } from './services/caia.js';
 import { initializeQueryAudit, queryAuditMiddleware } from './observability/query-audit.js';
 import { sessionCookieProxy, sessionCookieSameSite, sessionCookieSecure } from './config/session-cookie.js';
@@ -180,6 +185,9 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
     res.json({ status: 'ok' });
   });
 
+  // Public discovery document for the Ship CLI
+  app.use('/.well-known', shipDiscoveryRoutes);
+
   // Temporary CORS diagnostics endpoint (no auth needed)
   app.get('/api/cors-debug', (req, res) => {
     res.json({
@@ -199,6 +207,14 @@ export function createApp(corsOrigin: string | string[] = 'http://localhost:5173
       },
     });
   });
+
+  // OAuth endpoints — no CSRF (state param per RFC 6749 §10.12)
+  app.use('/oauth/authorize', oauthAuthorizeRouter);
+  app.use('/oauth/token', oauthTokenRouter);
+  app.use('/oauth/device', oauthDeviceRouter);
+
+  // Public API v1 — mounted before internal routes and CSRF
+  app.use('/api/v1', v1Router);
 
   // API documentation (no auth needed)
   setupSwagger(app);

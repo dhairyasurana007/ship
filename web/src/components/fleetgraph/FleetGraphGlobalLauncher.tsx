@@ -118,13 +118,11 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
   useEffect(() => {
     function handleOpen() {
       setOpen(true);
-      if (messages.length === 0) {
-        setMessages([
-          { role: 'assistant', text: WELCOME_MESSAGE },
-          { role: 'assistant', text: '⏳ Loading workspace context…' },
-        ]);
-        void send('search_entities');
-      }
+      setMessages([
+        { role: 'assistant', text: WELCOME_MESSAGE },
+        { role: 'assistant', text: '⏳ Calling search_entities to load workspace context… (session start)' },
+      ]);
+      void send('search_entities');
       void loadOutputs();
       void loadApprovals();
     }
@@ -326,11 +324,15 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
                 className="inline-flex h-6 w-6 items-center justify-center rounded border border-border text-xs text-muted hover:bg-muted"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setMessages([{ role: 'assistant', text: WELCOME_MESSAGE }]);
+                  setMessages([
+                    { role: 'assistant', text: WELCOME_MESSAGE },
+                    { role: 'assistant', text: '⏳ Calling search_entities to refresh workspace context… (session reset)' },
+                  ]);
                   setPrompt('');
                   setPendingPrompt(null);
                   setDegradedNotice(null);
                   setThinkingStep(null);
+                  void send('search_entities');
                 }}
               >
                 ↺
@@ -466,19 +468,13 @@ export function FleetGraphGlobalLauncher({ documentId, documentType }: FleetGrap
         type="button"
         className={`relative flex h-9 w-9 items-center justify-center rounded-lg transition-colors ${open ? 'bg-border text-foreground' : 'text-muted hover:bg-border/50 hover:text-foreground'}`}
         onClick={() => {
-          setOpen((v) => {
-            const next = !v;
-            if (next) {
-              setMessages((prev) => (
-                prev.length === 0
-                  ? [{ role: 'assistant', text: WELCOME_MESSAGE }]
-                  : prev
-              ));
-              void loadOutputs();
-              void loadApprovals();
-            }
-            return next;
-          });
+          if (open) {
+            // Closing — just hide the panel
+            setOpen(false);
+          } else {
+            // Opening — dispatch the event so handleOpen runs search_entities
+            window.dispatchEvent(new Event('fleetgraph:open'));
+          }
         }}
         aria-label="FleetGraph Assistant"
         title="FleetGraph Assistant"

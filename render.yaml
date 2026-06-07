@@ -11,6 +11,7 @@ services:
     preDeployCommand: |
       corepack pnpm --filter @ship/api db:migrate
       corepack pnpm --filter @ship/api db:seed
+      corepack pnpm --filter @ship/api db:seed:grader
     startCommand: corepack pnpm --filter @ship/api start
     healthCheckPath: /health
     autoDeployTrigger: commit

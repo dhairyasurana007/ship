@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "db:seed": "tsx src/db/seed.ts",
+    "db:seed:grader": "tsx src/db/seeds/grader-oauth-app.ts",
     "db:seed:due-soon-sprint": "tsx src/db/scripts/seed-due-soon-sprint.ts",
     "db:migrate": "tsx src/db/migrate.ts",
     "db:orphan-check": "tsx src/db/scripts/orphan-diagnostic.ts",
@@ -30,6 +31,9 @@
     "@aws-sdk/s3-request-presigner": "^3.985.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@ship/shared": "workspace:*",
+    "@ship/sdk": "workspace:*",
+    "ajv": "^8.20.0",
+    "ajv-formats": "^3.0.1",
     "bcryptjs": "^3.0.3",
     "cookie": "^1.1.1",
     "cookie-parser": "^1.4.7",
@@ -49,7 +53,8 @@
     "y-protocols": "^1.0.7",
     "y-websocket": "^2.0.4",
     "yjs": "^13.6.20",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
@@ -74,7 +79,7 @@
     "openapi3-ts": "^4.5.0",
     "supertest": "^7.1.4",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2",
+    "typescript": "^6.0.0",
     "vitest": "^4.0.16"
   }
 }

@@ -1,0 +1,662 @@
+name: PlugForge
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+  push:
+    branches: [main, master, mvp]
+    paths:
+      - ".github/workflows/plugforge.yml"
+      - "api/**"
+      - "sdk/**"
+      - "integrations/cli/**"
+      - "e2e/**"
+      - "perform-audit.cjs"
+      - "package.json"
+      - "pnpm-workspace.yaml"
+      - "pnpm-lock.yaml"
+  pull_request:
+    branches: [main, master, mvp]
+    paths:
+      - ".github/workflows/plugforge.yml"
+      - "api/**"
+      - "sdk/**"
+      - "integrations/cli/**"
+      - "e2e/**"
+      - "perform-audit.cjs"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+
+permissions:
+  contents: read
+
+jobs:
+  api-core:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ship
+          POSTGRES_PASSWORD: ship_dev_password
+          POSTGRES_DB: ship_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ship -d ship_dev"
+          --health-interval 10s
+          --health-timeout 10s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://ship:ship_dev_password@127.0.0.1:5432/ship_dev
+      NODE_ENV: test
+      SESSION_SECRET: test-session-secret
+      CORS_ORIGIN: http://localhost:5173
+      CI: true
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Build API
+        run: corepack pnpm build:api
+      - name: Run migrations
+        run: corepack pnpm -C api db:migrate
+      - name: Seed baseline data
+        run: corepack pnpm db:seed
+      - name: Lint — API boundary enforcement
+        run: pnpm lint
+      - name: API quality suites
+        run: >
+          corepack pnpm -C api exec vitest run
+          src/platform/apps/__tests__/appsRouter.test.ts
+          src/platform/apps/__tests__/OAuthAppService.test.ts
+          src/platform/middleware/__tests__/bearerAuth.test.ts
+          src/platform/middleware/__tests__/requireScope.test.ts
+          src/platform/__tests__/api-contract.fitness.test.ts
+          src/platform/__tests__/openapi.test.ts
+          src/routes/auth.test.ts
+          src/routes/documents.test.ts
+
+  f3-refresh-token-rotation:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Refresh token rotation unit tests
+        run: pnpm -C api exec vitest run src/platform/oauth/refresh.test.ts
+
+  f3b-stolen-token-drill:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+      API_URL: https://ship-api-ysxi.onrender.com
+      TEST_REFRESH_TOKEN: ${{ secrets.TEST_REFRESH_TOKEN }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Stolen token drill
+        run: pnpm --filter @ship/cli exec vitest run tests/stolen-token.drill.ts
+
+  f4-webhook-pipeline:
+    runs-on: ubuntu-latest
+    needs: [f3-refresh-token-rotation]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Webhook pipeline unit tests
+        run: pnpm -C api exec vitest run src/platform/webhooks/__tests__/HmacSigner.test.ts
+
+  f13-architecture-doc:
+    runs-on: ubuntu-latest
+    needs: []
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Architecture doc check
+        run: |
+          [ -f docs/architecture.md ] || (echo "missing docs/architecture.md" && exit 1)
+          COUNT=$(grep -c "^##" docs/architecture.md)
+          [ "$COUNT" -ge 9 ] || (echo "only $COUNT sections, need >= 9" && exit 1)
+          echo "Architecture doc OK: $COUNT sections"
+
+  f12-reference-integrations:
+    runs-on: ubuntu-latest
+    needs: [f11-agent-rewire]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Slack integration tests
+        run: pnpm --filter @ship/slack-integration test
+      - name: GitHub integration tests
+        run: pnpm --filter @ship/github-integration test
+      - name: Plugin runtime tests
+        run: pnpm --filter @ship/plugin-runtime test
+
+  f12b-idempotency-drill:
+    runs-on: ubuntu-latest
+    needs: [f12-reference-integrations]
+    env:
+      NODE_ENV: test
+      CI: true
+      API_URL: https://ship-api-ysxi.onrender.com
+      SHIP_GRADER_TOKEN: ${{ secrets.SHIP_GRADER_TOKEN }}
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Idempotency drill
+        run: pnpm --filter @ship/cli exec vitest run tests/idempotency.drill.ts
+
+  f12c-browser-demo:
+    runs-on: ubuntu-latest
+    needs: [f12b-idempotency-drill]
+    env:
+      CI: true
+      PLAYWRIGHT_WORKERS: 1
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run browser demo smoke
+        run: pnpm exec playwright test e2e/browser-demo.spec.ts
+
+  f12d-cli-smoke:
+    runs-on: ubuntu-latest
+    needs: [f12c-browser-demo]
+    env:
+      NODE_ENV: test
+      CI: true
+      SHIP_API_BASE_URL: http://127.0.0.1:3999
+      HOME: ${{ github.workspace }}/.ship-home
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK + CLI
+        run: pnpm build:sdk && pnpm build:cli
+      - name: Start mock API
+        run: |
+          cat > mock-api.mjs <<'NODE'
+          import http from 'node:http';
+          import fs from 'node:fs';
+
+          const server = http.createServer((req, res) => {
+            const url = new URL(req.url ?? '/', 'http://127.0.0.1:3999');
+            if (req.method === 'GET' && url.pathname === '/api/v1/docs/doc-1') {
+              res.writeHead(200, { 'content-type': 'application/json' });
+              res.end(JSON.stringify({ id: 'doc-1', title: 'Doc One', document_type: 'wiki' }));
+              return;
+            }
+            if (req.method === 'GET' && url.pathname === '/api/v1/webhooks/deliveries') {
+              res.writeHead(200, { 'content-type': 'application/json' });
+              res.end(JSON.stringify({ data: [{ id: 'delivery-1', event_type: 'document.created', attempt_number: 1, response_status: 200, latency_ms: 12, idempotency_key: 'key-1', dead_lettered_at: null, created_at: new Date().toISOString() }], next_cursor: null }));
+              return;
+            }
+            res.writeHead(404, { 'content-type': 'application/json' });
+            res.end(JSON.stringify({ code: 'not_found', message: 'not found' }));
+          });
+
+          server.listen(3999, '127.0.0.1', () => {
+            fs.writeFileSync('mock-api.ready', 'ready');
+          });
+
+          process.on('SIGTERM', () => server.close(() => process.exit(0)));
+          NODE
+          node mock-api.mjs &
+          echo $! > mock-api.pid
+          for _ in $(seq 1 20); do
+            if [ -f mock-api.ready ]; then
+              break
+            fi
+            sleep 1
+          done
+      - name: Seed token
+        run: |
+          mkdir -p "$HOME/.ship"
+          cat > "$HOME/.ship/token.json" <<'JSON'
+          { "token": "mock-token" }
+          JSON
+      - name: Docs get smoke
+        run: |
+          node integrations/cli/dist/index.js docs get doc-1 > /tmp/ship-doc-get.out
+          grep -q 'Doc One' /tmp/ship-doc-get.out
+      - name: Webhooks tail smoke
+        run: |
+          node integrations/cli/dist/index.js webhooks tail --poll-interval 250 > /tmp/ship-webhooks-tail.out 2>&1 &
+          pid=$!
+          sleep 2
+          kill $pid || true
+          wait $pid || true
+          grep -q '\[verified\] document.created' /tmp/ship-webhooks-tail.out
+      - name: Stop mock API
+        if: always()
+        run: |
+          if [ -f mock-api.pid ]; then
+            kill "$(cat mock-api.pid)" || true
+          fi
+
+  f11-agent-rewire:
+    runs-on: ubuntu-latest
+    needs: [f10-developer-portal]
+    env:
+      NODE_ENV: test
+      CI: true
+      AGENT_USE_PUBLIC_API: true
+      SHIP_API_BASE_URL: https://ship-api-ysxi.onrender.com
+      SHIP_AUDIT_DATABASE_URL: ${{ secrets.SHIP_AUDIT_DATABASE_URL }}
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK
+        run: pnpm build:sdk
+      - name: Verify agent rewire migration exists
+        run: test -f api/src/db/migrations/063_agent_oauth_app_seed.sql
+      - name: Agent audit proof
+        run: pnpm -C api exec vitest run src/__tests__/agent-audit-proof.test.ts
+
+  f10-developer-portal:
+    runs-on: ubuntu-latest
+    needs: [f9-ttfe-drill]
+    env:
+      NODE_ENV: test
+      CI: true
+      WEB_URL: https://ship-web-ak37.onrender.com
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Developer portal live E2E
+        run: pnpm exec playwright test --config api-playwright-test/playwright.config.ts api-playwright-test/developer-portal-live.spec.ts --workers=1
+
+  f9-ttfe-drill:
+    runs-on: ubuntu-latest
+    needs: [f8-cli]
+    env:
+      NODE_ENV: test
+      CI: true
+      API_URL: https://ship-api-ysxi.onrender.com
+      SHIP_GRADER_TOKEN: ${{ secrets.SHIP_GRADER_TOKEN }}
+      SHIP_DEVICE_CODE: ${{ secrets.SHIP_DEVICE_CODE }}
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK + CLI
+        run: pnpm build:sdk && pnpm build:cli
+      - name: TTFE drill
+        run: pnpm drill ttfe
+        timeout-minutes: 2
+      - name: TTFE elapsed check
+        run: |
+          if [ -f test-results/ttfe-timing.json ]; then
+            TOTAL=$(node -e "const d=require('./test-results/ttfe-timing.json');console.log(d.reduce((a,x)=>a+x.elapsedMs,0))")
+            [ "$TOTAL" -lt 60000 ] || (echo "TTFE exceeded 60s: ${TOTAL}ms" && exit 1)
+          fi
+
+  f8-cli:
+    runs-on: ubuntu-latest
+    needs: [f7-sdk-full]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: CLI build
+        run: pnpm build:cli
+      - name: CLI lint (no api/src imports)
+        run: pnpm lint integrations/cli
+
+  f7-sdk-full:
+    runs-on: ubuntu-latest
+    needs: [f6-ratelimit-audit]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: SDK build + type check
+        run: pnpm build:sdk && pnpm type-check
+
+  f6-ratelimit-audit:
+    runs-on: ubuntu-latest
+    needs: [f5-retry-dlq-replay]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Rate limit + audit unit tests
+        run: pnpm -C api exec vitest run src/platform/ratelimit/ratelimit.test.ts
+
+  f5-retry-dlq-replay:
+    runs-on: ubuntu-latest
+    needs: [f4-webhook-pipeline]
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Retry + DLQ unit tests
+        run: pnpm -C api exec vitest run src/platform/webhooks/retry.test.ts
+        timeout-minutes: 1
+
+  sdk-cli:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Build CLI
+        run: corepack pnpm build:cli
+      - name: CLI lint
+        run: corepack pnpm lint integrations/cli
+      - name: SDK smoke suites
+        run: >
+          corepack pnpm -C sdk exec vitest run
+          src/auth/__tests__/ClientCredentialsFlow.test.ts
+          src/auth/__tests__/DeviceFlow.test.ts
+          tests/openapi-parity.test.ts
+          src/__tests__/authorizationCodeFlow.test.ts
+          src/resources/__tests__/AuditClient.test.ts
+          src/resources/__tests__/DocumentsClient.test.ts
+          src/__tests__/ShipClient.integration.test.ts
+
+  playwright-regression:
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      PLAYWRIGHT_WORKERS: 2
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Install Playwright browser
+        run: pnpm exec playwright install --with-deps chromium
+      - name: Run Playwright regression suite
+        run: pnpm test:e2e
+
+  live-smoke:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    env:
+      API_URL: https://ship-api-ysxi.onrender.com
+      WEB_URL: https://ship-web-ak37.onrender.com
+      CI: true
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Build CLI
+        run: corepack pnpm build:cli
+      - name: Check public discovery endpoints
+        run: |
+          set -euo pipefail
+          curl -fsS "$API_URL/.well-known/ship.json" | node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync(0,'utf8')); if (!data.oauth_client_id) throw new Error('Missing oauth_client_id');"
+          curl -fsS "$API_URL/api/v1/openapi.json" | node -e "const fs=require('fs'); const data=JSON.parse(fs.readFileSync(0,'utf8')); if (data.openapi !== '3.1.0') throw new Error('Unexpected OpenAPI version');"
+      - name: End-to-end CLI login
+        run: |
+          set -euo pipefail
+          out="$(mktemp)"
+          err="$(mktemp)"
+          node integrations/cli/dist/index.js login >"$out" 2>"$err" &
+          pid=$!
+
+          for _ in $(seq 1 30); do
+            if grep -q '^Visit ' "$out"; then
+              break
+            fi
+            sleep 1
+          done
+
+          cat "$out"
+          cat "$err" >&2
+
+          if ! grep -q '^Visit ' "$out"; then
+            echo "ship login did not print a verification URL" >&2
+            kill "$pid" || true
+            wait "$pid" || true
+            exit 1
+          fi
+
+          verification_uri="$(sed -n 's/^Visit \(.*\) and enter .*$/\1/p' "$out" | tail -n1)"
+          user_code="$(sed -n 's/^Visit .* and enter \(.*\)$/\1/p' "$out" | tail -n1)"
+
+          curl -fsS -X POST "$verification_uri/verify" \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            --data "user_code=$user_code&email=dev%40ship.local&password=admin123" >/dev/null
+
+          wait "$pid"
+          cat "$out"
+          if ! grep -q '^Logged in as ' "$out"; then
+            echo "ship login did not finish successfully" >&2
+            exit 1
+          fi
+
+          node integrations/cli/dist/index.js docs ls >/tmp/ship-docs.out
+          test -s /tmp/ship-docs.out
+
+  audit-baseline:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    env:
+      AUDIT_API_URL: https://ship-api-ysxi.onrender.com
+      AUDIT_WEB_URL: https://ship-web-ak37.onrender.com
+      AUDIT_EMAIL: dev@ship.local
+      AUDIT_PASSWORD: admin123
+      DATABASE_URL: ${{ secrets.SHIP_AUDIT_DATABASE_URL }}
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Run performance and query audit
+        run: node perform-audit.cjs --categories=2,3,4
