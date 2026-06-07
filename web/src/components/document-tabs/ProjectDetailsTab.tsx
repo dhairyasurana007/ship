@@ -11,7 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { issueKeys } from '@/hooks/useIssuesQuery';
 import { projectKeys } from '@/hooks/useProjectsQuery';
 import type { DocumentTabProps } from '@/lib/document-tabs';
-import { computeICEScore } from '@ship/shared';
+import { computeICEScore } from '@ship-dhairya/shared';
 
 /**
  * ProjectDetailsTab - Renders the project document in the UnifiedEditor

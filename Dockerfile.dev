@@ -15,17 +15,17 @@ COPY api/package.json ./api/
 COPY shared/package.json ./shared/
 
 # Create minimal web package.json - needed for workspace but won't be installed
-RUN mkdir -p web && echo '{"name":"@ship/web","version":"0.0.0","private":true}' > web/package.json
+RUN mkdir -p web && echo '{"name":"@ship-dhairya/web","version":"0.0.0","private":true}' > web/package.json
 
 # Install only api and shared dependencies (skip web entirely)
-RUN pnpm install --filter @ship/api --filter @ship/shared --ignore-scripts
+RUN pnpm install --filter @ship-dhairya/api --filter @ship-dhairya/shared --ignore-scripts
 
 # Copy source code (only api and shared - web is excluded by .dockerignore)
 COPY shared/ ./shared/
 COPY api/ ./api/
 
 # Build shared types first, then API
-RUN pnpm build:shared && pnpm --filter @ship/api build
+RUN pnpm build:shared && pnpm --filter @ship-dhairya/api build
 
 # Expose API port
 EXPOSE 3000

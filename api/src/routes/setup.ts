@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import type { Router as RouterType } from 'express';
 import bcrypt from 'bcryptjs';
 import { pool } from '../db/client.js';
-import { ERROR_CODES, HTTP_STATUS } from '@ship/shared';
+import { ERROR_CODES, HTTP_STATUS } from '@ship-dhairya/shared';
 import { WELCOME_DOCUMENT_TITLE, WELCOME_DOCUMENT_CONTENT } from '../db/welcomeDocument.js';
 
 const router: RouterType = Router();

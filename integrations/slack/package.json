@@ -1,5 +1,5 @@
 {
-  "name": "@ship/slack-integration",
+  "name": "@ship-dhairya/slack-integration",
   "version": "0.1.0",
   "private": true,
   "type": "module",

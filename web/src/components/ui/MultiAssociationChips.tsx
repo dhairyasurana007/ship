@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import type { BelongsTo, BelongsToType } from '@ship/shared';
+import type { BelongsTo, BelongsToType } from '@ship-dhairya/shared';
 
 interface AssociationOption {
   id: string;

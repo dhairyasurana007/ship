@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
-import type { ApprovalTracking } from '@ship/shared';
+import type { ApprovalTracking } from '@ship-dhairya/shared';
 import { DiffViewer, tipTapToPlainText } from '@/components/DiffViewer';
 import { apiPost } from '@/lib/api';
 

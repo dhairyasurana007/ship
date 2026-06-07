@@ -4,7 +4,7 @@ import { PropertyRow } from '@/components/ui/PropertyRow';
 import { Combobox } from '@/components/ui/Combobox';
 import { ApprovalButton } from '@/components/ApprovalButton';
 import { apiPost } from '@/lib/api';
-import type { ApprovalTracking } from '@ship/shared';
+import type { ApprovalTracking } from '@ship-dhairya/shared';
 
 const STATUS_OPTIONS = [
   { value: 'planning', label: 'Planning', color: 'bg-blue-500' },
@@ -277,7 +277,7 @@ export function WeekSidebar({
               {sprint.review_rating.value}
             </span>
             <span className="text-sm text-muted">
-              – {OPM_RATING_LABELS[sprint.review_rating.value]?.label || 'Unknown'}
+              â€“ {OPM_RATING_LABELS[sprint.review_rating.value]?.label || 'Unknown'}
             </span>
           </div>
         ) : (

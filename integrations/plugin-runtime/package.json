@@ -1,5 +1,5 @@
 {
-  "name": "@ship/plugin-runtime",
+  "name": "@ship-dhairya/plugin-runtime",
   "version": "0.1.0",
   "private": true,
   "type": "module",

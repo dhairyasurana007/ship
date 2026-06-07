@@ -3,7 +3,7 @@ import type { Router as RouterType } from 'express';
 import bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
 import { pool } from '../db/client.js';
-import { ERROR_CODES, HTTP_STATUS, SESSION_TIMEOUT_MS } from '@ship/shared';
+import { ERROR_CODES, HTTP_STATUS, SESSION_TIMEOUT_MS } from '@ship-dhairya/shared';
 import { logAuditEvent } from '../services/audit.js';
 import { linkUserToWorkspaceViaInvite } from '../services/invite-acceptance.js';
 

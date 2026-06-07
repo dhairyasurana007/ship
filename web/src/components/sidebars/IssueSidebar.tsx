@@ -6,7 +6,7 @@ import { ConfirmDialog } from '@/components/ConfirmDialog';
 import { isCascadeWarningError, type IncompleteChild } from '@/hooks/useIssuesQuery';
 import { apiPost, apiDelete } from '@/lib/api';
 import { formatDateRange } from '@/lib/date-utils';
-import type { BelongsTo, BelongsToType } from '@ship/shared';
+import type { BelongsTo, BelongsToType } from '@ship-dhairya/shared';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -377,7 +377,7 @@ export function IssueSidebar({
             type="number"
             step="0.5"
             min="0"
-            placeholder="—"
+            placeholder="â€”"
             aria-label="Estimate in hours"
             value={issue.estimate ?? ''}
             onChange={(e) => {

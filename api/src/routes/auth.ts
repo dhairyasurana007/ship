@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { pool } from '../db/client.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { ERROR_CODES, HTTP_STATUS, SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
+import { ERROR_CODES, HTTP_STATUS, SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship-dhairya/shared';
 import { logAuditEvent } from '../services/audit.js';
 import { sessionCookieSameSite, sessionCookieSecure } from '../config/session-cookie.js';
 import { notifySessionStart, notifySessionEnd } from '../fleetgraph/session-tracker.js';

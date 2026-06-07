@@ -15,10 +15,10 @@ COPY web/package.json ./web/
 COPY shared/package.json ./shared/
 
 # Create minimal api package.json - needed for workspace but won't be installed
-RUN mkdir -p api && echo '{"name":"@ship/api","version":"0.0.0","private":true}' > api/package.json
+RUN mkdir -p api && echo '{"name":"@ship-dhairya/api","version":"0.0.0","private":true}' > api/package.json
 
 # Install only web and shared dependencies (skip api entirely)
-RUN pnpm install --filter @ship/web --filter @ship/shared --ignore-scripts
+RUN pnpm install --filter @ship-dhairya/web --filter @ship-dhairya/shared --ignore-scripts
 
 # Copy source code
 COPY shared/ ./shared/

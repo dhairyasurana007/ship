@@ -16,7 +16,7 @@ import { pool } from '../db/client.js';
 
 const qr = (rows: unknown[]) => ({ rows } as any);
 import { Request, Response, NextFunction } from 'express';
-import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
+import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship-dhairya/shared';
 
 // Helper to create mock request/response
 function createMockReqRes(cookies: Record<string, string> = {}) {

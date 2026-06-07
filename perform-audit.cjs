@@ -660,7 +660,7 @@ async function category3() {
 
     log("Running database migrations before Category 3 seed...");
     log("Seed env overrides: NODE_ENV=development, PGSSLMODE=require");
-    const migrate = runPnpm(["--filter", "@ship/api", "exec", "tsx", "src/db/migrate.ts"], {
+    const migrate = runPnpm(["--filter", "@ship-dhairya/api", "exec", "tsx", "src/db/migrate.ts"], {
       env: seedEnv,
     });
     if (migrate.status !== 0) {
@@ -672,7 +672,7 @@ async function category3() {
 
     log("Seeding database (baseline) via direct api seed runner...");
     log("Seed env overrides: NODE_ENV=development, PGSSLMODE=require");
-    const seedBase = runPnpm(["--filter", "@ship/api", "exec", "tsx", "src/db/seed.ts"], { env: seedEnv });
+    const seedBase = runPnpm(["--filter", "@ship-dhairya/api", "exec", "tsx", "src/db/seed.ts"], { env: seedEnv });
     if (seedBase.status !== 0) {
       const rows = [["Status", "Blocked: baseline seed failed"]];
       console.log(terminalTable(["Metric", "Your Baseline"], rows));
@@ -892,7 +892,7 @@ function parseTestStats(text) {
   };
   const clean = text
     .replace(/\x1B\[[0-9;]*m/g, "") // strip ANSI
-    .replace(/[│┃]/g, "|");
+    .replace(/[â”‚â”ƒ]/g, "|");
   const lines = clean.split(/\r?\n/);
   const testsLine = lines.find((l) => /\bTests?\b/i.test(l)) || "";
   const filesLine = lines.find((l) => /\bTest Files\b/i.test(l)) || "";

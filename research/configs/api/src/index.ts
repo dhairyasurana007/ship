@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import { config } from 'dotenv';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import type { User } from '@ship/shared';
+import type { User } from '@ship-dhairya/shared';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

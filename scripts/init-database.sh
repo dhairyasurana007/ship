@@ -44,7 +44,7 @@ read -p "Seed database with test data? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Seeding database..."
-    pnpm --filter @ship/api db:seed
+    pnpm --filter @ship-dhairya/api db:seed
     echo "Database seeded successfully!"
 fi
 

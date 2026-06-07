@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { pool } from '../db/client.js';
 import { getVisibilityContext, VISIBILITY_FILTER_SQL } from '../middleware/visibility.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { computeICEScore } from '@ship/shared';
+import { computeICEScore } from '@ship-dhairya/shared';
 import { extractText } from '../utils/document-content.js';
 
 type RouterType = ReturnType<typeof Router>;

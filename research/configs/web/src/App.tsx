@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { User, ApiResponse } from '@ship/shared';
+import type { User, ApiResponse } from '@ship-dhairya/shared';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 

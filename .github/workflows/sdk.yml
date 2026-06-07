@@ -56,7 +56,7 @@ jobs:
         run: corepack pnpm -C api db:migrate
       - name: Seed baseline data
         run: corepack pnpm db:seed
-      - name: Lint — API boundary enforcement
+      - name: Lint â€” API boundary enforcement
         run: pnpm lint
       - name: API quality suites
         run: >
@@ -112,7 +112,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Stolen token drill
-        run: pnpm --filter @ship/cli exec vitest run tests/stolen-token.drill.ts
+        run: pnpm --filter @ship-dhairya/cli exec vitest run tests/stolen-token.drill.ts
 
   webhook-pipeline:
     runs-on: ubuntu-latest
@@ -170,11 +170,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Slack integration tests
-        run: pnpm --filter @ship/slack-integration test
+        run: pnpm --filter @ship-dhairya/slack-integration test
       - name: GitHub integration tests
-        run: pnpm --filter @ship/github-integration test
+        run: pnpm --filter @ship-dhairya/github-integration test
       - name: Plugin runtime tests
-        run: pnpm --filter @ship/plugin-runtime test
+        run: pnpm --filter @ship-dhairya/plugin-runtime test
 
   idempotency-drill:
     runs-on: ubuntu-latest
@@ -198,7 +198,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Idempotency drill
-        run: pnpm --filter @ship/cli exec vitest run tests/idempotency.drill.ts
+        run: pnpm --filter @ship-dhairya/cli exec vitest run tests/idempotency.drill.ts
 
   browser-demo:
     runs-on: ubuntu-latest

@@ -8,7 +8,7 @@ import * as decoding from 'lib0/decoding';
 import { pool } from '../db/client.js';
 import { extractHypothesisFromContent, extractSuccessCriteriaFromContent, extractVisionFromContent, extractGoalsFromContent } from '../utils/extractHypothesis.js';
 import { yjsToJson, jsonToYjs } from '../utils/yjsConverter.js';
-import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
+import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship-dhairya/shared';
 import cookie from 'cookie';
 
 const messageSync = 0;
@@ -429,7 +429,7 @@ async function canAccessDocumentForCollab(
 
 /**
  * Handle document conversion.
- * When a document is converted to a different type (issue→project or project→issue),
+ * When a document is converted to a different type (issueâ†’project or projectâ†’issue),
  * notify all collaborators and redirect them to the new document.
  *
  * @param oldDocId - The original document ID that was converted

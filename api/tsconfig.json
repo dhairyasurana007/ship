@@ -8,8 +8,8 @@
     "paths": {
       "@ship-dhairya/sdk": ["../sdk/dist"],
       "@ship-dhairya/sdk/*": ["../sdk/dist/*"],
-      "@ship/shared": ["../shared/dist"],
-      "@ship/shared/*": ["../shared/dist/*"]
+      "@ship-dhairya/shared": ["../shared/dist"],
+      "@ship-dhairya/shared/*": ["../shared/dist/*"]
     }
   },
   "include": ["src/**/*"],

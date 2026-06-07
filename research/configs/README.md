@@ -23,45 +23,45 @@ pnpm run dev
 
 ```
 ship/
-├── api/                     # Express backend
-│   ├── src/
-│   │   └── index.ts        # API server entry point
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── .env.template       # Checked into git
-│   └── .env.local          # Generated per worktree (gitignored)
-│
-├── web/                     # React + Vite frontend
-│   ├── src/
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── index.html
-│   ├── vite.config.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── .env.template
-│   └── .env.local          # Generated per worktree (gitignored)
-│
-├── shared/                  # Shared TypeScript types
-│   ├── src/
-│   │   ├── types/
-│   │   │   ├── user.ts
-│   │   │   ├── api.ts
-│   │   │   └── index.ts
-│   │   ├── constants.ts
-│   │   └── index.ts
-│   ├── dist/               # Built output (consumed by api/web)
-│   ├── package.json
-│   └── tsconfig.json
-│
-├── scripts/
-│   ├── worktree-init.sh    # Initialize new worktree
-│   └── check-ports.sh      # Check worktree status
-│
-├── package.json            # Root workspace config
-├── pnpm-workspace.yaml     # Workspace definition
-├── tsconfig.json           # Base TypeScript config
-└── .gitignore
+â”œâ”€â”€ api/                     # Express backend
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â””â”€â”€ index.ts        # API server entry point
+â”‚   â”œâ”€â”€ package.json
+â”‚   â”œâ”€â”€ tsconfig.json
+â”‚   â”œâ”€â”€ .env.template       # Checked into git
+â”‚   â””â”€â”€ .env.local          # Generated per worktree (gitignored)
+â”‚
+â”œâ”€â”€ web/                     # React + Vite frontend
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ App.tsx
+â”‚   â”‚   â””â”€â”€ main.tsx
+â”‚   â”œâ”€â”€ index.html
+â”‚   â”œâ”€â”€ vite.config.ts
+â”‚   â”œâ”€â”€ package.json
+â”‚   â”œâ”€â”€ tsconfig.json
+â”‚   â”œâ”€â”€ .env.template
+â”‚   â””â”€â”€ .env.local          # Generated per worktree (gitignored)
+â”‚
+â”œâ”€â”€ shared/                  # Shared TypeScript types
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ types/
+â”‚   â”‚   â”‚   â”œâ”€â”€ user.ts
+â”‚   â”‚   â”‚   â”œâ”€â”€ api.ts
+â”‚   â”‚   â”‚   â””â”€â”€ index.ts
+â”‚   â”‚   â”œâ”€â”€ constants.ts
+â”‚   â”‚   â””â”€â”€ index.ts
+â”‚   â”œâ”€â”€ dist/               # Built output (consumed by api/web)
+â”‚   â”œâ”€â”€ package.json
+â”‚   â””â”€â”€ tsconfig.json
+â”‚
+â”œâ”€â”€ scripts/
+â”‚   â”œâ”€â”€ worktree-init.sh    # Initialize new worktree
+â”‚   â””â”€â”€ check-ports.sh      # Check worktree status
+â”‚
+â”œâ”€â”€ package.json            # Root workspace config
+â”œâ”€â”€ pnpm-workspace.yaml     # Workspace definition
+â”œâ”€â”€ tsconfig.json           # Base TypeScript config
+â””â”€â”€ .gitignore
 ```
 
 ## Worktree Isolation
@@ -146,9 +146,9 @@ Ship Databases:
   ship_feature_123
 
 Worktree Configuration:
-  api/.env.local: ✓ exists
+  api/.env.local: âœ“ exists
     API Port: 3456
-  web/.env.local: ✓ exists
+  web/.env.local: âœ“ exists
     Web Port: 5629
 ```
 
@@ -189,7 +189,7 @@ Both environments run simultaneously without conflicts!
 
 ## Shared TypeScript Types
 
-The `@ship/shared` package contains all shared types, constants, and utilities.
+The `@ship-dhairya/shared` package contains all shared types, constants, and utilities.
 
 ### Adding New Types
 
@@ -209,7 +209,7 @@ export * from './product.js';
 
 **In API:**
 ```typescript
-import type { User, ApiResponse } from '@ship/shared';
+import type { User, ApiResponse } from '@ship-dhairya/shared';
 
 app.get('/api/users', (req, res) => {
   const users: User[] = [...];
@@ -224,7 +224,7 @@ app.get('/api/users', (req, res) => {
 **In Web:**
 ```typescript
 import { useState } from 'react';
-import type { User, ApiResponse } from '@ship/shared';
+import type { User, ApiResponse } from '@ship-dhairya/shared';
 
 function UserList() {
   const [users, setUsers] = useState<User[]>([]);
@@ -277,16 +277,16 @@ pnpm run worktree:status  # Check worktree status
 
 **API package:**
 ```bash
-pnpm --filter @ship/api dev          # Start dev server
-pnpm --filter @ship/api build        # Build for production
-pnpm --filter @ship/api type-check   # Type check only
+pnpm --filter @ship-dhairya/api dev          # Start dev server
+pnpm --filter @ship-dhairya/api build        # Build for production
+pnpm --filter @ship-dhairya/api type-check   # Type check only
 ```
 
 **Web package:**
 ```bash
-pnpm --filter @ship/web dev          # Start Vite dev server
-pnpm --filter @ship/web build        # Build for production
-pnpm --filter @ship/web preview      # Preview production build
+pnpm --filter @ship-dhairya/web dev          # Start Vite dev server
+pnpm --filter @ship-dhairya/web build        # Build for production
+pnpm --filter @ship-dhairya/web preview      # Preview production build
 ```
 
 ## TypeScript Configuration
@@ -312,16 +312,16 @@ Each package's `tsconfig.json` includes:
 Instead of relative imports, use package names:
 
 ```typescript
-// ✓ Good
-import type { User } from '@ship/shared';
+// âœ“ Good
+import type { User } from '@ship-dhairya/shared';
 
-// ✗ Bad
+// âœ— Bad
 import type { User } from '../../shared/src/types/user';
 ```
 
 This works because:
 1. Packages reference each other via `workspace:*` in `package.json`
-2. pnpm creates symlinks in `node_modules/@ship/*`
+2. pnpm creates symlinks in `node_modules/@ship-dhairya/*`
 3. TypeScript resolves via `node_modules`
 
 ## Build and Deployment
@@ -378,7 +378,7 @@ FROM node:20-slim AS api
 WORKDIR /app
 COPY --from=builder /app/api/dist ./
 COPY --from=builder /app/api/package.json ./
-COPY --from=builder /app/shared/dist ./node_modules/@ship/shared/dist/
+COPY --from=builder /app/shared/dist ./node_modules/@ship-dhairya/shared/dist/
 CMD ["node", "index.js"]
 ```
 
@@ -387,9 +387,9 @@ CMD ["node", "index.js"]
 ### Per-Worktree Databases
 
 Each worktree gets its own database:
-- `main` branch → `ship_main`
-- `feature-123` branch → `ship_feature_123`
-- `fix/bug-456` branch → `ship_fix_bug_456`
+- `main` branch â†’ `ship_main`
+- `feature-123` branch â†’ `ship_feature_123`
+- `fix/bug-456` branch â†’ `ship_fix_bug_456`
 
 ### Running Migrations
 

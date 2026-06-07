@@ -62,7 +62,7 @@ All files in `/Users/corcoss/code/ship/research/configs/` are production-ready:
 - Shared TypeScript configuration
 
 ### 2. Shared TypeScript Types
-- Dedicated `@ship/shared` package
+- Dedicated `@ship-dhairya/shared` package
 - User types, API response types, constants
 - Consumed by both API and Web via `workspace:*`
 
@@ -138,23 +138,23 @@ Both run simultaneously without ANY conflicts!
 
 ```
 ship/
-├── shared/          TypeScript types and constants
-│   └── dist/        → Built output consumed by api/web
-│
-├── api/             Express backend
-│   ├── .env.local   → Auto-generated per worktree (unique PORT, DATABASE_URL)
-│   └── src/         → Imports types from @ship/shared
-│
-├── web/             React + Vite frontend
-│   ├── .env.local   → Auto-generated per worktree (unique VITE_PORT, VITE_API_URL)
-│   └── src/         → Imports types from @ship/shared
-│
-└── scripts/
-    ├── worktree-init.sh     → Generate unique config
-    └── check-ports.sh       → Verify isolation
+â”œâ”€â”€ shared/          TypeScript types and constants
+â”‚   â””â”€â”€ dist/        â†’ Built output consumed by api/web
+â”‚
+â”œâ”€â”€ api/             Express backend
+â”‚   â”œâ”€â”€ .env.local   â†’ Auto-generated per worktree (unique PORT, DATABASE_URL)
+â”‚   â””â”€â”€ src/         â†’ Imports types from @ship-dhairya/shared
+â”‚
+â”œâ”€â”€ web/             React + Vite frontend
+â”‚   â”œâ”€â”€ .env.local   â†’ Auto-generated per worktree (unique VITE_PORT, VITE_API_URL)
+â”‚   â””â”€â”€ src/         â†’ Imports types from @ship-dhairya/shared
+â”‚
+â””â”€â”€ scripts/
+    â”œâ”€â”€ worktree-init.sh     â†’ Generate unique config
+    â””â”€â”€ check-ports.sh       â†’ Verify isolation
 ```
 
-**Key Insight:** The `shared` package is the source of truth for types. Both `api` and `web` import from it using `import type { User } from '@ship/shared'`.
+**Key Insight:** The `shared` package is the source of truth for types. Both `api` and `web` import from it using `import type { User } from '@ship-dhairya/shared'`.
 
 ---
 
@@ -184,9 +184,9 @@ pnpm run worktree:status  # Check ports and databases
 
 ### Package-Specific
 ```bash
-pnpm --filter @ship/api <command>
-pnpm --filter @ship/web <command>
-pnpm --filter @ship/shared <command>
+pnpm --filter @ship-dhairya/api <command>
+pnpm --filter @ship-dhairya/web <command>
+pnpm --filter @ship-dhairya/shared <command>
 ```
 
 ---
@@ -206,10 +206,10 @@ Result: Same worktree always gets same ports, different worktrees never collide.
 
 ### Database Naming
 ```bash
-# Branch name → Database name
-main           → ship_main
-feature-123    → ship_feature_123
-fix/bug-456    → ship_fix_bug_456
+# Branch name â†’ Database name
+main           â†’ ship_main
+feature-123    â†’ ship_feature_123
+fix/bug-456    â†’ ship_fix_bug_456
 ```
 
 ### Environment Loading Priority
@@ -277,9 +277,9 @@ fix/bug-456    → ship_fix_bug_456
 - Run `./scripts/check-ports.sh`
 - Kill process: `lsof -i :PORT` then `kill -9 PID`
 
-**"Cannot find module '@ship/shared'"**
+**"Cannot find module '@ship-dhairya/shared'"**
 - Build shared: `pnpm run build:shared`
-- Verify symlinks: `ls -la node_modules/@ship/`
+- Verify symlinks: `ls -la node_modules/@ship-dhairya/`
 
 **"Type errors in API/Web after changing shared"**
 - Rebuild shared: `pnpm run build:shared`
@@ -300,14 +300,14 @@ All research materials are in `/Users/corcoss/code/ship/research/`:
 
 ```
 research/
-├── INDEX.md (you are here)
-├── SUMMARY.md
-├── FILE-STRUCTURE.md
-├── pnpm-monorepo-best-practices.md
-└── configs/
-    ├── README.md
-    ├── [25 ready-to-use configuration files]
-    └── ...
+â”œâ”€â”€ INDEX.md (you are here)
+â”œâ”€â”€ SUMMARY.md
+â”œâ”€â”€ FILE-STRUCTURE.md
+â”œâ”€â”€ pnpm-monorepo-best-practices.md
+â””â”€â”€ configs/
+    â”œâ”€â”€ README.md
+    â”œâ”€â”€ [25 ready-to-use configuration files]
+    â””â”€â”€ ...
 ```
 
 ---

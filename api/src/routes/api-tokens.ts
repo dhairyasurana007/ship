@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import { z } from 'zod';
 import { pool } from '../db/client.js';
 import { authMiddleware } from '../middleware/auth.js';
-import { ERROR_CODES, HTTP_STATUS } from '@ship/shared';
+import { ERROR_CODES, HTTP_STATUS } from '@ship-dhairya/shared';
 import { logAuditEvent } from '../services/audit.js';
 
 const router: RouterType = Router();

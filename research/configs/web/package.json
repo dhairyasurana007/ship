@@ -1,5 +1,5 @@
 {
-  "name": "@ship/web",
+  "name": "@ship-dhairya/web",
   "version": "0.0.0",
   "private": true,
   "description": "React + Vite frontend",
@@ -13,7 +13,7 @@
     "lint": "eslint src --ext ts,tsx"
   },
   "dependencies": {
-    "@ship/shared": "workspace:*",
+    "@ship-dhairya/shared": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -508,7 +508,7 @@ From `api/src/middleware/auth.ts`:
 ```typescript
 import { Request, Response, NextFunction } from 'express';
 import { pool } from '../db/client.js';
-import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship/shared';
+import { SESSION_TIMEOUT_MS, ABSOLUTE_SESSION_TIMEOUT_MS } from '@ship-dhairya/shared';
 
 export async function authMiddleware(
   req: Request,

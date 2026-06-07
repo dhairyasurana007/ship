@@ -1,5 +1,5 @@
 {
-  "name": "@ship/api",
+  "name": "@ship-dhairya/api",
   "version": "0.0.0",
   "private": true,
   "description": "Express API server",
@@ -15,7 +15,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@ship/shared": "workspace:*",
+    "@ship-dhairya/shared": "workspace:*",
     "express": "^4.21.2",
     "dotenv": "^16.4.7",
     "cors": "^2.8.5",

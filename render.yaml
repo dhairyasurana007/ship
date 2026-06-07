@@ -9,10 +9,10 @@ services:
       corepack pnpm install --frozen-lockfile
       corepack pnpm build:api
     preDeployCommand: |
-      corepack pnpm --filter @ship/api db:migrate
-      corepack pnpm --filter @ship/api db:seed
-      corepack pnpm --filter @ship/api db:seed:grader
-    startCommand: corepack pnpm --filter @ship/api start
+      corepack pnpm --filter @ship-dhairya/api db:migrate
+      corepack pnpm --filter @ship-dhairya/api db:seed
+      corepack pnpm --filter @ship-dhairya/api db:seed:grader
+    startCommand: corepack pnpm --filter @ship-dhairya/api start
     healthCheckPath: /health
     autoDeployTrigger: commit
     envVars:

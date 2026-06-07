@@ -24,7 +24,7 @@ import {
   storeOAuthState,
   consumeOAuthState,
 } from '../services/oauth-state.js';
-import { SESSION_TIMEOUT_MS } from '@ship/shared';
+import { SESSION_TIMEOUT_MS } from '@ship-dhairya/shared';
 import { logAuditEvent } from '../services/audit.js';
 import { sessionCookieSameSite, sessionCookieSecure } from '../config/session-cookie.js';
 

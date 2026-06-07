@@ -19,7 +19,7 @@ import { apiGet } from '@/lib/api';
 import { cn } from '@/lib/cn';
 import type { WeeklyReviewActionsState } from '@/hooks/useWeeklyReviewActions';
 import type { Person } from '@/components/PersonCombobox';
-import type { BelongsTo, ApprovalTracking } from '@ship/shared';
+import type { BelongsTo, ApprovalTracking } from '@ship-dhairya/shared';
 
 // Document types that have properties panels
 export type PanelDocumentType = 'wiki' | 'issue' | 'project' | 'sprint' | 'program' | 'weekly_plan' | 'weekly_retro';

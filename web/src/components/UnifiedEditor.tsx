@@ -19,7 +19,7 @@ import { PlanQualityBanner, RetroQualityBanner } from '@/components/PlanQualityB
 import { FleetGraphAssistantPanel } from '@/components/fleetgraph/FleetGraphAssistantPanel';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import type { Person } from '@/components/PersonCombobox';
-import type { BelongsTo } from '@ship/shared';
+import type { BelongsTo } from '@ship-dhairya/shared';
 
 export type DocumentType = 'wiki' | 'issue' | 'project' | 'sprint' | 'program' | 'person' | 'weekly_plan' | 'weekly_retro';
 
@@ -412,7 +412,7 @@ export function UnifiedEditor({
   // Weekly plans and retros have computed titles (includes person name) - make read-only
   const isTitleReadOnly = document.document_type === 'weekly_plan' || document.document_type === 'weekly_retro';
 
-  // AI quality banner — triggers analysis on content changes from the editor
+  // AI quality banner â€” triggers analysis on content changes from the editor
   const [editorContent, setEditorContent] = useState<Record<string, unknown> | null>(null);
   const [aiScoringAnalysis, setAiScoringAnalysis] = useState<{ planAnalysis?: unknown; retroAnalysis?: unknown } | null>(null);
 

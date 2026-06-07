@@ -17,7 +17,7 @@ import { pool } from '../db/client.js';
 import { addBusinessDays, isBusinessDay } from '../utils/business-days.js';
 import { hasContent } from '../utils/document-content.js';
 import { getAllocations } from '../utils/allocation.js';
-import type { AccountabilityType } from '@ship/shared';
+import type { AccountabilityType } from '@ship-dhairya/shared';
 
 // Accountability item returned from check
 export interface MissingAccountabilityItem {
@@ -351,7 +351,7 @@ async function checkWeeklyPersonAccountability(
   planDueDate.setUTCDate(planDueDate.getUTCDate() - 2);
   const planDueStr = planDueDate.toISOString().split('T')[0] || '';
 
-  // Plan becomes overdue on Tuesday (weekStart + 1) — used for dueDate display
+  // Plan becomes overdue on Tuesday (weekStart + 1) â€” used for dueDate display
   const planOverdueDate = new Date(sprintStartDate);
   planOverdueDate.setUTCDate(planOverdueDate.getUTCDate() + 1);
   const planOverdueStr = planOverdueDate.toISOString().split('T')[0] || '';
@@ -361,7 +361,7 @@ async function checkWeeklyPersonAccountability(
   retroActionableDate.setUTCDate(retroActionableDate.getUTCDate() + 3);
   const retroActionableStr = retroActionableDate.toISOString().split('T')[0] || '';
 
-  // Retro is due by end of Friday (weekStart + 4) — matches grid's yellow window
+  // Retro is due by end of Friday (weekStart + 4) â€” matches grid's yellow window
   const retroDueDate = new Date(sprintStartDate);
   retroDueDate.setUTCDate(retroDueDate.getUTCDate() + 4);
   const retroDueStr = retroDueDate.toISOString().split('T')[0] || '';

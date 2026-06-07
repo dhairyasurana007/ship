@@ -4,44 +4,44 @@ All configuration files are located in `/Users/corcoss/code/ship/research/config
 
 ```
 configs/
-│
-├── README.md                          # Complete setup and usage guide
-├── .gitignore                         # Git ignore patterns
-├── package.json                       # Root workspace configuration
-├── pnpm-workspace.yaml               # Workspace package definitions
-├── tsconfig.json                     # Base TypeScript configuration
-│
-├── shared/                           # @ship/shared package
-│   ├── package.json                  # Shared package config
-│   ├── tsconfig.json                 # TS config (extends root)
-│   └── src/
-│       ├── index.ts                  # Main entry - re-exports everything
-│       ├── constants.ts              # Shared constants (HTTP_STATUS, etc.)
-│       └── types/
-│           ├── index.ts              # Re-export all types
-│           ├── user.ts               # User, CreateUserInput, UpdateUserInput
-│           └── api.ts                # ApiResponse, ApiError, PaginatedResponse
-│
-├── api/                              # @ship/api package
-│   ├── package.json                  # Express + dependencies
-│   ├── tsconfig.json                 # TS config (extends root, references shared)
-│   ├── .env.template                 # Environment template (checked in)
-│   └── src/
-│       └── index.ts                  # Express server with CORS, helmet, routes
-│
-├── web/                              # @ship/web package
-│   ├── package.json                  # React + Vite + dependencies
-│   ├── tsconfig.json                 # TS config (extends root, references shared)
-│   ├── vite.config.ts                # Vite config with env loading
-│   ├── .env.template                 # Environment template (checked in)
-│   ├── index.html                    # HTML entry point
-│   └── src/
-│       ├── main.tsx                  # React entry point
-│       └── App.tsx                   # Example app using shared types
-│
-└── scripts/
-    ├── worktree-init.sh              # Initialize worktree (unique ports/DB)
-    └── check-ports.sh                # Check active worktrees and resources
+â”‚
+â”œâ”€â”€ README.md                          # Complete setup and usage guide
+â”œâ”€â”€ .gitignore                         # Git ignore patterns
+â”œâ”€â”€ package.json                       # Root workspace configuration
+â”œâ”€â”€ pnpm-workspace.yaml               # Workspace package definitions
+â”œâ”€â”€ tsconfig.json                     # Base TypeScript configuration
+â”‚
+â”œâ”€â”€ shared/                           # @ship-dhairya/shared package
+â”‚   â”œâ”€â”€ package.json                  # Shared package config
+â”‚   â”œâ”€â”€ tsconfig.json                 # TS config (extends root)
+â”‚   â””â”€â”€ src/
+â”‚       â”œâ”€â”€ index.ts                  # Main entry - re-exports everything
+â”‚       â”œâ”€â”€ constants.ts              # Shared constants (HTTP_STATUS, etc.)
+â”‚       â””â”€â”€ types/
+â”‚           â”œâ”€â”€ index.ts              # Re-export all types
+â”‚           â”œâ”€â”€ user.ts               # User, CreateUserInput, UpdateUserInput
+â”‚           â””â”€â”€ api.ts                # ApiResponse, ApiError, PaginatedResponse
+â”‚
+â”œâ”€â”€ api/                              # @ship-dhairya/api package
+â”‚   â”œâ”€â”€ package.json                  # Express + dependencies
+â”‚   â”œâ”€â”€ tsconfig.json                 # TS config (extends root, references shared)
+â”‚   â”œâ”€â”€ .env.template                 # Environment template (checked in)
+â”‚   â””â”€â”€ src/
+â”‚       â””â”€â”€ index.ts                  # Express server with CORS, helmet, routes
+â”‚
+â”œâ”€â”€ web/                              # @ship-dhairya/web package
+â”‚   â”œâ”€â”€ package.json                  # React + Vite + dependencies
+â”‚   â”œâ”€â”€ tsconfig.json                 # TS config (extends root, references shared)
+â”‚   â”œâ”€â”€ vite.config.ts                # Vite config with env loading
+â”‚   â”œâ”€â”€ .env.template                 # Environment template (checked in)
+â”‚   â”œâ”€â”€ index.html                    # HTML entry point
+â”‚   â””â”€â”€ src/
+â”‚       â”œâ”€â”€ main.tsx                  # React entry point
+â”‚       â””â”€â”€ App.tsx                   # Example app using shared types
+â”‚
+â””â”€â”€ scripts/
+    â”œâ”€â”€ worktree-init.sh              # Initialize worktree (unique ports/DB)
+    â””â”€â”€ check-ports.sh                # Check active worktrees and resources
 ```
 
 ## File Purposes
@@ -56,7 +56,7 @@ configs/
 | `pnpm-workspace.yaml` | Defines workspace packages (api, web, shared) |
 | `tsconfig.json` | Base TypeScript config extended by all packages |
 
-### Shared Package (@ship/shared)
+### Shared Package (@ship-dhairya/shared)
 
 | File | Purpose |
 |------|---------|
@@ -68,7 +68,7 @@ configs/
 | `src/types/api.ts` | ApiResponse, ApiError, PaginatedResponse |
 | `src/types/index.ts` | Re-exports all type files |
 
-### API Package (@ship/api)
+### API Package (@ship-dhairya/api)
 
 | File | Purpose |
 |------|---------|
@@ -77,7 +77,7 @@ configs/
 | `.env.template` | Environment variable template (PORT, DATABASE_URL) |
 | `src/index.ts` | Express server with routes using shared types |
 
-### Web Package (@ship/web)
+### Web Package (@ship-dhairya/web)
 
 | File | Purpose |
 |------|---------|

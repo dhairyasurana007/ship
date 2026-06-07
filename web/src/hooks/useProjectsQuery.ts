@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
-import { computeICEScore } from '@ship/shared';
+import { computeICEScore } from '@ship-dhairya/shared';
 
 // Inferred project status based on sprint relationships
 export type InferredProjectStatus = 'active' | 'planned' | 'completed' | 'backlog' | 'archived';

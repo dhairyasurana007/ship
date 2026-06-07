@@ -342,10 +342,10 @@ export interface WorkItem {
 }
 
 // api/src/routes/dashboard.ts
-import { WorkItem } from '@ship/shared';
+import { WorkItem } from '@ship-dhairya/shared';
 
 // web/src/hooks/useDashboard.ts
-import { WorkItem } from '@ship/shared';
+import { WorkItem } from '@ship-dhairya/shared';
 ```
 
 Existing shared types are at:

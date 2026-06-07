@@ -39,7 +39,7 @@ pnpm test
 | Error | Fix |
 |-------|-----|
 | `pg_isready` fails | PostgreSQL not in PATH: `export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"` |
-| `Cannot find module @ship/shared` | Run `pnpm build:shared` first |
+| `Cannot find module @ship-dhairya/shared` | Run `pnpm build:shared` first |
 | `database "X" does not exist` | Run the `createdb` command above |
 | vendor/@fpki missing | Create symlink: `mkdir -p vendor/@fpki && ln -sf /path/to/main/repo/vendor/@fpki/auth-client vendor/@fpki/auth-client` |
 

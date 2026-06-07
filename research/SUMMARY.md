@@ -12,7 +12,7 @@ This research covers best practices for setting up a pnpm monorepo with Express 
 - Must exist in repository root
 
 ### 2. Shared TypeScript Types Pattern
-- Create dedicated `@ship/shared` package
+- Create dedicated `@ship-dhairya/shared` package
 - Export types, constants, and utilities
 - Reference via `workspace:*` protocol
 - Build to `dist/` for consumption
@@ -50,55 +50,55 @@ All configuration files are ready to use in `/Users/corcoss/code/ship/research/c
 ### Root Configuration
 ```
 configs/
-├── README.md                    # Complete setup guide
-├── pnpm-workspace.yaml         # Workspace definition
-├── package.json                # Root scripts and metadata
-├── tsconfig.json               # Base TypeScript config
-└── .gitignore                  # Ignore patterns
+â”œâ”€â”€ README.md                    # Complete setup guide
+â”œâ”€â”€ pnpm-workspace.yaml         # Workspace definition
+â”œâ”€â”€ package.json                # Root scripts and metadata
+â”œâ”€â”€ tsconfig.json               # Base TypeScript config
+â””â”€â”€ .gitignore                  # Ignore patterns
 ```
 
-### Shared Package (@ship/shared)
+### Shared Package (@ship-dhairya/shared)
 ```
 configs/shared/
-├── package.json                # Package metadata with exports
-├── tsconfig.json              # TS config with composite: true
-└── src/
-    ├── index.ts               # Main entry point
-    ├── constants.ts           # Shared constants
-    └── types/
-        ├── index.ts           # Re-export all types
-        ├── user.ts            # User types
-        └── api.ts             # API response types
+â”œâ”€â”€ package.json                # Package metadata with exports
+â”œâ”€â”€ tsconfig.json              # TS config with composite: true
+â””â”€â”€ src/
+    â”œâ”€â”€ index.ts               # Main entry point
+    â”œâ”€â”€ constants.ts           # Shared constants
+    â””â”€â”€ types/
+        â”œâ”€â”€ index.ts           # Re-export all types
+        â”œâ”€â”€ user.ts            # User types
+        â””â”€â”€ api.ts             # API response types
 ```
 
-### API Package (@ship/api)
+### API Package (@ship-dhairya/api)
 ```
 configs/api/
-├── package.json               # API dependencies + scripts
-├── tsconfig.json             # Extends root, references shared
-├── .env.template             # Template (checked into git)
-└── src/
-    └── index.ts              # Express server with shared types
+â”œâ”€â”€ package.json               # API dependencies + scripts
+â”œâ”€â”€ tsconfig.json             # Extends root, references shared
+â”œâ”€â”€ .env.template             # Template (checked into git)
+â””â”€â”€ src/
+    â””â”€â”€ index.ts              # Express server with shared types
 ```
 
-### Web Package (@ship/web)
+### Web Package (@ship-dhairya/web)
 ```
 configs/web/
-├── package.json              # React + Vite dependencies
-├── tsconfig.json            # Extends root, references shared
-├── vite.config.ts           # Vite configuration with env loading
-├── .env.template            # Template (checked into git)
-├── index.html               # HTML entry point
-└── src/
-    ├── main.tsx             # React entry point
-    └── App.tsx              # Example using shared types
+â”œâ”€â”€ package.json              # React + Vite dependencies
+â”œâ”€â”€ tsconfig.json            # Extends root, references shared
+â”œâ”€â”€ vite.config.ts           # Vite configuration with env loading
+â”œâ”€â”€ .env.template            # Template (checked into git)
+â”œâ”€â”€ index.html               # HTML entry point
+â””â”€â”€ src/
+    â”œâ”€â”€ main.tsx             # React entry point
+    â””â”€â”€ App.tsx              # Example using shared types
 ```
 
 ### Scripts
 ```
 configs/scripts/
-├── worktree-init.sh         # Initialize worktree with unique config
-└── check-ports.sh           # Check active worktrees and ports
+â”œâ”€â”€ worktree-init.sh         # Initialize worktree with unique config
+â””â”€â”€ check-ports.sh           # Check active worktrees and ports
 ```
 
 ## Quick Start
@@ -161,8 +161,8 @@ pnpm run worktree:init    # Generate unique config
 pnpm run worktree:status  # Check ports and databases
 
 # Package-specific
-pnpm --filter @ship/api <script>
-pnpm --filter @ship/web <script>
+pnpm --filter @ship-dhairya/api <script>
+pnpm --filter @ship-dhairya/web <script>
 ```
 
 ## Technical Details
@@ -198,16 +198,16 @@ Priority (highest to lowest):
 ### TypeScript Monorepo Pattern
 ```
 Root tsconfig.json (base config)
-  ├── api/tsconfig.json (extends + references shared)
-  ├── web/tsconfig.json (extends + references shared)
-  └── shared/tsconfig.json (extends + composite)
+  â”œâ”€â”€ api/tsconfig.json (extends + references shared)
+  â”œâ”€â”€ web/tsconfig.json (extends + references shared)
+  â””â”€â”€ shared/tsconfig.json (extends + composite)
 ```
 
 ### Package Dependencies
 ```
 shared (no dependencies)
-  ├── api (depends on shared via workspace:*)
-  └── web (depends on shared via workspace:*)
+  â”œâ”€â”€ api (depends on shared via workspace:*)
+  â””â”€â”€ web (depends on shared via workspace:*)
 ```
 
 ### Build Order

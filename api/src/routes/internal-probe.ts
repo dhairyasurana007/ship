@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import type { Router as RouterType } from 'express';
 import crypto from 'crypto';
 import { pool } from '../db/client.js';
-import { ERROR_CODES, HTTP_STATUS } from '@ship/shared';
+import { ERROR_CODES, HTTP_STATUS } from '@ship-dhairya/shared';
 import { cleanupExpiredProbeElevations } from '../services/internal-probe.js';
 import { logAuditEvent } from '../services/audit.js';
 

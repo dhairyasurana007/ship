@@ -5,7 +5,7 @@ import { MultiPersonCombobox } from '@/components/MultiPersonCombobox';
 import { ProgramCombobox } from '@/components/ProgramCombobox';
 import { PropertyRow } from '@/components/ui/PropertyRow';
 import { ApprovalButton } from '@/components/ApprovalButton';
-import { computeICEScore, type ApprovalTracking } from '@ship/shared';
+import { computeICEScore, type ApprovalTracking } from '@ship-dhairya/shared';
 
 const PROJECT_COLORS = [
   '#6366f1', // Indigo
@@ -133,10 +133,10 @@ export function ProjectSidebar({
       <div className="rounded-lg border border-border bg-accent/10 p-3">
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-medium text-muted uppercase tracking-wide">ICE Score</span>
-          <span className="text-2xl font-bold text-accent tabular-nums">{iceScore ?? '—'}</span>
+          <span className="text-2xl font-bold text-accent tabular-nums">{iceScore ?? 'â€”'}</span>
         </div>
         <div className="text-xs text-muted">
-          {project.impact ?? '—'} × {project.confidence ?? '—'} × {project.ease ?? '—'} = {iceScore ?? '—'}
+          {project.impact ?? 'â€”'} Ã— {project.confidence ?? 'â€”'} Ã— {project.ease ?? 'â€”'} = {iceScore ?? 'â€”'}
         </div>
       </div>
 

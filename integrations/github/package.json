@@ -1,5 +1,5 @@
 {
-  "name": "@ship/github-integration",
+  "name": "@ship-dhairya/github-integration",
   "version": "0.1.0",
   "private": true,
   "type": "module",

@@ -9,9 +9,9 @@ if (!drillName) {
 }
 
 const drillMap = {
-  ttfe: ['--filter', '@ship/cli', 'exec', 'vitest', 'run', 'tests/ttfe.drill.ts'],
-  idempotency: ['--filter', '@ship/cli', 'exec', 'vitest', 'run', 'tests/idempotency.drill.ts'],
-  'stolen-token': ['--filter', '@ship/cli', 'exec', 'vitest', 'run', 'tests/stolen-token.drill.ts'],
+  ttfe: ['--filter', '@ship-dhairya/cli', 'exec', 'vitest', 'run', 'tests/ttfe.drill.ts'],
+  idempotency: ['--filter', '@ship-dhairya/cli', 'exec', 'vitest', 'run', 'tests/idempotency.drill.ts'],
+  'stolen-token': ['--filter', '@ship-dhairya/cli', 'exec', 'vitest', 'run', 'tests/stolen-token.drill.ts'],
 };
 
 const args = drillMap[drillName];

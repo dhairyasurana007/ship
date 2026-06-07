@@ -71,7 +71,7 @@
     - `e2e/fleetgraph-proactive-notifications.spec.ts`
     - `e2e/fleetgraph-human-gate.spec.ts`
     - `e2e/fleetgraph-ondemand-context.spec.ts`
-  - Cross-platform Ship build bug fixed in `@ship/api` build script (Windows `cp` failure).
+  - Cross-platform Ship build bug fixed in `@ship-dhairya/api` build script (Windows `cp` failure).
   - Production FleetGraph bug fixed: global launcher now uses API client routing for outputs/approvals (prevents `401` on split web/api origins).
 - Production validation completed (May 27, 2026):
   - Commit 1 scope: login/smoke passed on `https://ship-web-ak37.onrender.com`.

@@ -41,21 +41,21 @@ The recommended approach is to create a `shared` package that exports types, con
 **Structure:**
 ```
 shared/
-├── package.json
-├── tsconfig.json
-├── src/
-│   ├── types/
-│   │   ├── index.ts      # Re-export all types
-│   │   ├── user.ts
-│   │   └── api.ts
-│   └── index.ts          # Main entry point
-└── dist/                 # Built output
+â”œâ”€â”€ package.json
+â”œâ”€â”€ tsconfig.json
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ types/
+â”‚   â”‚   â”œâ”€â”€ index.ts      # Re-export all types
+â”‚   â”‚   â”œâ”€â”€ user.ts
+â”‚   â”‚   â””â”€â”€ api.ts
+â”‚   â””â”€â”€ index.ts          # Main entry point
+â””â”€â”€ dist/                 # Built output
 ```
 
 **shared/package.json:**
 ```json
 {
-  "name": "@ship/shared",
+  "name": "@ship-dhairya/shared",
   "version": "0.0.0",
   "private": true,
   "main": "./dist/index.js",
@@ -80,7 +80,7 @@ shared/
 ```json
 {
   "dependencies": {
-    "@ship/shared": "workspace:*"
+    "@ship-dhairya/shared": "workspace:*"
   }
 }
 ```
@@ -161,10 +161,10 @@ TypeScript's project references (`references` field) enable:
 {
   "scripts": {
     "dev": "pnpm --parallel --recursive run dev",
-    "dev:api": "pnpm --filter @ship/api dev",
-    "dev:web": "pnpm --filter @ship/web dev",
+    "dev:api": "pnpm --filter @ship-dhairya/api dev",
+    "dev:web": "pnpm --filter @ship-dhairya/web dev",
     "build": "pnpm --recursive run build",
-    "build:shared": "pnpm --filter @ship/shared build"
+    "build:shared": "pnpm --filter @ship-dhairya/shared build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
@@ -203,7 +203,7 @@ TypeScript's project references (`references` field) enable:
 ```json
 {
   "scripts": {
-    "build": "pnpm -r --filter '@ship/shared' run build && pnpm -r --filter '{@ship/api,@ship/web}' run build"
+    "build": "pnpm -r --filter '@ship-dhairya/shared' run build && pnpm -r --filter '{@ship-dhairya/api,@ship-dhairya/web}' run build"
   }
 }
 ```
@@ -442,7 +442,7 @@ psql -U postgres -c "\l" | grep ship_ || echo "No ship databases found"
 
 ## Anti-Patterns to Avoid
 
-1. **Don't use relative paths in imports** - Use package names (`@ship/shared`)
+1. **Don't use relative paths in imports** - Use package names (`@ship-dhairya/shared`)
 2. **Don't commit `.env.local`** - Always gitignore, use `.env.template`
 3. **Don't hardcode ports** - Always use environment variables
 4. **Don't share database between worktrees** - Each worktree needs isolation

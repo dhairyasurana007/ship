@@ -8,7 +8,7 @@ import { BulkActionBar } from '@/components/BulkActionBar';
 import { DocumentListToolbar } from '@/components/DocumentListToolbar';
 import { Issue } from '@/contexts/IssuesContext';
 import { useBulkUpdateIssues, useIssuesQuery, useCreateIssue, useUpdateIssue, issueKeys, getProgramId, getProgramTitle, getProjectId, getProjectTitle, getSprintId, getSprintTitle } from '@/hooks/useIssuesQuery';
-import type { BelongsTo } from '@ship/shared';
+import type { BelongsTo } from '@ship-dhairya/shared';
 import { projectKeys, useProjectsQuery } from '@/hooks/useProjectsQuery';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAssignableMembersQuery } from '@/hooks/useTeamMembersQuery';
@@ -1392,7 +1392,7 @@ function IssueRowContent({ issue, visibleColumns, sprints, onSprintChange, isOut
       )}
       {visibleColumns.has('program') && (
         <td className={cn("px-4 py-3 text-sm text-muted", cellClass)} role="gridcell">
-          {getProgramTitle(issue) || '—'}
+          {getProgramTitle(issue) || 'â€”'}
         </td>
       )}
       {visibleColumns.has('sprint') && (
@@ -1404,7 +1404,7 @@ function IssueRowContent({ issue, visibleColumns, sprints, onSprintChange, isOut
               onChange={(sprintId) => onSprintChange(issue.id, sprintId)}
             />
           ) : (
-            getSprintTitle(issue) || '—'
+            getSprintTitle(issue) || 'â€”'
           )}
         </td>
       )}

@@ -11,7 +11,7 @@
  *   actions.forEach(action => renderMenuItem(action));
  */
 
-import { DocumentType, IssueState, IssuePriority, DocumentVisibility } from '@ship/shared';
+import { DocumentType, IssueState, IssuePriority, DocumentVisibility } from '@ship-dhairya/shared';
 import { ReactNode } from 'react';
 
 // Action handler context passed to action handlers

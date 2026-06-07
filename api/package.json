@@ -1,5 +1,5 @@
 {
-  "name": "@ship/api",
+  "name": "@ship-dhairya/api",
   "version": "0.0.0",
   "private": true,
   "description": "Express API server",
@@ -30,7 +30,7 @@
     "@aws-sdk/client-ssm": "^3.985.0",
     "@aws-sdk/s3-request-presigner": "^3.985.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
-    "@ship/shared": "workspace:*",
+    "@ship-dhairya/shared": "workspace:*",
     "@ship-dhairya/sdk": "workspace:*",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
