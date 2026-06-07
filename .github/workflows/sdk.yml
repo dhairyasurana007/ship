@@ -237,12 +237,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        run: corepack prepare pnpm@10.27.0 --activate
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build SDK + CLI
@@ -306,6 +305,15 @@ jobs:
         run: |
           if [ -f mock-api.pid ]; then
             kill "$(cat mock-api.pid)" || true
+          fi
+          if [ -f mock-api.ready ]; then
+            rm -f mock-api.ready
+          fi
+          if [ -f /tmp/ship-doc-get.out ]; then
+            cat /tmp/ship-doc-get.out
+          fi
+          if [ -f /tmp/ship-webhooks-tail.out ]; then
+            cat /tmp/ship-webhooks-tail.out
           fi
 
   agent-rewire:
@@ -502,7 +510,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build shared package
@@ -522,12 +529,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup pnpm
-        run: corepack prepare pnpm@10.27.0 --activate
+        uses: pnpm/action-setup@v4
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build shared package
@@ -547,12 +553,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        run: corepack prepare pnpm@10.27.0 --activate
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build shared package
@@ -572,12 +577,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        run: corepack prepare pnpm@10.27.0 --activate
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build shared package
@@ -597,12 +601,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        run: corepack prepare pnpm@10.27.0 --activate
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build shared package
@@ -622,12 +625,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        run: corepack prepare pnpm@10.27.0 --activate
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Build shared package
