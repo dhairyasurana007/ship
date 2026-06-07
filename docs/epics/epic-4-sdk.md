@@ -1,4 +1,4 @@
-# Epic 4 — TypeScript SDK (@ship/sdk)
+# Epic 4 — TypeScript SDK (@ship-dhairya/sdk)
 
 ## Before
 
@@ -10,8 +10,9 @@ No SDK. Developers had to hand-roll HTTP calls, manage pagination, and implement
 
 ## After
 
-Developers can `npm install @ship/sdk` and reach a verified signed webhook in under 30 minutes.
+Developers can `npm install @ship-dhairya/sdk` and reach a verified signed webhook in under 30 minutes.
 
 ## Proof
 
 `sdk/src/__tests__/ShipClient.integration.test.ts` passes. `openapi-parity.test.ts` asserts 0 drift between spec and SDK methods.
+

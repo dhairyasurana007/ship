@@ -94,7 +94,7 @@ The goal isn't to check boxes. It's to capture what your team learned so you can
 ### Quick Start (CLI)
 
 ```bash
-npm install -g @ship/sdk   # or: pnpm install @ship/sdk
+npm install -g @ship-dhairya/sdk   # or: pnpm install @ship-dhairya/sdk
 ship login                 # Device flow — prints a code, open the URL, enter the code
 ship docs ls               # List documents
 ship docs create --title "hello"
@@ -338,3 +338,4 @@ We welcome contributions. See [CONTRIBUTING.md](./CONTRIBUTING.md) for guideline
 ## License
 
 [MIT License](./LICENSE)
+

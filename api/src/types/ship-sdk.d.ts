@@ -1,4 +1,4 @@
-declare module '@ship/sdk' {
+declare module '@ship-dhairya/sdk' {
   export interface ShipClientOptions {
     token: string;
     baseUrl?: string;

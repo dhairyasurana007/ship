@@ -51,7 +51,7 @@ sdk/src/
   types.ts                     # User, Document, Issue, Sprint, Webhook
 
 integrations/
-  cli/                         # ship binary — imports only @ship/sdk
+  cli/                         # ship binary — imports only @ship-dhairya/sdk
   browser-demo/                # PKCE SPA demo
   slack/                       # Slack bolt integration
   drills/                      # stolen-token-drill.ts, idempotency-drill.ts
@@ -193,7 +193,7 @@ flowchart LR
 
     subgraph After ["After (Epic 7 flag ON)"]
         A2["Agent\n(platform citizen)"]
-        SDK2["@ship/sdk\nShipClient"]
+        SDK2["@ship-dhairya/sdk\nShipClient"]
         V1["POST /api/v1/docs\n(Bearer token, documents:write scope)"]
         Mid2["bearerAuth → rateLimit → auditLog"]
         DS2["DocumentService"]
@@ -289,3 +289,4 @@ const tokenStore   = new InMemoryTokenStore()
 | 12 | Consent screen CSRF | `state` parameter (RFC 6749 §10.12) | Yes |
 | 13 | In-memory deliverer ceiling | Cap at 500 in-flight; beyond = dead-letter | Yes |
 | 14 | Webhook log retention | 30 days (env `WEBHOOK_DELIVERY_RETENTION_DAYS`) | Yes |
+

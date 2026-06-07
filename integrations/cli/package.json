@@ -13,7 +13,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@ship/sdk": "workspace:*",
+    "@ship-dhairya/sdk": "workspace:*",
     "commander": "7.2.0"
   },
   "devDependencies": {

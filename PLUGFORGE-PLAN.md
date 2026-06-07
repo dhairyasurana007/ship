@@ -20,7 +20,7 @@
 - [ ] **Consistent ApiError shape** — `{ code, message, details?, request_id }` on every public failure. A fitness test enumerates all `/api/v1` routes and asserts the shape on every failure path.
 - [ ] **ScopeRegistry** — scopes-as-data. Insufficient scope returns 403 with the missing scope named explicitly in the body (no opaque "forbidden").
 - [ ] **OpenAPI 3.1 spec** — served at `/api/v1/openapi.json`, generated from route metadata (never hand-written), validated against the OpenAPI schema in a unit test.
-- [ ] **SDK skeleton** — `@ship/sdk` workspace package exists. `new ShipClient({ token }).me()` against a running server returns the typed authenticated user.
+- [ ] **SDK skeleton** — `@ship-dhairya/sdk` workspace package exists. `new ShipClient({ token }).me()` against a running server returns the typed authenticated user.
 - [ ] **Regression gate** — existing Playwright suite passes on main. P95 latency, bundle size, and per-route query counts within +10% of Part 1 baseline.
 - [ ] **Deployed + publicly accessible** — Ship deployed, OpenAPI spec URL published, at least one OAuth app pre-registered with read-only scopes for graders.
 
@@ -33,7 +33,7 @@
 **Deliverables (all required):**
 
 - [ ] **GitHub repository** — public; per-slice branches preserved; each PR description lists which acceptance criterion it advances and confirms the fitness test passed.
-- [ ] **Demo video (3–5 min)** — the five-line story: fresh terminal → `pnpm install @ship/sdk` → `ship login` → `ship docs create` → `ship webhooks tail` → verified signed delivery arrives. Then switch to dev portal and replay one delivery.
+- [ ] **Demo video (3–5 min)** — the five-line story: fresh terminal → `pnpm install @ship-dhairya/sdk` → `ship login` → `ship docs create` → `ship webhooks tail` → verified signed delivery arrives. Then switch to dev portal and replay one delivery.
 - [ ] **Pre-Search document** — all three phases completed with written answers; saved AI conversation attached as a reference artifact.
 - [ ] **Architecture document** — 1–2 pages committed at `docs/architecture.md`, covering all 8 sections (module layout, SOLID rationale, composition root, public/internal boundary, OAuth flows, webhook pipeline, SDK surface, agent-as-citizen, failure modes).
 - [ ] **OpenAPI spec** — live at `/api/v1/openapi.json` on the deployed instance + static copy at `docs/openapi.json` in the repo. Validated against the OpenAPI schema.
@@ -258,7 +258,7 @@
 
 **Boundary lint rules (two rules, both required):**
 1. `no-restricted-imports` in `api/src/platform/api/v1/**`: forbids importing from `../../routes/**` and `../../services/**`.
-2. `no-restricted-imports` in `integrations/**`: forbids importing from `../../api/src/**`. Only `@ship/sdk` allowed.
+2. `no-restricted-imports` in `integrations/**`: forbids importing from `../../api/src/**`. Only `@ship-dhairya/sdk` allowed.
 
 Both rules added to `.eslintrc.json` (or `eslint.config.js`) before any cross-imports exist. Enforced in the `pnpm lint` CI step.
 
@@ -281,7 +281,7 @@ Each step is a prerequisite for the next. The TTFE drill runs after build so the
 
 **One-command CLI setup for graders:**
 ```bash
-npx @ship/sdk  # or: npm install -g @ship/sdk (once published)
+npx @ship-dhairya/sdk  # or: npm install -g @ship-dhairya/sdk (once published)
 ship login     # device flow against the prod instance
 ```
 Documented in `README.md` under "Quick Start".
@@ -346,7 +346,7 @@ sdk/src/
   types.ts                     # User, Document, Issue, Sprint, Webhook
 
 integrations/
-  cli/                         # ship binary — imports only @ship/sdk
+  cli/                         # ship binary — imports only @ship-dhairya/sdk
   browser-demo/                # PKCE SPA demo
   slack/                       # Slack bolt integration
   drills/                      # stolen-token-drill.ts, idempotency-drill.ts
@@ -488,7 +488,7 @@ flowchart LR
 
     subgraph After ["After (Epic 7 flag ON)"]
         A2["Agent\n(platform citizen)"]
-        SDK2["@ship/sdk\nShipClient"]
+        SDK2["@ship-dhairya/sdk\nShipClient"]
         V1["POST /api/v1/docs\n(Bearer token, documents:write scope)"]
         Mid2["bearerAuth → rateLimit → auditLog"]
         DS2["DocumentService"]
@@ -582,3 +582,4 @@ const tokenStore   = new InMemoryTokenStore()
 | 12 | Consent screen CSRF | `state` parameter (RFC 6749 §10.12) | Yes |
 | 13 | In-memory deliverer ceiling | Cap at 500 in-flight; beyond = dead-letter | Yes |
 | 14 | Webhook log retention | 30 days (env `WEBHOOK_DELIVERY_RETENTION_DAYS`) | Yes |
+

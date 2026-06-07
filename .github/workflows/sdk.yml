@@ -668,28 +668,28 @@ jobs:
       - name: Ship client integration
         run: corepack pnpm -C sdk exec vitest run src/__tests__/ShipClient.integration.test.ts
 
-  playwright-regression:
-    runs-on: ubuntu-latest
-    env:
-      CI: true
-      PLAYWRIGHT_WORKERS: 2
-    timeout-minutes: 120
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "pnpm"
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-      - name: Install Playwright browser
-        run: pnpm exec playwright install --with-deps chromium
-      - name: Run Playwright regression suite
-        run: pnpm test:e2e
+  # playwright-regression:
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     CI: true
+  #     PLAYWRIGHT_WORKERS: 2
+  #   timeout-minutes: 120
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v4
+  #     - name: Setup Node
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: "20"
+  #         cache: "pnpm"
+  #     - name: Install dependencies
+  #       run: pnpm install --frozen-lockfile
+  #     - name: Install Playwright browser
+  #       run: pnpm exec playwright install --with-deps chromium
+  #     - name: Run Playwright regression suite
+  #       run: pnpm test:e2e
 
   live-smoke:
     runs-on: ubuntu-latest

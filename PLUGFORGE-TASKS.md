@@ -296,10 +296,10 @@ pnpm test --run api/src/platform/__tests__/api-contract.fitness.test.ts
 
 ---
 
-### M7 — SDK Skeleton (`@ship/sdk`)
+### M7 — SDK Skeleton (`@ship-dhairya/sdk`)
 
 **What to build:**
-- New workspace package `sdk/` — `package.json` name `@ship/sdk`, TypeScript strict
+- New workspace package `sdk/` — `package.json` name `@ship-dhairya/sdk`, TypeScript strict
 - `sdk/src/ShipClient.ts` — constructor `{ token: string, baseUrl?: string }`
 - `sdk/src/resources/MeClient.ts` — `.me()` calls `GET /api/v1/me`, returns typed `User`
 - `GET /api/v1/me` on v1 router — user-context tokens only (Client Credentials → 403), returns `{ id, name, email, granted_scopes }`
@@ -481,7 +481,7 @@ pnpm test:e2e --grep "device flow"
 - `sdk/src/auth/DeviceFlow.ts` — `ShipClient.deviceLogin({ onUserCode, baseUrl?, tokenStore? })` static method: calls `POST /oauth/device/code`, displays user code, polls `POST /oauth/token` until approved, stores token
 - `sdk/src/resources/DocumentsClient.ts` — `.list(cursor?)` calls `GET /api/v1/docs`, returns `{ data, next_cursor }`
 - `sdk/src/store/FileTokenStore.ts` — persists token to `~/.ship/token.json`
-- `integrations/cli/` — `bin: { "ship": "./dist/index.js" }`, uses `commander`, imports only `@ship/sdk`
+- `integrations/cli/` — `bin: { "ship": "./dist/index.js" }`, uses `commander`, imports only `@ship-dhairya/sdk`
 - `ship login` — runs device flow, saves token, prints "Logged in as <name>"
 - `ship docs ls` — lists documents via `DocumentsClient.list()`, prints titles
 
@@ -706,7 +706,7 @@ pnpm size-limit
 ### F8 — CLI Tool (`ship` binary)
 
 **What to build:**
-- `integrations/cli/` — `bin: { "ship": "./dist/index.js" }`, uses `commander`, imports only `@ship/sdk`
+- `integrations/cli/` — `bin: { "ship": "./dist/index.js" }`, uses `commander`, imports only `@ship-dhairya/sdk`
 - `ship login` — device flow, stores token to `~/.ship/token.json`
 - `ship docs ls` / `ship docs create --title "..."` — list and create via SDK
 - `ship webhooks tail` — SSE stream, prints each delivery with `✓ verified` / `✗ invalid`
@@ -822,7 +822,7 @@ pnpm test:e2e --grep "developer portal"
 **What to build:**
 - Migration `062_agent_oauth_app_seed.sql` — seeds FleetGraph system user `{ name: "FleetGraph", email: "fleetgraph@ship.internal" }` + OAuth app. Client Credentials tokens carry `user_id = fleetgraph_system_user.id` (never null).
 - `AGENT_USE_PUBLIC_API=true` env var in FleetGraph composition root
-- Flag ON: replace `pool.query()` with `@ship/sdk` calls. Flag OFF: original path unchanged.
+- Flag ON: replace `pool.query()` with `@ship-dhairya/sdk` calls. Flag OFF: original path unchanged.
 
 **Verify:**
 ```bash
@@ -950,9 +950,10 @@ git push origin v1.0.0-plugforge
 **Demo script (record this for the video):**
 ```bash
 cd /tmp && mkdir demo && cd demo
-pnpm install @ship/sdk
+pnpm install @ship-dhairya/sdk
 ship login                          # Device flow — show code, approve in browser
 ship docs create --title "hello"    # Creates via SDK + public API
 ship webhooks tail                  # Events stream — document.created ✓ verified
 # Switch to browser → /developer → replay one DLQ delivery
 ```
+

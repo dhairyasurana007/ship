@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { FileTokenStore, ShipClient, type DeviceCodeResponse } from "@ship/sdk";
+import { FileTokenStore, ShipClient, type DeviceCodeResponse } from "@ship-dhairya/sdk";
 
 const program = new Command();
 const tokenStore = new FileTokenStore();
@@ -138,3 +138,4 @@ main().catch((error) => {
   console.error(error instanceof Error ? error.message : String(error));
   process.exitCode = 1;
 });
+

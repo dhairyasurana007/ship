@@ -28,7 +28,7 @@ flowchart TD
 
     DB[("PostgreSQL")]
 
-    SDK["@ship/sdk\nShipClient · verifyWebhook()"]
+    SDK["@ship-dhairya/sdk\nShipClient · verifyWebhook()"]
 
     Receiver(["Webhook Receiver\n(Slack, GitHub, custom)"])
 
@@ -55,4 +55,5 @@ flowchart TD
 3. **Domain work** — the resource handler delegates to an internal domain service (e.g. Document Service) which reads/writes PostgreSQL.
 4. **Event published** — on any write, the domain service publishes an event onto `IEventBus` (never the route layer).
 5. **Webhook delivery** — the event is matched to subscriptions, HMAC-signed (Stripe-style `Ship-Signature` header), and delivered with exponential-backoff retries. After 6 failures, the delivery lands in the Dead-Letter Queue for manual replay.
-6. **SDK** — `@ship/sdk` wraps the public API so consumers never call raw HTTP. `verifyWebhook()` lets receivers verify signatures in one line.
+6. **SDK** — `@ship-dhairya/sdk` wraps the public API so consumers never call raw HTTP. `verifyWebhook()` lets receivers verify signatures in one line.
+

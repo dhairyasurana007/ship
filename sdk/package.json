@@ -1,5 +1,5 @@
 {
-  "name": "@ship/sdk",
+  "name": "@ship-dhairya/sdk",
   "version": "0.1.0",
   "private": false,
   "description": "TypeScript SDK for the Ship platform public API",

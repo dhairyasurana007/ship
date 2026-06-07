@@ -19,7 +19,7 @@
     "dev:shared": "pnpm --filter @ship/shared dev",
     "build": "pnpm --recursive run build",
     "build:shared": "pnpm --filter @ship/shared build",
-    "build:sdk": "pnpm --filter @ship/sdk build",
+    "build:sdk": "pnpm --filter @ship-dhairya/sdk build",
     "build:cli": "pnpm build:sdk && pnpm --filter @ship/cli build",
     "build:api": "pnpm run build:shared && pnpm build:sdk && pnpm --filter @ship/api build",
     "build:web": "pnpm run build:shared && pnpm --filter @ship/web build",

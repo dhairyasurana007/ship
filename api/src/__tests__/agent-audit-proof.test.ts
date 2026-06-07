@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ShipClient } from '@ship/sdk';
+import { ShipClient } from '@ship-dhairya/sdk';
 import {
   FLEETGRAPH_AGENT_CLIENT_ID,
   FLEETGRAPH_AGENT_CLIENT_SECRET,

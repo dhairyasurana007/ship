@@ -6,8 +6,8 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@ship/sdk": ["../sdk/dist"],
-      "@ship/sdk/*": ["../sdk/dist/*"],
+      "@ship-dhairya/sdk": ["../sdk/dist"],
+      "@ship-dhairya/sdk/*": ["../sdk/dist/*"],
       "@ship/shared": ["../shared/dist"],
       "@ship/shared/*": ["../shared/dist/*"]
     }

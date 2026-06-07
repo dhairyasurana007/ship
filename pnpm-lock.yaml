@@ -71,7 +71,7 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
         version: 1.26.0(zod@3.25.76)
-      '@ship/sdk':
+      '@ship-dhairya/sdk':
         specifier: workspace:*
         version: link:../sdk
       '@ship/shared':
@@ -222,7 +222,7 @@ importers:
 
   integrations/cli:
     dependencies:
-      '@ship/sdk':
+      '@ship-dhairya/sdk':
         specifier: workspace:*
         version: link:../../sdk
       commander:
@@ -11200,3 +11200,4 @@ snapshots:
   zod@3.25.76: {}
 
   zwitch@2.0.4: {}
+

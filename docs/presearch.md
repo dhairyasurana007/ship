@@ -2,6 +2,7 @@
 
 > Completed before writing code, per PRD requirement.
 > All three phases are answered below. This document plus the AI conversation log constitute the pre-search artifact.
+> Reference artifact: [docs/presearch-conversation.md](./presearch-conversation.md)
 
 ---
 
@@ -193,7 +194,7 @@
 
 **Boundary lint rules (two rules, both required):**
 1. `no-restricted-imports` in `api/src/platform/api/v1/**`: forbids importing from `../../routes/**` and `../../services/**`.
-2. `no-restricted-imports` in `integrations/**`: forbids importing from `../../api/src/**`. Only `@ship/sdk` allowed.
+2. `no-restricted-imports` in `integrations/**`: forbids importing from `../../api/src/**`. Only `@ship-dhairya/sdk` allowed.
 
 Both rules added to `.eslintrc.json` (or `eslint.config.js`) before any cross-imports exist. Enforced in the `pnpm lint` CI step.
 
@@ -216,7 +217,7 @@ Each step is a prerequisite for the next. The TTFE drill runs after build so the
 
 **One-command CLI setup for graders:**
 ```bash
-npx @ship/sdk  # or: npm install -g @ship/sdk (once published)
+npx @ship-dhairya/sdk  # or: npm install -g @ship-dhairya/sdk (once published)
 ship login     # device flow against the prod instance
 ```
 Documented in `README.md` under "Quick Start".
@@ -256,3 +257,4 @@ The surprising finding: Express `router.stack` exposes route layers with their m
 The signing scheme `HMAC-SHA256(secret, "t=<unix>.<rawBody>")` prevents two distinct attacks: (1) body tampering (HMAC binds the signature to the exact bytes), and (2) replay attacks (the timestamp is inside the signed payload, so an attacker cannot reuse a valid signature with a fresh timestamp). The 5-minute tolerance window (`toleranceSec = 300`) is surfaced as a parameter to `verifyWebhook()` rather than hardcoded, allowing security-conscious subscribers to tighten it.
 
 The discovery: HMAC-based anti-replay only works if the verifier checks the timestamp is within tolerance *and* that the timestamp in the header matches the timestamp inside the signed string. If they differ, the signature is valid but the delivery is a replay with a forged timestamp. `HmacSigner.ts` concatenates `t=<unix>` as a prefix of the signed payload to prevent this.
+
