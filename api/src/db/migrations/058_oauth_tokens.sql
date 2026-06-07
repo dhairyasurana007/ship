@@ -18,10 +18,14 @@ CREATE TABLE IF NOT EXISTS oauth_access_tokens (
   app_id UUID NOT NULL REFERENCES oauth_apps(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   scopes TEXT[] NOT NULL DEFAULT '{}',
+  token_kind TEXT NOT NULL DEFAULT 'user',
   expires_at TIMESTAMPTZ NOT NULL,
   revoked_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE oauth_access_tokens
+  ADD COLUMN IF NOT EXISTS token_kind TEXT NOT NULL DEFAULT 'user';
 
 CREATE TABLE IF NOT EXISTS oauth_refresh_tokens (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
