@@ -1,4 +1,4 @@
-name: SDK - Security Probe Scaffold
+name: Security Probe Scaffold
 
 on:
   pull_request:

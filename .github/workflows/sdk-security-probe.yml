@@ -1,4 +1,4 @@
-name: SDK - Security Probe CI
+name: Security Probe
 
 on:
   pull_request:
