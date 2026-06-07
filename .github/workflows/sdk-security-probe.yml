@@ -1,17 +1,17 @@
-name: security-probe-rate-limiting-error-verbosity
+name: SDK - Security Probe CI
 
 on:
   pull_request:
     paths:
       - "security-probe/**"
-      - ".github/workflows/security-probe-rate-limiting-error-verbosity.yml"
+      - ".github/workflows/sdk-security-probe.yml"
   push:
     paths:
       - "security-probe/**"
-      - ".github/workflows/security-probe-rate-limiting-error-verbosity.yml"
+      - ".github/workflows/sdk-security-probe.yml"
 
 jobs:
-  rate-limiting-error-verbosity-ci:
+  security-probe-ci:
     runs-on: ubuntu-latest
     defaults:
       run:

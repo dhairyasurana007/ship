@@ -1,4 +1,4 @@
-name: FleetGraph Dedup Worsening
+name: SDK - FleetGraph Dedup Worsening
 
 on:
   push:
@@ -61,4 +61,3 @@ jobs:
         run: corepack pnpm -C api db:migrate
       - name: Run dedup/worsening tests
         run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-dedup-worsening.test.ts
-

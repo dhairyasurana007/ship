@@ -1,4 +1,4 @@
-name: FleetGraph Notifications Digest
+name: SDK - FleetGraph Notifications Digest
 
 on:
   push:
@@ -59,4 +59,3 @@ jobs:
         run: corepack pnpm -C api db:migrate
       - name: Run notifications/digest tests
         run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-notifications.test.ts
-

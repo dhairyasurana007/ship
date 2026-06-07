@@ -1,4 +1,4 @@
-name: FleetGraph Proactive Classification
+name: SDK - FleetGraph Proactive Classification
 
 on:
   push:
@@ -70,4 +70,3 @@ jobs:
 
       - name: Run proactive classification tests
         run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-proactive-classification.test.ts
-

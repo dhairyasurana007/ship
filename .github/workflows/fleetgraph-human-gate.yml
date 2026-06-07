@@ -1,4 +1,4 @@
-name: FleetGraph Human Gate
+name: SDK - FleetGraph Human Gate
 
 on:
   push:
@@ -65,4 +65,3 @@ jobs:
         run: corepack pnpm -C api db:migrate
       - name: Run human gate tests
         run: corepack pnpm -C api exec vitest run src/__tests__/fleetgraph-human-gate.test.ts
-

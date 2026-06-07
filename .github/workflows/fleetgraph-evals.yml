@@ -1,4 +1,4 @@
-name: FleetGraph Evals
+name: SDK - FleetGraph Evals
 
 on:
   workflow_dispatch:
