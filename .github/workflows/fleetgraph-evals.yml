@@ -3,33 +3,7 @@ name: FleetGraph Evals
 on:
   workflow_dispatch:
   push:
-    paths:
-      - ".github/workflows/fleetgraph-evals.yml"
-      - "FLEETGRAPH.md"
-      - "api/src/fleetgraph/**"
-      - "api/src/routes/fleetgraph.ts"
-      - "api/src/__tests__/fleetgraph-*.test.ts"
-      - "web/src/components/fleetgraph/**"
-      - "e2e/fleetgraph-*.spec.ts"
-      - "e2e/fixtures/isolated-env.ts"
-      - "playwright.config.ts"
-      - "api/src/db/migrations/042_fleetgraph_mvp_tables.sql"
-      - "api/src/db/migrations/043_fleetgraph_approval_requests.sql"
-      - "api/src/db/migrations/044_fleetgraph_outputs.sql"
-      - "api/src/db/migrations/045_fleetgraph_runs_trigger_type.sql"
-      - "api/src/db/migrations/046_fleetgraph_state_entity_id.sql"
-      - "api/src/db/migrations/047_fleetgraph_pg_notify_trigger.sql"
-      - "api/package.json"
-      - "web/package.json"
-      - "package.json"
-      - "pnpm-lock.yaml"
   pull_request:
-    paths:
-      - "api/src/fleetgraph/**"
-      - "api/src/routes/fleetgraph.ts"
-      - "api/src/__tests__/fleetgraph-*.test.ts"
-      - "web/src/components/fleetgraph/**"
-      - "e2e/fleetgraph-*.spec.ts"
 
 jobs:
   fleetgraph-api-evals:

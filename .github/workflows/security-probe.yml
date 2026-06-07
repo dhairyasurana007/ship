@@ -2,13 +2,7 @@ name: Security Probe
 
 on:
   pull_request:
-    paths:
-      - "security-probe/**"
-      - ".github/workflows/security-probe.yml"
   push:
-    paths:
-      - "security-probe/**"
-      - ".github/workflows/security-probe.yml"
 
 jobs:
   install-security-probe:

@@ -3,25 +3,7 @@ name: FleetGraph UI Integration
 on:
   push:
     branches: [mvp, master]
-    paths:
-      - ".github/workflows/fleetgraph-ui-integration.yml"
-      - "web/src/components/fleetgraph/**"
-      - "web/src/components/UnifiedEditor.tsx"
-      - "api/src/routes/fleetgraph.ts"
-      - "api/src/fleetgraph/**"
-      - "web/package.json"
-      - "pnpm-lock.yaml"
-      - "package.json"
   pull_request:
-    paths:
-      - ".github/workflows/fleetgraph-ui-integration.yml"
-      - "web/src/components/fleetgraph/**"
-      - "web/src/components/UnifiedEditor.tsx"
-      - "api/src/routes/fleetgraph.ts"
-      - "api/src/fleetgraph/**"
-      - "web/package.json"
-      - "pnpm-lock.yaml"
-      - "package.json"
 
 jobs:
   web-fleetgraph-ui-tests:

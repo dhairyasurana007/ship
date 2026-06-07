@@ -3,20 +3,7 @@ name: FleetGraph MVP Acceptance
 on:
   workflow_dispatch:
   push:
-    branches: [mvp]
-    paths:
-      - ".github/workflows/fleetgraph-mvp-acceptance.yml"
-      - "api/src/fleetgraph/**"
-      - "api/src/routes/fleetgraph.ts"
-      - "api/src/__tests__/fleetgraph-*.test.ts"
-      - "web/src/components/fleetgraph/**"
-      - "web/src/components/UnifiedEditor.tsx"
-      - "api/src/db/migrations/042_fleetgraph_mvp_tables.sql"
-      - "api/src/db/migrations/043_fleetgraph_approval_requests.sql"
-      - "api/package.json"
-      - "web/package.json"
-      - "pnpm-lock.yaml"
-      - "package.json"
+    branches: [mvp, master]
 
 jobs:
   fleetgraph-mvp-acceptance:

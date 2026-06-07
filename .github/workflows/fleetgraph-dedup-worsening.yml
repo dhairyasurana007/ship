@@ -3,23 +3,7 @@ name: FleetGraph Dedup Worsening
 on:
   push:
     branches: [mvp, master]
-    paths:
-      - ".github/workflows/fleetgraph-dedup-worsening.yml"
-      - "api/src/fleetgraph/**"
-      - "api/src/__tests__/fleetgraph-dedup-worsening.test.ts"
-      - "api/src/db/migrations/**"
-      - "api/package.json"
-      - "pnpm-lock.yaml"
-      - "package.json"
   pull_request:
-    paths:
-      - ".github/workflows/fleetgraph-dedup-worsening.yml"
-      - "api/src/fleetgraph/**"
-      - "api/src/__tests__/fleetgraph-dedup-worsening.test.ts"
-      - "api/src/db/migrations/**"
-      - "api/package.json"
-      - "pnpm-lock.yaml"
-      - "package.json"
 
 jobs:
   api-fleetgraph-dedup-worsening-tests:

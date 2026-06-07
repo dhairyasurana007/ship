@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { Command } from "commander";
-import { FileTokenStore, ShipClient } from "@ship/sdk";
+import { FileTokenStore, ShipClient, type DeviceCodeResponse } from "@ship/sdk";
 
 const program = new Command();
 const tokenStore = new FileTokenStore();
@@ -26,7 +26,7 @@ program
   .description("Start the device login flow")
   .action(async () => {
     const client = await ShipClient.deviceLogin({
-      onUserCode: ({ user_code, verification_uri }) => {
+      onUserCode: ({ user_code, verification_uri }: DeviceCodeResponse) => {
         console.log(`Visit ${verification_uri} and enter ${user_code}`);
       },
       tokenStore,

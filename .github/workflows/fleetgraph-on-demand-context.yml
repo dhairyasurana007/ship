@@ -3,23 +3,7 @@ name: FleetGraph On Demand Context
 on:
   push:
     branches: [mvp, master]
-    paths:
-      - ".github/workflows/fleetgraph-on-demand-context.yml"
-      - "api/src/fleetgraph/**"
-      - "api/src/routes/fleetgraph.ts"
-      - "api/src/__tests__/fleetgraph-on-demand-context.test.ts"
-      - "api/package.json"
-      - "pnpm-lock.yaml"
-      - "package.json"
   pull_request:
-    paths:
-      - ".github/workflows/fleetgraph-on-demand-context.yml"
-      - "api/src/fleetgraph/**"
-      - "api/src/routes/fleetgraph.ts"
-      - "api/src/__tests__/fleetgraph-on-demand-context.test.ts"
-      - "api/package.json"
-      - "pnpm-lock.yaml"
-      - "package.json"
 
 jobs:
   api-fleetgraph-on-demand-context-tests:

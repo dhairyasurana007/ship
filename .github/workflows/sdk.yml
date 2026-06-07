@@ -6,28 +6,8 @@ on:
     - cron: "0 6 * * 1"
   push:
     branches: [main, master, mvp]
-    paths:
-      - ".github/workflows/sdk.yml"
-      - "api/**"
-      - "sdk/**"
-      - "integrations/cli/**"
-      - "e2e/**"
-      - "perform-audit.cjs"
-      - "package.json"
-      - "pnpm-workspace.yaml"
-      - "pnpm-lock.yaml"
   pull_request:
     branches: [main, master, mvp]
-    paths:
-      - ".github/workflows/sdk.yml"
-      - "api/**"
-      - "sdk/**"
-      - "integrations/cli/**"
-      - "e2e/**"
-      - "perform-audit.cjs"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
 
 permissions:
   contents: read
