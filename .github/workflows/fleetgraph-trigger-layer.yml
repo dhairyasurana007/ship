@@ -48,6 +48,8 @@ jobs:
 
       - name: Build shared package
         run: corepack pnpm build:shared
+      - name: Build SDK
+        run: corepack pnpm build:sdk
 
       - name: Run DB migrations
         run: corepack pnpm -C api db:migrate
