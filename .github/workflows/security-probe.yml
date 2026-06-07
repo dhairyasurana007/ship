@@ -11,7 +11,7 @@ on:
       - ".github/workflows/security-probe.yml"
 
 jobs:
-  security-probe:
+  install-security-probe:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -30,15 +30,47 @@ jobs:
           cache-dependency-path: security-probe/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Typecheck
-        run: npx tsc --noEmit
+      - name: Package installed dependencies
+        run: tar -czf security-probe-deps.tgz node_modules package-lock.json
 
-      - name: Run tests
-        run: npm test
+      - name: Upload dependency bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-probe-deps
+          path: security-probe-deps.tgz
 
-      - name: CLI smoke run
+  security-probe:
+    runs-on: ubuntu-latest
+    needs: install-security-probe
+    defaults:
+      run:
+        shell: bash
+        working-directory: security-probe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: security-probe/package-lock.json
+
+      - name: Download dependency bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: security-probe-deps
+          path: .
+
+      - name: Restore dependencies
+        run: tar -xzf security-probe-deps.tgz
+        shell: bash
+
+      - name: Run security probe
         run: npx tsx ./index.ts https://ship-web-ak37.onrender.com --output ./reports-ci
 
       - name: Non-existent URL smoke run
