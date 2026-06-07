@@ -1,10 +1,47 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
-function CodeBlock({ children }: { children: string }) {
+function CopyIcon({ copied }: { copied: boolean }) {
+  if (copied) {
+    return (
+      <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M20 6 9 17l-5-5" />
+      </svg>
+    );
+  }
+
   return (
-    <pre className="overflow-x-auto rounded-md border border-border bg-[#0d1117] px-4 py-3 text-sm text-[#e6edf3]">
-      <code>{children}</code>
-    </pre>
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function CodeBlock({ children }: { children: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopy() {
+    await navigator.clipboard.writeText(children);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={handleCopy}
+        className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md border border-white/10 bg-white/5 text-[#9da7b3] transition-colors hover:bg-white/10 hover:text-[#e6edf3]"
+        aria-label={copied ? 'Copied code' : 'Copy code'}
+        title={copied ? 'Copied' : 'Copy code'}
+      >
+        <CopyIcon copied={copied} />
+      </button>
+      <pre className="overflow-x-auto rounded-md border border-border bg-[#0d1117] px-4 py-3 pt-11 text-sm text-[#e6edf3]">
+        <code>{children}</code>
+      </pre>
+    </div>
   );
 }
 
