@@ -39,7 +39,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: security-probe-deps
-          path: security-probe-deps.tgz
+          path: security-probe/security-probe-deps.tgz
+          if-no-files-found: error
 
   security-probe:
     runs-on: ubuntu-latest
@@ -64,11 +65,10 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: security-probe-deps
-          path: .
+          path: security-probe
 
       - name: Restore dependencies
         run: tar -xzf security-probe-deps.tgz
-        shell: bash
 
       - name: Run security probe
         run: npx tsx ./index.ts https://ship-web-ak37.onrender.com --output ./reports-ci
