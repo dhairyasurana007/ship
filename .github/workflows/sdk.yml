@@ -416,7 +416,7 @@ jobs:
             [ "$TOTAL" -lt 60000 ] || (echo "TTFE exceeded 60s: ${TOTAL}ms" && exit 1)
           fi
 
-  cli:
+  cli-build-lint:
     runs-on: ubuntu-latest
     needs: [ratelimit-audit]
     env:
@@ -440,7 +440,7 @@ jobs:
       - name: CLI lint (no api/src imports)
         run: pnpm lint integrations/cli
 
-  sdk-full:
+  sdk-build-typecheck:
     runs-on: ubuntu-latest
     needs: [ratelimit-audit]
     env:
@@ -507,12 +507,12 @@ jobs:
         run: pnpm -C api exec vitest run src/platform/webhooks/retry.test.ts
         timeout-minutes: 1
 
-  sdk-cli:
+  sdk-client-credentials-flow:
     runs-on: ubuntu-latest
     env:
       NODE_ENV: test
       CI: true
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -529,20 +529,158 @@ jobs:
         run: corepack pnpm build:shared
       - name: Build SDK
         run: corepack pnpm build:sdk
-      - name: Build CLI
-        run: corepack pnpm build:cli
-      - name: CLI lint
-        run: corepack pnpm lint integrations/cli
-      - name: SDK smoke suites
-        run: >
-          corepack pnpm -C sdk exec vitest run
-          src/auth/__tests__/ClientCredentialsFlow.test.ts
-          src/auth/__tests__/DeviceFlow.test.ts
-          tests/openapi-parity.test.ts
-          src/__tests__/authorizationCodeFlow.test.ts
-          src/resources/__tests__/AuditClient.test.ts
-          src/resources/__tests__/DocumentsClient.test.ts
-          src/__tests__/ShipClient.integration.test.ts
+      - name: Client credentials flow
+        run: corepack pnpm -C sdk exec vitest run src/auth/__tests__/ClientCredentialsFlow.test.ts
+
+  sdk-device-flow:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Device flow
+        run: corepack pnpm -C sdk exec vitest run src/auth/__tests__/DeviceFlow.test.ts
+
+  sdk-openapi-parity:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: OpenAPI parity
+        run: corepack pnpm -C sdk exec vitest run tests/openapi-parity.test.ts
+
+  sdk-authorization-code-flow:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Authorization code flow
+        run: corepack pnpm -C sdk exec vitest run src/__tests__/authorizationCodeFlow.test.ts
+
+  sdk-audit-client:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Audit client
+        run: corepack pnpm -C sdk exec vitest run src/resources/__tests__/AuditClient.test.ts
+
+  sdk-documents-client:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Documents client
+        run: corepack pnpm -C sdk exec vitest run src/resources/__tests__/DocumentsClient.test.ts
+
+  sdk-ship-client-integration:
+    runs-on: ubuntu-latest
+    env:
+      NODE_ENV: test
+      CI: true
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build shared package
+        run: corepack pnpm build:shared
+      - name: Build SDK
+        run: corepack pnpm build:sdk
+      - name: Ship client integration
+        run: corepack pnpm -C sdk exec vitest run src/__tests__/ShipClient.integration.test.ts
 
   playwright-regression:
     runs-on: ubuntu-latest
