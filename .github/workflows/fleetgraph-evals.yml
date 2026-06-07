@@ -88,10 +88,28 @@ jobs:
 
   fleetgraph-playwright-evals:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: ship
+          POSTGRES_PASSWORD: ship_dev_password
+          POSTGRES_DB: ship_dev
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ship -d ship_dev"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     env:
       CI: true
+      NODE_ENV: test
+      SESSION_SECRET: test-session-secret
+      DATABASE_URL: postgres://ship:ship_dev_password@127.0.0.1:5432/ship_dev
+      CORS_ORIGIN: http://127.0.0.1:4173
       PLAYWRIGHT_WORKERS: 1
-      PLAYWRIGHT_BASE_URL: https://ship-web-ak37.onrender.com
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -104,6 +122,31 @@ jobs:
           cache: "pnpm"
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Build API
+        run: pnpm build:api
+      - name: Build web app
+        run: pnpm build:web
+      - name: Run DB migrations
+        run: pnpm db:migrate
+      - name: Seed baseline data
+        run: pnpm db:seed
+      - name: Start API server
+        run: nohup pnpm --filter @ship/api start >/tmp/ship-api.log 2>&1 &
+      - name: Start web preview
+        run: nohup pnpm --filter @ship/web preview --host 127.0.0.1 >/tmp/ship-web.log 2>&1 &
+      - name: Wait for local stack
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:4173 >/dev/null && curl -sf http://127.0.0.1:3000/health >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API log:"
+          cat /tmp/ship-api.log || true
+          echo "Web log:"
+          cat /tmp/ship-web.log || true
+          exit 1
       - name: Install Playwright browser
         run: pnpm exec playwright install --with-deps chromium
       - name: Run FleetGraph Playwright eval suite
@@ -112,10 +155,8 @@ jobs:
           e2e/fleetgraph-proactive-notifications.spec.ts
           e2e/fleetgraph-human-gate.spec.ts
           e2e/fleetgraph-ondemand-context.spec.ts
-      # Playwright evals hit the live Render deployment and leave test-tagged rows
-      # behind. This step removes them so repeated runs start from a clean state.
+      # Playwright evals use a local CI stack and leave test-tagged rows behind.
+      # This step removes them so repeated runs start from a clean state.
       - name: Cleanup eval test data
         if: always()
-        env:
-          SHIP_API_URL: https://ship-api-ysxi.onrender.com
         run: bash scripts/fleetgraph-eval-cleanup.sh

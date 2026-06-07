@@ -40,12 +40,13 @@ test.describe('fleetgraph human gate', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ token: 't' }) });
     });
 
+    const panel = page.locator('[data-fleetgraph-panel]');
     await page.getByRole('button', { name: 'FleetGraph Assistant' }).click();
-    await expect(page.getByText('Pending approvals')).toBeVisible();
-    await expect(page.getByText('Move issue to sprint new sprint')).toBeVisible();
+    await expect(panel).toContainText('Pending approvals');
+    await expect(panel).toContainText('Move issue to sprint new sprint');
 
     // Click the approval item to open detail view, then approve
-    await page.getByText('Move issue to sprint new sprint').click();
+    await panel.getByText('Move issue to sprint new sprint').click();
     await expect(page.getByRole('button', { name: 'Approve' })).toBeVisible();
     await page.getByRole('button', { name: 'Approve' }).click();
     // Detail view closes after approval

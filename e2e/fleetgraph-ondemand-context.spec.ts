@@ -30,9 +30,10 @@ test.describe('fleetgraph on-demand context', () => {
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ token: 't' }) });
     });
 
+    const panel = page.locator('[data-fleetgraph-panel]');
     await page.getByRole('button', { name: 'FleetGraph Assistant' }).click();
     await page.getByPlaceholder('Type your message...').fill("What's at risk?");
     await page.getByRole('button', { name: 'Send message' }).click();
-    await expect(page.getByText('Workspace status: 10 open issues and 1 active sprint.')).toBeVisible({ timeout: 10000 });
+    await expect(panel).toContainText('Workspace status: 10 open issues and 1 active sprint.', { timeout: 10000 });
   });
 });
