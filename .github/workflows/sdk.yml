@@ -442,7 +442,7 @@ jobs:
 
   sdk-full:
     runs-on: ubuntu-latest
-    needs: [rate-limit-audit]
+    needs: [ratelimit-audit]
     env:
       NODE_ENV: test
       CI: true
