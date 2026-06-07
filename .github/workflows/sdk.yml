@@ -373,6 +373,25 @@ jobs:
       - name: Developer portal live E2E
         run: pnpm exec playwright test --config api-playwright-test/playwright.config.ts api-playwright-test/developer-portal-live.spec.ts --workers=1
 
+  developer-install-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Smoke test published SDK install
+        run: |
+          set -euo pipefail
+          workdir="$(mktemp -d)"
+          cd "$workdir"
+          npm init -y >/dev/null 2>&1
+          npm install @ship-dhairya/sdk
+          node --input-type=module -e "import { ShipClient } from '@ship-dhairya/sdk'; if (typeof ShipClient !== 'function') throw new Error('ShipClient export missing')"
+
   ttfe-drill:
     runs-on: ubuntu-latest
     needs: [cli-build-lint]

@@ -146,15 +146,6 @@ ship docs ls`}</CodeBlock>
         </Section>
 
         {/* Footer */}
-        <div className="border-t border-border pt-6 text-xs text-muted">
-          <p>
-            Questions?{' '}
-            <Link to="/login" className="text-accent hover:underline">
-              Sign in to Ship
-            </Link>{' '}
-            and visit the Developer portal under Settings.
-          </p>
-        </div>
       </div>
     </div>
   );
