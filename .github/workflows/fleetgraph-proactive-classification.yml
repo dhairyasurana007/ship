@@ -1,4 +1,4 @@
-name: SDK - FleetGraph Proactive Classification
+name: FleetGraph Proactive Classification
 
 on:
   push:

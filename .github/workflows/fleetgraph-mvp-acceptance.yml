@@ -1,4 +1,4 @@
-name: SDK - FleetGraph MVP Acceptance
+name: FleetGraph MVP Acceptance
 
 on:
   workflow_dispatch:

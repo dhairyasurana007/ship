@@ -1,4 +1,4 @@
-name: PlugForge
+name: SDK - PlugForge
 
 on:
   workflow_dispatch:

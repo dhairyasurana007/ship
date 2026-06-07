@@ -1,4 +1,4 @@
-name: SDK - FleetGraph Observability
+name: FleetGraph Observability
 
 on:
   push:

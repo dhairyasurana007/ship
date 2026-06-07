@@ -1,4 +1,4 @@
-name: SDK - FleetGraph On-Demand Context
+name: FleetGraph On Demand Context
 
 on:
   push:

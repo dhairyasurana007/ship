@@ -1,4 +1,4 @@
-name: SDK - FleetGraph Human Gate
+name: FleetGraph Human Gate
 
 on:
   push:

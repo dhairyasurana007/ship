@@ -1,4 +1,4 @@
-name: SDK - FleetGraph Scaffold
+name: FleetGraph Scaffold
 
 on:
   push:

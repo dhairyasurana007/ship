@@ -1,4 +1,4 @@
-name: SDK - FleetGraph Notifications Digest
+name: FleetGraph Notifications Digest
 
 on:
   push:

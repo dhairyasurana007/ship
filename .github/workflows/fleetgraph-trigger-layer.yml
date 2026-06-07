@@ -1,4 +1,4 @@
-name: SDK - FleetGraph Trigger Layer
+name: FleetGraph Trigger Layer
 
 on:
   push:
