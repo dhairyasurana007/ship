@@ -31,6 +31,7 @@
     "@aws-sdk/s3-request-presigner": "^3.985.0",
     "@modelcontextprotocol/sdk": "^1.26.0",
     "@ship/shared": "workspace:*",
+    "@ship/sdk": "workspace:*",
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
     "bcryptjs": "^3.0.3",

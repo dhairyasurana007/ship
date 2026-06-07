@@ -10,7 +10,7 @@ registerRoute(router, 'get', '/me', {
   summary: 'Get current authenticated user',
 }, async (req, res, next) => {
   try {
-    if (!req.auth?.userId) {
+    if (!req.auth?.userId || req.auth.isMachine) {
       throw new ApiError('forbidden', 'Client Credentials tokens cannot access /me');
     }
     const result = await pool.query(

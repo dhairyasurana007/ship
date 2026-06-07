@@ -6,6 +6,7 @@ export interface AuthContext {
   appId: string;
   userId: string | null;
   scopes: string[];
+  isMachine: boolean;
 }
 
 declare global {
@@ -24,7 +25,7 @@ export async function bearerAuth(req: Request, _res: Response, next: NextFunctio
   const token = header.slice(7);
   try {
     const result = await pool.query(
-      `SELECT id, app_id, user_id, scopes, expires_at, revoked_at
+      `SELECT id, app_id, user_id, scopes, expires_at, revoked_at, token_kind
        FROM oauth_access_tokens WHERE token = $1`,
       [token]
     );
@@ -38,7 +39,12 @@ export async function bearerAuth(req: Request, _res: Response, next: NextFunctio
     if (new Date(row.expires_at) < new Date()) {
       return next(new ApiError('token_expired', 'Token has expired'));
     }
-    req.auth = { appId: row.app_id, userId: row.user_id, scopes: row.scopes };
+    req.auth = {
+      appId: row.app_id,
+      userId: row.user_id,
+      scopes: row.scopes,
+      isMachine: row.token_kind === 'machine',
+    };
     next();
   } catch (err) {
     next(err);

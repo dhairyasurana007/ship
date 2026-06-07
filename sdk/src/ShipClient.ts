@@ -3,6 +3,7 @@ import {
   AuthorizationCodeFlow,
   type AuthCodeFlowOptions,
 } from "./auth/AuthorizationCodeFlow.js";
+import { clientCredentialsFlow, type ClientCredentialsOptions } from "./auth/ClientCredentialsFlow.js";
 import { DocumentsClient } from "./resources/DocumentsClient.js";
 import { AuditClient } from "./resources/AuditClient.js";
 import { IssuesClient } from "./resources/IssuesClient.js";
@@ -51,5 +52,10 @@ export class ShipClient {
 
   static authorizationCodeFlow(opts: AuthCodeFlowOptions): AuthorizationCodeFlow {
     return new AuthorizationCodeFlow(opts);
+  }
+
+  static async clientCredentials(opts: ClientCredentialsOptions): Promise<ShipClient> {
+    const accessToken = await clientCredentialsFlow(opts);
+    return new ShipClient({ token: accessToken, baseUrl: opts.baseUrl });
   }
 }

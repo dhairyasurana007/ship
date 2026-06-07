@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { pool } from '../../db/client.js';
 import { deviceStore } from './deviceStore.js';
 
@@ -12,16 +13,29 @@ function verifyPkce(verifier: string, challenge: string, method: string): boolea
   return verifier === challenge;
 }
 
+async function issueAccessToken(
+  appId: string,
+  userId: string | null,
+  scopes: string[],
+  tokenKind: 'user' | 'machine' = 'user',
+): Promise<string> {
+  const accessToken = crypto.randomBytes(32).toString('hex');
+  await pool.query(
+    `INSERT INTO oauth_access_tokens (token, app_id, user_id, scopes, expires_at, token_kind)
+     VALUES ($1,$2,$3,$4,$5,$6)`,
+    [accessToken, appId, userId, scopes, new Date(Date.now() + 15 * 60 * 1000), tokenKind]
+  );
+  return accessToken;
+}
+
 async function issueTokenPair(appId: string, userId: string | null, scopes: string[]): Promise<{
   access_token: string; refresh_token: string;
 }> {
-  const accessToken = crypto.randomBytes(32).toString('hex');
+  const accessToken = await issueAccessToken(appId, userId, scopes, 'user');
   const refreshToken = crypto.randomBytes(32).toString('hex');
-
   const tokenResult = await pool.query(
-    `INSERT INTO oauth_access_tokens (token, app_id, user_id, scopes, expires_at)
-     VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-    [accessToken, appId, userId, scopes, new Date(Date.now() + 15 * 60 * 1000)]
+    `SELECT id FROM oauth_access_tokens WHERE token = $1`,
+    [accessToken]
   );
 
   await pool.query(
@@ -38,7 +52,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
   const body = req.body as Record<string, string | undefined>;
   const grant_type = body['grant_type'];
 
-  // ── Authorization Code + PKCE ──────────────────────────────────────────────
+  // Authorization Code + PKCE
   if (grant_type === 'authorization_code') {
     const { code, code_verifier, redirect_uri, client_id } = body;
     if (!code || !code_verifier || !redirect_uri || !client_id) {
@@ -71,7 +85,53 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // ── Device Authorization Grant ─────────────────────────────────────────────
+  // Client Credentials
+  if (grant_type === 'client_credentials') {
+    const { client_id, client_secret, scope } = body;
+    if (!client_id || !client_secret) {
+      res.status(400).json({ error: 'invalid_request', error_description: 'Missing client_id or client_secret' }); return;
+    }
+
+    const appResult = await pool.query(
+      `SELECT id, client_id, hashed_client_secret, owner_id, requested_scopes
+       FROM oauth_apps
+       WHERE client_id = $1`,
+      [client_id]
+    );
+    if (appResult.rows.length === 0) { res.status(400).json({ error: 'invalid_client' }); return; }
+
+    const app = appResult.rows[0] as Record<string, unknown>;
+    const secretMatch = await bcrypt.compare(client_secret, String(app['hashed_client_secret'] ?? ''));
+    if (!secretMatch) {
+      res.status(400).json({ error: 'invalid_client' }); return;
+    }
+
+    const allowedScopes = Array.isArray(app['requested_scopes'])
+      ? (app['requested_scopes'] as string[])
+      : [];
+    const requestedScopes = String(scope ?? '').trim().split(/\s+/).filter(Boolean);
+    const effectiveScopes = requestedScopes.length > 0 ? requestedScopes : allowedScopes;
+    const invalidScope = effectiveScopes.some((requestedScope) => !allowedScopes.includes(requestedScope));
+    if (invalidScope) {
+      res.status(400).json({ error: 'invalid_scope', error_description: 'Requested scope is not allowed for this client' }); return;
+    }
+
+    const accessToken = await issueAccessToken(
+      String(app['id']),
+      app['owner_id'] ? String(app['owner_id']) : null,
+      effectiveScopes,
+      'machine'
+    );
+    res.json({
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: 900,
+      scope: effectiveScopes.join(' '),
+    });
+    return;
+  }
+
+  // Device Authorization Grant
   if (grant_type === 'urn:ietf:params:oauth:grant-type:device_code') {
     const { device_code, client_id } = body;
     if (!device_code || !client_id) {
@@ -86,7 +146,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: 'expired_token' }); return;
     }
 
-    // Slow down check — if polled within 4s of last poll
+    // Slow down check â€” if polled within 4s of last poll
     const now = new Date();
     if (entry.lastPolledAt && (now.getTime() - entry.lastPolledAt.getTime()) < 4000) {
       await deviceStore.updateLastPolled(device_code);
@@ -99,7 +159,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
       res.status(400).json({ error: 'authorization_pending' }); return;
     }
 
-    // Approved — issue tokens
+    // Approved â€” issue tokens
     const appResult = await pool.query(`SELECT id FROM oauth_apps WHERE client_id = $1`, [client_id]);
     if (appResult.rows.length === 0) { res.status(400).json({ error: 'invalid_client' }); return; }
     const appId = (appResult.rows[0] as { id: string }).id;
@@ -111,7 +171,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // ── Refresh Token Grant ────────────────────────────────────────────────────
+  // Refresh Token Grant
   if (grant_type === 'refresh_token') {
     const { refresh_token } = body;
     if (!refresh_token) {
@@ -129,7 +189,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
 
     const rt = rtResult.rows[0] as Record<string, unknown>;
 
-    // Reuse detection — token already used: revoke entire family
+    // Reuse detection â€” token already used: revoke entire family
     if (rt['used_at']) {
       await pool.query(
         `UPDATE oauth_refresh_tokens SET revoked_at = NOW() WHERE family_id = $1`,
@@ -142,7 +202,7 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
          )`,
         [rt['family_id']]
       );
-      res.status(400).json({ error: 'invalid_grant', error_description: 'Refresh token already used — family revoked' }); return;
+      res.status(400).json({ error: 'invalid_grant', error_description: 'Refresh token already used â€” family revoked' }); return;
     }
 
     if (rt['revoked_at']) {
@@ -161,9 +221,9 @@ router.post('/', async (req: Request, res: Response): Promise<void> => {
     const newRefreshToken = crypto.randomBytes(32).toString('hex');
 
     const newAtResult = await pool.query(
-      `INSERT INTO oauth_access_tokens (token, app_id, user_id, scopes, expires_at)
-       VALUES ($1,$2,$3,$4,$5) RETURNING id`,
-      [accessToken, rt['app_id'], rt['user_id'], rt['scopes'], new Date(Date.now() + 15 * 60 * 1000)]
+      `INSERT INTO oauth_access_tokens (token, app_id, user_id, scopes, expires_at, token_kind)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`,
+      [accessToken, rt['app_id'], rt['user_id'], rt['scopes'], new Date(Date.now() + 15 * 60 * 1000), 'user']
     );
 
     await pool.query(

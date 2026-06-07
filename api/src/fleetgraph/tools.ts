@@ -1,4 +1,5 @@
 import { pool } from '../db/client.js';
+import { getFleetGraphPublicClient, shouldUsePublicApi } from './public-api.js';
 
 export type FleetGraphToolName =
   | 'create_document'
@@ -317,6 +318,20 @@ export async function executeToolCall(input: {
   const { workspaceId, userId, toolCall } = input;
 
   if (toolCall.name === 'create_document') {
+    if (shouldUsePublicApi()) {
+      const client = await getFleetGraphPublicClient();
+      const documentType = String(toolCall.args.documentType ?? 'wiki');
+      const title = String(toolCall.args.title ?? 'Untitled');
+      const created = await client.documents.create({
+        title,
+        document_type: documentType === 'wiki' ? 'wiki' : (documentType as 'issue' | 'program' | 'project' | 'sprint' | 'person'),
+      });
+      return {
+        ok: true,
+        summary: `Created ${created.document_type} document "${created.title}".`,
+        data: { documentId: created.id, documentType: created.document_type, title: created.title },
+      };
+    }
     const documentType = String(toolCall.args.documentType ?? 'wiki');
     const title = String(toolCall.args.title ?? 'Untitled');
     const result = await pool.query(

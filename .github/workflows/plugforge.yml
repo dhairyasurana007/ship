@@ -334,12 +334,28 @@ jobs:
     env:
       NODE_ENV: test
       CI: true
+      AGENT_USE_PUBLIC_API: true
+      SHIP_API_BASE_URL: https://ship-api-ysxi.onrender.com
+      SHIP_AUDIT_DATABASE_URL: ${{ secrets.SHIP_AUDIT_DATABASE_URL }}
     timeout-minutes: 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build SDK
+        run: pnpm build:sdk
       - name: Verify agent rewire migration exists
         run: test -f api/src/db/migrations/063_agent_oauth_app_seed.sql
+      - name: Agent audit proof
+        run: pnpm -C api exec vitest run src/__tests__/agent-audit-proof.test.ts
 
   f10-developer-portal:
     runs-on: ubuntu-latest
@@ -518,6 +534,7 @@ jobs:
       - name: SDK smoke suites
         run: >
           corepack pnpm -C sdk exec vitest run
+          src/auth/__tests__/ClientCredentialsFlow.test.ts
           src/auth/__tests__/DeviceFlow.test.ts
           tests/openapi-parity.test.ts
           src/__tests__/authorizationCodeFlow.test.ts
