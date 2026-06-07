@@ -3,9 +3,47 @@
 
 -- Rename document_type enum values
 -- PostgreSQL 10+ supports ALTER TYPE ... RENAME VALUE
-ALTER TYPE document_type RENAME VALUE 'sprint_plan' TO 'weekly_plan';
-ALTER TYPE document_type RENAME VALUE 'sprint_retro' TO 'weekly_retro';
-ALTER TYPE document_type RENAME VALUE 'sprint_review' TO 'weekly_review';
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'document_type'
+      AND e.enumlabel = 'sprint_plan'
+  ) THEN
+    ALTER TYPE document_type RENAME VALUE 'sprint_plan' TO 'weekly_plan';
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'document_type'
+      AND e.enumlabel = 'sprint_retro'
+  ) THEN
+    ALTER TYPE document_type RENAME VALUE 'sprint_retro' TO 'weekly_retro';
+  END IF;
+END
+$$;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_enum e
+    JOIN pg_type t ON t.oid = e.enumtypid
+    WHERE t.typname = 'document_type'
+      AND e.enumlabel = 'sprint_review'
+  ) THEN
+    ALTER TYPE document_type RENAME VALUE 'sprint_review' TO 'weekly_review';
+  END IF;
+END
+$$;
 
 -- Note: We keep 'sprint' as a document_type because it represents the sprint document itself.
 -- The terminology change is "Sprint 3" → "Week of Jan 27" in UI, but the underlying
